@@ -1,6 +1,6 @@
 package cn.orangeiot.handler;
 
-import cn.orangeiot.handler.message.MessageHandler;
+import cn.orangeiot.handler.dao.message.MessageHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;

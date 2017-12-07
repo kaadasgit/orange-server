@@ -14,13 +14,13 @@
         <module>mqtt-auth</module>
         <module>mqtt-cache</module>
         <module>mqtt-dao</module>
-        <module>mqtt-synch</module>
         <module>mqtt-subscribe</module>
         <module>mqtt-publish</module>
         <module>mqtt-topic</module>
         <module>mqtt-message</module>
         <module>mqtt-common</module>
         <module>mqtt-server</module>
+        <module>mqtt-apidao</module>
     </modules>
 
 

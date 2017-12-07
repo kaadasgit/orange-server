@@ -37,35 +37,17 @@ public class ConnectHandler {
             JsonObject jsonObject=new JsonObject(message.body().toString());
 
             /*查找缓存*/
-            vertx.eventBus().send(config.getString("send_connect_cache"),message.body(),(AsyncResult<Message<Boolean>> rs)->{
+            vertx.eventBus().send(config.getString("send_connect_dao"),message.body(),(AsyncResult<Message<Boolean>> rs)->{
                    if(rs.result().body()){//验证成功
                        message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
                                jsonObject.getString("username")).put("auth_valid", rs.result().body()));
                    }else{
-                       vertx.eventBus().send(config.getString("send_connect_dao"),message.body(),(AsyncResult<Message<JsonObject>> as)->{//查询数据层
-                         replyResult(message,as.result().body());
-                       });
+                       message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
+                               jsonObject.getString("username")).put("auth_valid", rs.result().body()));
                    }
             });
 
 
         }
     }
-
-
-    /**
-     * @Description 返回结果
-     * @author zhang bo
-     * @date 17-11-27
-     * @version 1.0
-     */
-    public void replyResult(Message message,JsonObject jsonObject){
-        if(jsonObject.getBoolean("code")) {
-            message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
-                    jsonObject.getString("username")).put("auth_valid", jsonObject.getBoolean("code")));
-
-            vertx.eventBus().send(config.getString("send_synch_user"), jsonObject);//同步数据
-        }
-    }
-
 }
