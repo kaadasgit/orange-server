@@ -1,0 +1,9 @@
+{
+  "host":"127.0.0.1",
+  "consumer_saveTopic":"cn.orangeiot.topic.cache.saveTopic",
+  "consumer_delTopic":"cn.orangeiot.topic.cache.delTopic",
+  "consumer_saveOfflineMessage":"cn.orangeiod.cache.saveOfflineMsg",
+  "consumer_getUserMsgAll":"cn.orangeiod.cache.getAll",
+  "consumer_connect_cache":"cn.orangeiot.auth.cache.getuser",
+  "consumer_synch_user":"cn.orangeiod.cache.user"
+}

@@ -1,0 +1,5 @@
+{
+  "host":"127.0.0.1",
+  "consumer_synch_user":"cn.orangeiod.synch.user",
+  "send_synch_user":"cn.orangeiod.cache.user"
+}

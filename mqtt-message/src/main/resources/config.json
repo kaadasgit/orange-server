@@ -1,0 +1,12 @@
+{
+  "host":"127.0.0.1",
+  "send_reply_num":5,
+  "send_reply_time":2000,
+  "consumer_receMessage":"cn.orangeiot.message.rece",
+  "consumer_sendMessage":"cn.orangeiot.message.send",
+  "consumer_messageCallBack":"cn.orangeiod.message.callBack",
+  "consumer_getUserMsgAll":"cn.orangeiod.message.getAll",
+  "send_getUserMsgAll":"cn.orangeiod.cache.getAll",
+  "send_publishMessage":"cn.orangeiot.message.publish",
+  "send_saveOfflineMessage":"cn.orangeiod.cache.saveOfflineMsg"
+}
