@@ -20,7 +20,7 @@
         <module>mqtt-topic</module>
         <module>mqtt-message</module>
         <module>mqtt-common</module>
-        <module>mqtt-broker</module>
+        <module>mqtt-server</module>
     </modules>
 
 

@@ -1,0 +1,17 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1885,
+      "socket_idle_timeout": 120
+    }
+  ],
+  "bridge_client": {
+    "websocket_enabled": true,
+    "socket_idle_timeout": 120,
+    "remote_bridge_host": "localhost",
+    "remote_bridge_port": 7007,
+    "ssl_cert_key": "/opt/CA/t2.com/t2.com.pkcs8.key",
+    "ssl_cert": "/opt/CA/t2.com/t2.com.crt",
+    "ssl_trust": "/opt/CA/rootCA.pem"
+  }
+}

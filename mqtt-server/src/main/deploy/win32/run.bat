@@ -1,0 +1,1 @@
+java -jar ${artifactId}-${version}-fat.jar -c config.json

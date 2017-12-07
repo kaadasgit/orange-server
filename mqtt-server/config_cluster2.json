@@ -1,0 +1,8 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1885,
+      "socket_idle_timeout": 120
+    }
+  ]
+}

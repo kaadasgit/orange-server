@@ -1,0 +1,14 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1883,
+      "socket_idle_timeout": 120
+    }
+  ],
+  "bridge_client": {
+    "websocket_enabled": false,
+    "remote_bridge_host": "127.0.1.1",
+    "remote_bridge_port": 7007,
+    "remote_bridge_tenant": "demo.it"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1884,
+      "socket_idle_timeout": 120
+    }
+  ],
+  "bridge_client": {
+    "!websocket_enabled": true,
+    "socket_idle_timeout": 120,
+    "remote_bridge_host": "demo.smartplatform.io",
+    "!remote_bridge_port": 80,
+    "!remote_bridge_path":"/bridge",
+    "!remote_bridge_tenant":"demo.electrolux.com",
+    "!ssl_cert_key": "/home/giovanni/CA/demo.it/demo.it.pkcs8.key",
+    "!ssl_cert": "/home/giovanni/CA/demo.it/demo.it.crt",
+    "!ssl_trust": "/home/giovanni/CA/rootCA.pem"
+  }
+}

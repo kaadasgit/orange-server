@@ -1,0 +1,25 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1883,
+      "socket_idle_timeout": 120
+    },
+    {
+      "tcp_port": 11883,
+      "websocket_enabled": true,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "retain_support": true
+    }
+  ],
+  "bridge_server": {
+    "websocket_enabled": true,
+    "socket_idle_timeout": 120,
+    "local_bridge_port": 7007,
+    "!ssl_cert_key": "/opt/CA/datacenter/datacenter.pkcs8.key",
+    "!ssl_cert": "/opt/CA/datacenter/datacenter.crt",
+    "!ssl_trust": "/opt/CA/rootCA.pem"
+  },
+  "rest_server": {
+    "port": 2883
+  }
+}
