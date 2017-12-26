@@ -12,8 +12,6 @@
 
     <modules>
         <module>mqtt-auth</module>
-        <module>mqtt-cache</module>
-        <module>mqtt-dao</module>
         <module>mqtt-subscribe</module>
         <module>mqtt-publish</module>
         <module>mqtt-topic</module>
@@ -21,6 +19,9 @@
         <module>mqtt-common</module>
         <module>mqtt-server</module>
         <module>mqtt-apidao</module>
+        <module>http-server</module>
+        <module>reg-addr</module>
+        <module>mqtt-job</module>
     </modules>
 
 

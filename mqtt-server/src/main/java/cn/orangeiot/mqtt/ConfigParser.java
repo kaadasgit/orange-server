@@ -18,6 +18,7 @@ public class ConfigParser {
     private boolean securityEnabled;
     private String tlsKeyPath;
     private String tlsCertPath;
+    private String publish;
     private int socketIdleTimeout;
 
     private static final int IDLE_TIMEOUT_SECONDS = 120;
@@ -40,6 +41,15 @@ public class ConfigParser {
         tlsKeyPath = tls.getString("keyPath");
         tlsCertPath = tls.getString("certPath");
         socketIdleTimeout = conf.getInteger("socket_idle_timeout", IDLE_TIMEOUT_SECONDS);
+        publish = conf.getString("send_publish_message");
+    }
+
+    public String getPublish() {
+        return publish;
+    }
+
+    public void setPublish(String publish) {
+        this.publish = publish;
     }
 
     public int getPort() {

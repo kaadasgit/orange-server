@@ -14,6 +14,7 @@ import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
@@ -186,34 +187,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
                 logger.info("==client publish topic:" + publish.getTopicName() + "==payload:" + publish.getPayloadAsString());
 
-
-                QOSType qos = publish.getQos();
-                String topic = publish.getTopicName();
-                PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
-                switch (publish.getQos()) {
-                    case RESERVED:
-                        session.handlePublishMessage(publish, null);
-                        break;
-                    case MOST_ONE:
-                        session.handlePublishMessage(publish, null);
-                        break;
-                    case LEAST_ONE:
-//                        session.addMessageToQueue(publish);
-                        session.handlePublishMessage(publish, permitted -> {
-                            PubAckMessage pubAck = new PubAckMessage();
-                            pubAck.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubAck);
-                        });
-                        break;
-                    case EXACTLY_ONCE:
-//                        session.addMessageToQueue(publish);
-                        session.handlePublishMessage(publish, permitted -> {
-                            PubRecMessage pubRec = new PubRecMessage();
-                            pubRec.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubRec);
-                        });
-                        break;
-                }
+                session.handlerPublishMessage(publish, session.getClientID(), rs -> {
+                    if (Objects.nonNull(rs) && Objects.nonNull(rs.getValue("flag"))) {
+                        publishMsg(publish, rs, false);
+                    } else if (Objects.nonNull(rs)) {
+                        publishMsg(publish, rs, true);
+                    }
+                });
                 break;
             case PUBREC:
                 session.resetKeepAliveTimer();
@@ -263,9 +243,49 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     }
 
+
+    public void publishMsg(PublishMessage publish, JsonObject rs, boolean flag) {
+        QOSType qos = publish.getQos();
+        publish.setTopicName(rs.getString("topicName"));
+        if (flag)
+            try {
+                rs.remove("topicName");
+                publish.setPayload(rs.toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        String topic = publish.getTopicName();
+        PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
+        switch (publish.getQos()) {
+            case RESERVED:
+                session.handlePublishMessage(publish, null);
+                break;
+            case MOST_ONE:
+                session.handlePublishMessage(publish, null);
+                break;
+            case LEAST_ONE:
+//                        session.addMessageToQueue(publish);
+                session.handlePublishMessage(publish, permitted -> {
+                    PubAckMessage pubAck = new PubAckMessage();
+                    pubAck.setMessageID(publish.getMessageID());
+                    sendMessageToClient(pubAck);
+                });
+                break;
+            case EXACTLY_ONCE:
+//                        session.addMessageToQueue(publish);
+                session.handlePublishMessage(publish, permitted -> {
+                    PubRecMessage pubRec = new PubRecMessage();
+                    pubRec.setMessageID(publish.getMessageID());
+                    sendMessageToClient(pubRec);
+                });
+                break;
+        }
+    }
+
+
     //qos发送消息
     public void sendMessage() {
-        vertx.eventBus().consumer("cn.orangeiot.message.publish",(Message<JsonObject> rs) -> {
+        vertx.eventBus().consumer("cn.orangeiot.message.publish", (Message<JsonObject> rs) -> {
             sessions.forEach((k, v) -> {
                 PublishMessage publish = new PublishMessage();
                 publish.setTopicName(rs.body().getString("topic"));
@@ -283,7 +303,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubAck);
-                            vertx.eventBus().send("cn.orangeiod.message.callBack",rs);//回调
+                            vertx.eventBus().send("cn.orangeiod.message.callBack", rs);//回调
                         });
                         break;
                     case 2:
@@ -291,7 +311,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubRec);
-                            vertx.eventBus().send("cn.orangeiod.message.callBack",rs);//回调
+                            vertx.eventBus().send("cn.orangeiod.message.callBack", rs);//回调
                         });
                         break;
                 }
@@ -303,10 +323,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     /**
      * 获取订阅的所有主题
      */
-    public void getTopic(){
+    public void getTopic() {
 
     }
-
 
 
     public void sendMessageToClient(AbstractMessage message) {

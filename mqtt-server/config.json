@@ -51,5 +51,6 @@
         "idp_password": "admin"
       }
     }
-]
+],
+  "send_publish_message":"cn.orangeiot.publish.message"
 }

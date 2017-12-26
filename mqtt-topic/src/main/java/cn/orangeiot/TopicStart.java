@@ -1,6 +1,6 @@
 package cn.orangeiot;
 
-import cn.orangeiot.verticle.TopicVerticle;
+import cn.orangeiot.topic.verticle.TopicVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;

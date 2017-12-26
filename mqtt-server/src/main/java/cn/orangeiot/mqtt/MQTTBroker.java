@@ -19,6 +19,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -128,6 +129,7 @@ public class MQTTBroker extends AbstractVerticle {
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
+                brokerConf.put("send_publish_message",config.getString("send_publish_message"));
                 ConfigParser c = new ConfigParser(brokerConf);
                 boolean wsEnabled = c.isWsEnabled();
                 if (wsEnabled) {
@@ -173,7 +175,7 @@ public class MQTTBroker extends AbstractVerticle {
             );
         }
         NetServer netServer = vertx.createNetServer(opt);
-        Map<String, MQTTSession> sessions = new HashMap<>();
+        Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
         netServer.connectHandler(netSocket -> {
             MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket, sessions);
             mqttNetSocket.start();

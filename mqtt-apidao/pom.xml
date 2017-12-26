@@ -25,6 +25,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>cn.orangeiot</groupId>
+            <artifactId>reg-addr</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!--vertx mongoclient配置-->
         <dependency>
             <groupId>io.vertx</groupId>

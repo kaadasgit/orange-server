@@ -1,0 +1,96 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>orange-server</artifactId>
+        <groupId>cn.orangeiot</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>mqtt-job</artifactId>
+    <packaging>jar</packaging>
+
+    <name>mqtt-job</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <quartz.version>2.2.1</quartz.version>
+        <jta.version>1.1</jta.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>${quartz.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz-jobs</artifactId>
+            <version>${quartz.version}</version>
+
+        </dependency>
+
+        <dependency>
+            <groupId>javax.transaction</groupId>
+            <artifactId>jta</artifactId>
+            <version>${jta.version}</version>
+        </dependency>
+    </dependencies>
+
+
+    <build>
+        <plugins>
+            <!--fat.jar打包-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <!--<mainClass>cn.orangeiot.httpServerStart</mainClass>-->
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <!--<resource>-->
+            <!--<directory>src/main/resources</directory>-->
+            <!--<includes>-->
+            <!--<include>**/*.json</include>-->
+            <!--<include>**/*.jks</include>-->
+            <!--</includes>-->
+            <!--<excludes>-->
+            <!--<exclude>zkConf.json</exclude>-->
+            <!--</excludes>-->
+            <!--</resource>-->
+            <!--<resource>-->
+            <!--<filtering>true</filtering>-->
+            <!--<directory>src/main/${package.target}</directory>-->
+            <!--<includes>-->
+            <!--<include>zkConf.json</include>-->
+            <!--</includes>-->
+            <!--</resource>-->
+        </resources>
+    </build>
+</project>

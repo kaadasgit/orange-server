@@ -1,0 +1,816 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters.",
+    "version": "1.0.0",
+    "title": "Swagger Petstore",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "email": "apiteam@swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "192.168.6.87:8090",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "sms",
+      "description": "发送手机验证码",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "user",
+      "description": "用户相关操作接口",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "mail",
+      "description": "发送邮箱验证码",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "suggest",
+      "description": "用户留言",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/sms/sendSmsTokenByTX": {
+      "post": {
+        "tags": [
+          "sms"
+        ],
+        "summary": "验证码发送",
+        "description": "",
+        "operationId": "sendtel",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sendSmsTokenByTX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/mail/sendemailtoken": {
+      "post": {
+        "tags": [
+          "mail"
+        ],
+        "summary": "验证码发送",
+        "description": "",
+        "operationId": "sendmail",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sendemailtoken"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/login/getuserbymail": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "邮箱登录",
+        "description": "",
+        "operationId": "createUsersWithArrayInput",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getuserbymail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/login/getuserbytel": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "手机号登录",
+        "description": "",
+        "operationId": "createUsersWithListInput",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getuserbytel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/reg/putuserbytel": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "手机号注册",
+        "description": "",
+        "operationId": "loginUser",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/putuserbytel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/reg/putuserbymail": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "邮箱注册",
+        "description": "",
+        "operationId": "logoutUser",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/putuserbyemail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/uploaduserhead": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "上传头像",
+        "description": "",
+        "operationId": "logoutUsers",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "file to upload",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "name": "uid",
+            "in": "formData",
+            "description": "登录返回的uid",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/getUsernickname": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "获取用户昵称",
+        "description": "",
+        "operationId": "gienickanme",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getUsernickname"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/postUsernickname": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "修改用户昵称",
+        "description": "",
+        "operationId": "updatenickanme",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/postUsernickname"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/postUserPwd": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "修改用户密码",
+        "description": "",
+        "operationId": "updateUserPwd",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/postUserPwd"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/forgetPwd": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "忘记密码",
+        "description": "",
+        "operationId": "forgetUserPwd",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/forgetPwd"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/edit/showfileonline/{uid}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "获取头像",
+        "description": "",
+        "operationId": "getheaderImg",
+        "produces": [
+          "image/jpeg",
+          "image/jpg"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "description": "用户登录返回的uid",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          },
+          "404": {
+            "description": "resource not found"
+          }
+        }
+      }
+    },
+    "/user/logout": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "用户登出",
+        "description": "",
+        "operationId": "logout",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/suggest/putmsg": {
+      "post": {
+        "tags": [
+          "suggest"
+        ],
+        "summary": "用户留言",
+        "description": "",
+        "operationId": "suggestMsg",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/putmsg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "getuserbymail": {
+      "type": "object",
+      "required": [
+        "mail",
+        "password"
+      ],
+      "properties": {
+        "mail": {
+          "type": "string",
+          "description": "邮箱"
+        },
+        "password": {
+          "type": "string",
+          "description": "密码(明文)"
+        }
+      },
+      "xml": {
+        "name": "getuserbymail"
+      }
+    },
+    "getuserbytel": {
+      "type": "object",
+      "required": [
+        "tel",
+        "password"
+      ],
+      "properties": {
+        "tel": {
+          "type": "string",
+          "description": "手机号"
+        },
+        "password": {
+          "type": "string",
+          "description": "密码(明文)"
+        }
+      }
+    },
+    "putuserbytel": {
+      "type": "object",
+      "required": [
+        "name",
+        "password",
+        "tokens"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "手机号"
+        },
+        "password": {
+          "type": "string",
+          "description": "密码(明文)"
+        },
+        "tokens": {
+          "type": "string",
+          "description": "验证码"
+        }
+      }
+    },
+    "putuserbyemail": {
+      "type": "object",
+      "required": [
+        "name",
+        "password",
+        "tokens"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "邮箱"
+        },
+        "password": {
+          "type": "string",
+          "description": "密码(明文)"
+        },
+        "tokens": {
+          "type": "string",
+          "description": "验证码"
+        }
+      }
+    },
+    "sendSmsTokenByTX": {
+      "type": "object",
+      "required": [
+        "tel",
+        "code"
+      ],
+      "properties": {
+        "tel": {
+          "type": "string",
+          "description": "手机号"
+        },
+        "code": {
+          "type": "string",
+          "description": "国家区域号"
+        }
+      }
+    },
+    "sendemailtoken": {
+      "type": "object",
+      "required": [
+        "mail"
+      ],
+      "properties": {
+        "mail": {
+          "type": "string",
+          "description": "邮箱地址"
+        }
+      }
+    },
+    "ApiResponse": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "msg"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "状态码，全局 成功200"
+        },
+        "data": {
+          "type": "object",
+          "description": "返回的数据对象"
+        },
+        "msg": {
+          "type": "string",
+          "description": "code码相应状态消息"
+        }
+      }
+    },
+    "getUsernickname": {
+      "type": "object",
+      "required": [
+        "uid"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "postUsernickname": {
+      "type": "object",
+      "required": [
+        "uid",
+        "nickname"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "nickname": {
+          "type": "string",
+          "description": "用户昵称"
+        }
+      }
+    },
+    "postUserPwd": {
+      "type": "object",
+      "required": [
+        "newpwd",
+        "oldpwd",
+        "uid"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "newpwd": {
+          "type": "string",
+          "description": "用户修改的新密码"
+        },
+        "oldpwd": {
+          "type": "string",
+          "description": "用户的旧密码"
+        }
+      }
+    },
+    "forgetPwd": {
+      "type": "object",
+      "required": [
+        "name",
+        "pwd",
+        "type",
+        "tokens"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "登录账号(邮箱或者手机号)"
+        },
+        "pwd": {
+          "type": "string",
+          "description": "修改的新密码"
+        },
+        "type": {
+          "type": "integer",
+          "format": "int32",
+          "description": "登录类型 1 手机  2 邮箱"
+        },
+        "tokens": {
+          "type": "string",
+          "description": "验证码"
+        }
+      }
+    },
+    "putmsg": {
+      "type": "object",
+      "required": [
+        "uid",
+        "suggest"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "suggest": {
+          "type": "string",
+          "description": "留言的内容"
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about Swagger",
+    "url": "http://swagger.io"
+  }
+}

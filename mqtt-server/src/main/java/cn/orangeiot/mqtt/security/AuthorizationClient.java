@@ -28,12 +28,13 @@ public class AuthorizationClient {
         this.authenticatorAddress = authenticatorAddress;
     }
 
-    public void authorize(String username, String password, Handler<ValidationInfo> authHandler) {
+    public void authorize(String username, String password,String clientID,Handler<ValidationInfo> authHandler) {
         // AUTHENTICATION START
         logger.info("==AuthorizationClient==authorize==username:"+username+"==password:"+password);
         JsonObject oauth2_token_info = new JsonObject()
                 .put("username", username)
-                .put("password", password);
+                .put("password", password)
+                .put("clientId",clientID);
 
         eventBus.send(authenticatorAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
             ValidationInfo vi = new ValidationInfo();

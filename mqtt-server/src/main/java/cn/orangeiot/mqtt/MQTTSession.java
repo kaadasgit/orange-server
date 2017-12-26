@@ -5,6 +5,8 @@ import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.persistence.StoreManager;
 import cn.orangeiot.mqtt.persistence.Subscription;
 import cn.orangeiot.mqtt.security.AuthorizationClient;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -12,6 +14,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
@@ -53,6 +56,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private StoreManager storeManager;
     private Map<String, List<Subscription>> matchingSubscriptionsCache;
     private PublishMessage willMessage;
+    private String publish;
 
     private long keepAliveTimerID = -1;
     private boolean keepAliveTimeEnded;
@@ -70,6 +74,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.retainSupport = config.isRetainSupport();
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
+        this.publish=config.getPublish();
+
         PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<String, List<Subscription>>
                 expirePeriod = new PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<>(
                 30, TimeUnit.MINUTES);
@@ -138,7 +144,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
         if(securityEnabled) {
             AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
-            auth.authorize(username, password, validationInfo -> {
+            auth.authorize(username, password,getClientID(), validationInfo -> {
                 if (validationInfo.auth_valid) {
                 	authorizationToken = validationInfo.token;
                     String tenant = validationInfo.tenant;
@@ -511,6 +517,21 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         catch(Throwable e) {
             logger.error(e.getMessage());
         }
+    }
+
+    /**
+     * @Description publish处理
+     * @author zhang bo
+     * @date 17-12-11
+     * @version 1.0
+     */
+    public void handlerPublishMessage(PublishMessage publishMessage,String clientId,Handler<JsonObject> asyncResultHandler){
+        logger.debug("Message payload from " + publishMessage.getPayloadAsString());
+        vertx.eventBus().send(publish,new JsonObject(publishMessage.getPayloadAsString())
+                .put("topicName",publishMessage.getTopicName()).put("clientId",clientId),(AsyncResult<Message<JsonObject>> rs)->{
+                   asyncResultHandler.handle(rs.result().body());
+        });
+
     }
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
