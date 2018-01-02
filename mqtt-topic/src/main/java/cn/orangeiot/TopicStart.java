@@ -2,8 +2,8 @@ package cn.orangeiot;
 
 import cn.orangeiot.topic.verticle.TopicVerticle;
 import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -19,7 +19,7 @@ public class TopicStart {
     public static void main(String[] args){
         Vertx.vertx().deployVerticle(TopicVerticle.class.getName(), rs->{
             if(rs.failed()){
-                logger.fatal("deploy TopicVerticle fail");
+                logger.error("deploy TopicVerticle fail");
                 rs.cause().printStackTrace();
             }else{
                 logger.info("deploy TopicVerticle successs");

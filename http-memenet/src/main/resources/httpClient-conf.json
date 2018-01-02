@@ -1,0 +1,8 @@
+{
+  "host":"app.memenet.net",
+  "port":8443,
+  "is_ssl":true,
+  "verifyHost":false,
+  "timeout":2000,
+  "maxPoolSize":100
+}

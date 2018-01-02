@@ -50,5 +50,12 @@
             <artifactId>mqtt-common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <!--JWT配置-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-auth-jwt</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
     </dependencies>
 </project>

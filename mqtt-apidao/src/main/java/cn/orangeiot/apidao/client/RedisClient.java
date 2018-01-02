@@ -33,7 +33,7 @@ public class RedisClient {
                 JsonObject json = new JsonObject(redisConf);
 
                 client = io.vertx.redis.RedisClient.create(vertx, new RedisOptions().setHost(json.getString("host"))
-                        .setPort(json.getInteger("port")));//创建redisclient
+                        .setPort(json.getInteger("port")).setAuth(json.getString("password")));//创建redisclient
             }
         } catch (IOException e) {
             e.printStackTrace();

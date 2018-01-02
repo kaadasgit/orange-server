@@ -3,12 +3,11 @@ package cn.orangeiot.publish.handler;
 import cn.orangeiot.publish.handler.message.FuncHandler;
 import cn.orangeiot.publish.handler.message.PublishHandler;
 import cn.orangeiot.reg.EventbusAddr;
-import cn.orangeiot.reg.publish.PublishAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -44,7 +43,7 @@ public class RegisterHandler implements EventbusAddr{
             vertx.eventBus().consumer(PUBLISH_MSG,publishHandler::onMessage);//qos1和2回调
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 

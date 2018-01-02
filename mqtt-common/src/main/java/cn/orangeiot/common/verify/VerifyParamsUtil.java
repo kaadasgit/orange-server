@@ -4,8 +4,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -18,8 +18,7 @@ import java.util.Objects;
  */
 public class VerifyParamsUtil {
 
-    private static Logger logger = LogManager.getLogger(VerifyParamsUtil.class);
-
+    private static Logger logger = LoggerFactory.getLogger(VerifyParamsUtil.class);
     /**
      * 检验参数是否正确
      */

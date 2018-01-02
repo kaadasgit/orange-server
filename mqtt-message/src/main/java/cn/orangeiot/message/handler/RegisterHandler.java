@@ -1,14 +1,13 @@
 package cn.orangeiot.message.handler;
 
 import cn.orangeiot.message.handler.client.MailClient;
-import cn.orangeiot.message.handler.dao.message.MessageHandler;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -55,7 +54,7 @@ public class RegisterHandler implements EventbusAddr{
             vertx.eventBus().consumer(UserAddr.class.getName()+MAIL_CODE,msgHandler::mailCode);
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 

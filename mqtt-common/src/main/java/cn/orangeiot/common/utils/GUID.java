@@ -14,7 +14,6 @@ import java.rmi.server.UID;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.log4j.chainsaw.Main;
 public class GUID implements Serializable{
 
     /**

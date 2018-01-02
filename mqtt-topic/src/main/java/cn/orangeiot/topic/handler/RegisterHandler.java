@@ -4,8 +4,8 @@ import cn.orangeiot.topic.handler.dao.topic.TopicHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -39,7 +39,7 @@ public class RegisterHandler {
             vertx.eventBus().consumer(config.getString("consumer_delTopic"),topicHandler::onDelMessage);
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 

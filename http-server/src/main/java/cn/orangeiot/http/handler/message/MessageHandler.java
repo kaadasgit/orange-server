@@ -6,9 +6,9 @@ import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 

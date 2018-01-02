@@ -6,14 +6,12 @@ import cn.orangeiot.message.sms.SmsSingleSender;
 import cn.orangeiot.message.sms.SmsSingleSenderResult;
 import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.mail.MailMessage;
-import io.vertx.ext.mail.impl.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
@@ -25,7 +23,7 @@ import java.util.ArrayList;
  */
 public class MessageHandler implements MessageAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(cn.orangeiot.message.handler.dao.message.MessageHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
     private Vertx vertx;
 

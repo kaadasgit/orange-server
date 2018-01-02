@@ -2,8 +2,8 @@ package cn.orangeiot.job;
 
 import cn.orangeiot.job.verticle.JobVerticle;
 import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -18,7 +18,7 @@ public class JobStart {
     public static void main(String[] args){
         Vertx.vertx().deployVerticle(JobVerticle.class.getName(), rs->{
             if(rs.failed()){
-                logger.fatal("deploy JobVerticle fail");
+                logger.error("deploy JobVerticle fail");
                 rs.cause().printStackTrace();
             }else{
                 logger.info("deploy JobVerticle successs");

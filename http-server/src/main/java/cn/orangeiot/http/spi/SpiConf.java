@@ -12,15 +12,14 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JksOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -113,7 +112,7 @@ public class SpiConf {
             createHttpServer();//创建httpServer
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 
@@ -169,9 +168,11 @@ public class SpiConf {
                 //集群
                 Vertx.clusteredVertx(options, this::uploadApi);
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
 

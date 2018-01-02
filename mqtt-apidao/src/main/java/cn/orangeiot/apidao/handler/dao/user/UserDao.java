@@ -3,15 +3,19 @@ package cn.orangeiot.apidao.handler.dao.user;
 import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
+import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.utils.KdsCreateMD5;
 import cn.orangeiot.common.utils.SHA1;
-import cn.orangeiot.common.utils.UUIDUtils;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.auth.jwt.JWTAuth;
+import io.vertx.ext.auth.jwt.JWTOptions;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -23,6 +27,13 @@ import java.util.Objects;
 public class UserDao extends SynchUserDao {
 
     private static Logger logger = LoggerFactory.getLogger(UserDao.class);
+
+
+    private JWTAuth jwtAuth;
+
+    public UserDao(JWTAuth jwtAuth) {
+        this.jwtAuth = jwtAuth;
+    }
 
     /**
      * @Description 获取用户
@@ -107,16 +118,23 @@ public class UserDao extends SynchUserDao {
      * @version 1.0
      */
     public void verifyLogin(Message<String> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT, message.body(), rs -> {
-            if (rs.failed()) {
-                rs.cause().printStackTrace();
-            } else {
-                if (Objects.nonNull(rs.result()))
-                    message.reply(true);
-                else
-                    message.reply(false);
+        try {
+            JsonObject jsonObject = new JsonObject(new String(Base64.decodeBase64(message.body())));
+            String uid = jsonObject.getString("_id");
+            if (null != uid) {
+                RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT, uid, res -> {
+                    if (res.failed()) {
+                        message.reply(false);
+                    } else if (Objects.nonNull(res.result()) && res.result().toString().equals(message.body())) {
+                        message.reply(true, new DeliveryOptions().addHeader("uid", uid));
+                    } else {
+                        message.reply(false);
+                    }
+                });
             }
-        });
+        } catch (Exception e) {
+            message.reply(false);
+        }
     }
 
 
@@ -129,15 +147,15 @@ public class UserDao extends SynchUserDao {
     public void telLogin(Message<JsonObject> message) {
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel")), new JsonObject()
-                .put("userPwd", "").put("pwdSalt", "").put("_id", ""), res -> {
+                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1), res -> {
             if (res.failed()) {
                 res.cause().printStackTrace();
             } else {
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
-                        encyPwd(res.result(), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
+                        encyPwd(res.result().put("username", message.body().getString("tel")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
                     } else {//sha1验证
-                        encyPwd(res.result(), message, SHA1.encode(message.body().getString("password")));
+                        encyPwd(res.result().put("username", message.body().getString("tel")), message, SHA1.encode(message.body().getString("password")));
                     }
                 } else {//登陆失败
                     message.reply(null);
@@ -157,15 +175,15 @@ public class UserDao extends SynchUserDao {
     public void mailLogin(Message<JsonObject> message) {
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userMail", message.body().getString("mail")), new JsonObject()
-                .put("userPwd", "").put("pwdSalt", "").put("_id", ""), res -> {
+                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1), res -> {
             if (res.failed()) {
                 res.cause().printStackTrace();
             } else {
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
-                        encyPwd(res.result(), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
+                        encyPwd(res.result().put("username", message.body().getString("mail")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
                     } else {//sha1验证
-                        encyPwd(res.result(), message, SHA1.encode(message.body().getString("password")));
+                        encyPwd(res.result().put("username", message.body().getString("mail")), message, SHA1.encode(message.body().getString("password")));
                     }
                 } else {//登陆失败
                     message.reply(null);
@@ -175,12 +193,14 @@ public class UserDao extends SynchUserDao {
         });
     }
 
+
     /**
      * @Description 手机号注册
      * @author zhang bo
      * @date 17-12-12
      * @version 1.0
      */
+
     public void registerTel(Message<JsonObject> message) {
         register(message, "userTel");
     }
@@ -215,28 +235,36 @@ public class UserDao extends SynchUserDao {
                                     as.cause().printStackTrace();
                                 } else {
                                     if (!Objects.nonNull(as.result())) {//没有注册
+                                        String password = SHA1.encode(message.body().getString("password"));
                                         MongoClient.client.insert("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                                                .put("userPwd", SHA1.encode(message.body().getString("password"))).put("nickName", message.body().getString("name")), res -> {
+                                                .put("userPwd", password).put("nickName", message.body().getString("name")), res -> {
                                             if (res.failed()) {
                                                 res.cause().printStackTrace();
                                             } else {
-                                                String token = UUIDUtils.getUUID();
                                                 String uid = res.result();
-                                                //存储登录后token相关
-                                                RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, token, uid
-                                                        , ars -> {
-                                                            if (ars.failed()) ars.cause().printStackTrace();
+                                                String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", uid).put("username", message.body().getString("name")),
+                                                        new JWTOptions());//jwt加密
+                                                String[] jwts = StringUtils.split(jwtStr, ".");
+                                                RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, uid,
+                                                        jwts[1], jwtrs -> {
+                                                            if (jwtrs.failed()) jwtrs.cause().printStackTrace();
                                                         });
-                                                message.reply(new JsonObject().put("token", token).put("uid", uid));
+                                                message.reply(new JsonObject().put("token", jwts[1]).put("uid", uid));
+                                                onSynchUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
+                                                        .put("_id", uid).put("username", message.body().getString("name")));
                                             }
                                         });
                                     } else {
-                                        message.reply(null);
+                                        message.reply(null, new DeliveryOptions().addHeader("code",
+                                                String.valueOf(ErrorType.REGISTER_USER_DICT_FAIL.getKey())).addHeader("msg", ErrorType.REGISTER_USER_DICT_FAIL.getValue()));
+
                                     }
                                 }
                             });
                 } else {
-                    message.reply(null);
+                    message.reply(null, new DeliveryOptions().addHeader("code",
+                            String.valueOf(ErrorType.VERIFY_CODE_FAIL.getKey())).addHeader("msg", ErrorType.VERIFY_CODE_FAIL.getValue()));
+
                 }
             }
         });
@@ -251,50 +279,23 @@ public class UserDao extends SynchUserDao {
      */
     public void encyPwd(JsonObject jsonObject, Message<JsonObject> message, String pwd) {
         if (pwd.equals(jsonObject.getString("userPwd"))) {
-            String token = UUIDUtils.getUUID();
-            RedisClient.client.hexists(RedisKeyConf.USER_ACCOUNT, jsonObject.getString("_id"), rrs -> {
-                if (rrs.failed()) {
-                    rrs.cause().printStackTrace();
-                } else {
-                    if (rrs.result() == 0) {//不存在
-                        cacheUser(token, jsonObject.getString("_id"));
-                    } else {
-                        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT, jsonObject.getString("_id"), rs -> {
-                            if (rs.failed()) {
-                                rs.cause().printStackTrace();
-                            } else {
-                                RedisClient.client.hdel(RedisKeyConf.USER_ACCOUNT, rs.result(), as -> {
-                                    if (as.failed()) as.cause().printStackTrace();
-                                });
-                                cacheUser(token, jsonObject.getString("_id"));
-                            }
-                        });
-                    }
-                }
-            });
-            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", token));
+            String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", jsonObject.getString("_id"))
+                    .put("username", jsonObject.getString("username")), new JWTOptions());//jwt加密
+            String[] jwts = StringUtils.split(jwtStr, ".");
+            RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, jsonObject.getString("_id"),
+                    jwts[1], rs -> {
+                        if (rs.failed()) rs.cause().printStackTrace();
+                    });
+            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1]));
+            if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
+                onSynchUserInfo(jsonObject);
+            }
         } else {
             message.reply(null);
         }
+
     }
 
-
-    /**
-     * @Description 添加缓存
-     * @author zhang bo
-     * @date 17-12-14
-     * @version 1.0
-     */
-    public void cacheUser(String token, String uid) {
-        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, token, uid
-                , rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
-                });
-        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, uid, token
-                , rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
-                });
-    }
 
     /**
      * @Description 获取昵称
@@ -304,18 +305,29 @@ public class UserDao extends SynchUserDao {
      */
     @SuppressWarnings("Duplicates")
     public void getNickname(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid"))),
-                new JsonObject().put("nickName", "").put("_id", 0), rs -> {
-                    if (rs.failed()) {
-                        rs.cause().printStackTrace();
-                    } else {
-                        if (Objects.nonNull(rs.result())) {
-                            message.reply(rs.result());
-                        } else {
-                            message.reply(null);
-                        }
-                    }
-                });
+        logger.info("==UserDao=getNickname==params->"+message.body().toString());
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), ars -> {
+            if (ars.failed()) {
+                ars.cause().printStackTrace();
+            } else {
+                if (Objects.nonNull(ars.result())) {
+                    message.reply(new JsonObject().put("nickName", new JsonObject(ars.result()).getString("nickName")));
+                } else {
+                    MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid"))),
+                            new JsonObject().put("nickName", "").put("_id", 0), rs -> {
+                                if (rs.failed()) {
+                                    rs.cause().printStackTrace();
+                                } else {
+                                    if (Objects.nonNull(rs.result())) {
+                                        message.reply(rs.result());
+                                    } else {
+                                        message.reply(null);
+                                    }
+                                }
+                            });
+                }
+            }
+        });
     }
 
 
@@ -327,18 +339,38 @@ public class UserDao extends SynchUserDao {
      */
     @SuppressWarnings("Duplicates")
     public void updateNickname(Message<JsonObject> message) {
-        MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                , new JsonObject().put("$set", new JsonObject().put("nickName", message.body().getString("nickname"))), rs -> {
-                    if (rs.failed()) {
-                        rs.cause().printStackTrace();
-                    } else {
-                        if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
-                            message.reply(new JsonObject());
-                        } else {
-                            message.reply(null);
-                        }
-                    }
-                });
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), ars -> {
+            if (ars.failed()) {
+                ars.cause().printStackTrace();
+            } else {
+                if (Objects.nonNull(ars.result())) {
+                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid")
+                            , new JsonObject(ars.result()).put("nickName", message.body().getString("nickname")).toString(), rs -> {
+                                if (rs.failed()) {
+                                    rs.cause().printStackTrace();
+                                } else {
+                                    message.reply(new JsonObject());
+                                    //异步同步信息
+                                    MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
+                                            , new JsonObject().put("$set", new JsonObject().put("nickName", message.body().getString("nickname"))), mrs -> {
+                                                if (mrs.failed()) {
+                                                    mrs.cause().printStackTrace();
+                                                } else {
+                                                    if (Objects.nonNull(mrs.result()) && mrs.result().getDocModified() == 1) {
+                                                        message.reply(new JsonObject());
+                                                    } else {
+                                                        message.reply(null);
+                                                    }
+                                                }
+                                            });
+                                }
+                            });
+                } else {
+                    message.reply(null);
+                }
+            }
+        });
+
     }
 
 
@@ -350,54 +382,54 @@ public class UserDao extends SynchUserDao {
      */
     @SuppressWarnings("Duplicates")
     public void updateUserpwd(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                , new JsonObject().put("userPwd", "").put("_id", 0).put("pwdSalt", ""), as -> {
-                    if (as.failed()) {
-                        as.cause().printStackTrace();
-                    } else {
-                        if (Objects.nonNull(as.result())) {
-                            if (Objects.nonNull(as.result().getValue("pwdSalt"))) {//MD5
-                                if (as.result().getString("userPwd").equals(KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
-                                        as.result().getString("pwdSalt") + message.body().getString("oldpwd")))))
-                                    MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                            , new JsonObject().put("$set", new JsonObject().put("userPwd", KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
-                                                    as.result().getString("pwdSalt") + message.body().getString("newpwd"))))), rs -> {
-                                                if (rs.failed()) {
-                                                    rs.cause().printStackTrace();
-                                                } else {
-                                                    if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
-                                                        message.reply(new JsonObject());
-                                                    } else {
-                                                        message.reply(null);
-                                                    }
-                                                }
-                                            });
-                                else
-                                    message.reply(null);
-                            } else {//SHA-1
-                                if (as.result().getString("userPwd").equals(SHA1.encode(message.body().getString("oldpwd"))))
-                                    MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                            , new JsonObject().put("$set", new JsonObject().put("userPwd", SHA1.encode(message.body().getString("newpwd")))), rs -> {
-                                                if (rs.failed()) {
-                                                    rs.cause().printStackTrace();
-                                                } else {
-                                                    if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
-                                                        message.reply(new JsonObject());
-                                                    } else {
-                                                        message.reply(null);
-                                                    }
-                                                }
-                                            });
-                                else
-                                    message.reply(null);
-                            }
-                        } else {
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), as -> {
+            if (as.failed()) {
+                as.cause().printStackTrace();
+            } else {
+                if (Objects.nonNull(as.result())) {
+                    JsonObject jsonObject = new JsonObject(as.result());
+                    if (Objects.nonNull(jsonObject.getValue("pwdSalt"))) {//MD5
+                        if (jsonObject.getString("userPwd").equals(KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
+                                jsonObject.getString("pwdSalt") + message.body().getString("oldpwd")))))
+                            MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
+                                    , new JsonObject().put("$set", new JsonObject().put("userPwd", KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
+                                            jsonObject.getString("pwdSalt") + message.body().getString("newpwd"))))), rs -> {
+                                        if (rs.failed()) {
+                                            rs.cause().printStackTrace();
+                                        } else {
+                                            if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
+                                                message.reply(new JsonObject());
+                                            } else {
+                                                message.reply(null);
+                                            }
+                                        }
+                                    });
+                        else
                             message.reply(null);
-                        }
-
+                    } else {//SHA-1
+                        if (jsonObject.getString("userPwd").equals(SHA1.encode(message.body().getString("oldpwd"))))
+                            MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
+                                    , new JsonObject().put("$set", new JsonObject().put("userPwd", SHA1.encode(message.body().getString("newpwd")))), rs -> {
+                                        if (rs.failed()) {
+                                            rs.cause().printStackTrace();
+                                        } else {
+                                            if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
+                                                message.reply(new JsonObject());
+                                            } else {
+                                                message.reply(null);
+                                            }
+                                        }
+                                    });
+                        else
+                            message.reply(null);
                     }
+                } else {
+                    message.reply(null);
+                }
+            }
+        });
 
-                });
+
     }
 
     /**
@@ -483,21 +515,13 @@ public class UserDao extends SynchUserDao {
      * @version 1.0
      */
     public void logOut(Message<JsonObject> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT, message.body().getString("token"), rs -> {
-            if (rs.failed()) {
-                rs.cause().printStackTrace();
-            } else {
-                if (Objects.nonNull(rs.result())) {
-                    RedisClient.client.hdelMany(RedisKeyConf.USER_ACCOUNT, new ArrayList<String>() {{
-                        add(message.body().getString("token"));
-                        add(rs.result());
-                    }}, as -> {
-                        if (as.failed())
-                            as.cause().printStackTrace();
-                    });
-                }
-            }
-        });
+        String uid = new JsonObject(new String(Base64.decodeBase64(message.body().getString("token")))).getString("_id");
+        RedisClient.client.hdel(RedisKeyConf.USER_ACCOUNT, uid, rs -> {
+            if (rs.failed()) rs.cause().printStackTrace();
+        });//清除token
+        RedisClient.client.hdel(RedisKeyConf.USER_INFO, uid, rs -> {
+            if (rs.failed()) rs.cause().printStackTrace();
+        });//清除缓存打用户信息
         message.reply(new JsonObject());
     }
 }

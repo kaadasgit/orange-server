@@ -3,8 +3,8 @@ package cn.orangeiot.apidao.handler.dao.file;
 import cn.orangeiot.apidao.client.MongoClient;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
 {
-  "connection_string": "mongodb://114.67.58.242:27017/orangeiot",
+  "connection_string": "mongodb://kdsadmin:kdsqw458303edqeqq6458easd@114.67.58.242:27017/orangeiot",
   "useObjectId":true
 }

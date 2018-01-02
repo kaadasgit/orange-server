@@ -3,7 +3,6 @@ package cn.orangeiot.http.handler;
 import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
-import cn.orangeiot.common.utils.EscapeUtils;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -14,13 +13,13 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.HashSet;
@@ -34,13 +33,13 @@ import java.util.Set;
  * @Description
  * @date 2017-12-08
  */
-public class BaseHandler implements UserAddr{
+public class BaseHandler implements UserAddr {
 
     private Set<String> allowHeaders = new HashSet<>();//cors跨域header
 
     private Set<HttpMethod> allowMethods = new HashSet<>();//请求方法
 
-    private  List<String> excludePathList;//过滤排除的url路径集合
+    private List<String> excludePathList;//过滤排除的url路径集合
 
     private static Logger logger = LoggerFactory.getLogger(BaseHandler.class);
 
@@ -48,9 +47,9 @@ public class BaseHandler implements UserAddr{
 
     private JsonObject conf;
 
-    public BaseHandler(Vertx vertx,JsonObject conf) {
+    public BaseHandler(Vertx vertx, JsonObject conf) {
         this.vertx = vertx;
-        this.conf=conf;
+        this.conf = conf;
     }
 
     /**
@@ -87,7 +86,7 @@ public class BaseHandler implements UserAddr{
      * 配置Body
      */
     public void bodyOrUpload(Router router) {
-        router.route().handler(BodyHandler.create());
+        router.route().handler(BodyHandler.create().setDeleteUploadedFilesOnEnd(true).setBodyLimit(1000000L));
     }
 
 
@@ -112,7 +111,7 @@ public class BaseHandler implements UserAddr{
             HttpServerRequest request = failureRoutingContext.request();
             HttpServerResponse response = failureRoutingContext.response();
             Result<Object> result = new Result<>();
-            response.putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(),HttpAttrType.CONTENT_TYPE_JSON.getValue());
+            response.putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue());
             if (statusCode >= 0) {//判断是否出现异常
                 switch (statusCode) {//全局异常处理
                     case 404:
@@ -143,6 +142,10 @@ public class BaseHandler implements UserAddr{
                         result.setErrorMessage(ErrorType.RESULT_PARAMS_FAIL.getKey(), ErrorType.RESULT_PARAMS_FAIL.getValue());
                         response.end(JsonObject.mapFrom(result).toString());
                         break;
+                    case 413://body体积太大
+                        result.setErrorMessage(ErrorType.BODY_SIZE_FAIL.getKey(), ErrorType.BODY_SIZE_FAIL.getValue());
+                        response.end(JsonObject.mapFrom(result).toString());
+                        break;
                     default:
                         result.setErrorMessage(ErrorType.RESULT_UNKONWN.getKey(), ErrorType.RESULT_UNKONWN.getValue());
                         response.end(JsonObject.mapFrom(result).toString());
@@ -150,13 +153,13 @@ public class BaseHandler implements UserAddr{
                 }
                 //写入错误日志
                 if (Objects.nonNull(failureRoutingContext.failure()))
-                    logger.error("uri -> "+request.uri()+"  Exception ->"+failureRoutingContext.failure());//打印异常消息
+                    logger.error("uri -> " + request.uri() + "  Exception ->" + failureRoutingContext.failure());//打印异常消息
                 else
-                    logger.error("uri -> "+request.uri()+"  Exception ->"+ JsonObject.mapFrom(result).toString());//打印异常消息
+                    logger.error("uri -> " + request.uri() + "  Exception ->" + JsonObject.mapFrom(result).toString());//打印异常消息
             } else {//打印异常日志
                 result.setErrorMessage(ErrorType.RESULT_SERVER_FIAL.getKey(), ErrorType.RESULT_SERVER_FIAL.getValue());
                 response.end(JsonObject.mapFrom(result).toString());
-                logger.error("uri -> "+request.uri()+"  Exception ->"+failureRoutingContext.failure());//打印异常消息
+                logger.error("uri -> " + request.uri() + "  Exception ->" + failureRoutingContext.failure());//打印异常消息
             }
         }).handler(TimeoutHandler.create(2000, 509));//超时处理,返回错误码;
 
@@ -178,9 +181,9 @@ public class BaseHandler implements UserAddr{
      */
     public void globalIntercept(Router router) {
         router.post("/*").handler(routingContext -> {
-            logger.info("/*===globalIntercept params -> "+routingContext.getBodyAsString());
+            logger.info("/*===globalIntercept params -> " + routingContext.getBodyAsString());
 //            String params = EscapeUtils.escapeHtml(routingContext.getBodyAsString());//对特殊字符转义
-            String params =routingContext.getBodyAsString().replace("\\s","").replace("\n","");
+            String params = routingContext.getBodyAsString().replace("\\s", "").replace("\n", "");
             if (this.paramsIsJsonObject(routingContext, params)) {
                 if (!excludePathList.contains(routingContext.request().uri()))
                     isLogin(routingContext);
@@ -203,17 +206,17 @@ public class BaseHandler implements UserAddr{
         Result<Object> result = new Result<>();
         String token = routingContext.request().getHeader("token");
         validationToken(token, res -> {
-            if (res.failed())
+            if (res.failed()) {
                 routingContext.fail(res.cause());
-            else if (res.result()) {
+            } else if (res.result()) {
                 routingContext.next();
             } else {
                 result.setErrorMessage(ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue());
-                routingContext.response().end(JsonObject.mapFrom(result).toString());
+                routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
+                        .end(JsonObject.mapFrom(result).toString());
             }
-        });
+        }, routingContext);
     }
-
 
 
     /**
@@ -221,12 +224,14 @@ public class BaseHandler implements UserAddr{
      *
      * @param token
      */
-    public void validationToken(String token, Handler<AsyncResult<Boolean>> handler) {
+    public void validationToken(String token, Handler<AsyncResult<Boolean>> handler, RoutingContext routingContext) {
         if (StringUtils.isNotBlank(token)) {
-            vertx.eventBus().send(UserAddr.class.getName()+VERIFY_LOGIN,token,(AsyncResult<Message<Boolean>> rs)->{
-                if(rs.failed()){
+            vertx.eventBus().send(UserAddr.class.getName() + VERIFY_LOGIN, token, (AsyncResult<Message<Boolean>> rs) -> {
+                if (rs.failed()) {
                     handler.handle(Future.failedFuture(rs.cause()));
-                }else{
+                } else {
+                    if (!rs.result().headers().isEmpty())
+                        routingContext.put("uid", rs.result().headers().get("uid"));
                     handler.handle(Future.succeededFuture(rs.result().body()));
                 }
             });
@@ -234,7 +239,6 @@ public class BaseHandler implements UserAddr{
             handler.handle(Future.succeededFuture(false));
         }
     }
-
 
 
     /**
@@ -272,4 +276,5 @@ public class BaseHandler implements UserAddr{
             e.printStackTrace();
         }
     }
+
 }

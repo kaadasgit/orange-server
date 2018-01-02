@@ -6,9 +6,10 @@ import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -46,7 +47,7 @@ public class RegisterHandler implements EventbusAddr{
             vertx.eventBus().consumer(UserAddr.class.getName()+LOGIN_MAIL,userHandler::onByMailMessage);
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 

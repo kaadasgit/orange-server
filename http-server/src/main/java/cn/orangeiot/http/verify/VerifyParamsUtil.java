@@ -5,8 +5,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -19,29 +19,29 @@ import java.util.Objects;
  */
 public class VerifyParamsUtil {
 
-    private static Logger logger = LogManager.getLogger(VerifyParamsUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(VerifyParamsUtil.class);
 
     /**
      * 检验参数是否正确
      */
     @SuppressWarnings("Duplicates")
     public static void verifyParams(RoutingContext routingContext, JsonObject params, Handler<AsyncResult<JsonObject>> handler) {
-        logger.info("VerifyParamsUtil==verifyParams==params = "+params);
+        logger.info("VerifyParamsUtil==verifyParams==params = " + params);
         if (null != params && params.size() > 0 && Objects.nonNull(routingContext.get("params"))) {
             Boolean isFlag = true;
             JsonObject jsonObject = new JsonObject(routingContext.get("params").toString());
-            Map<String,Object> map= params.getMap();
+            Map<String, Object> map = params.getMap();//
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 try {
-                    Class<?> clazz= Class.forName(entry.getValue().toString());
-                    if(Objects.nonNull(jsonObject.getValue(entry.getKey())) && clazz.isInstance(jsonObject.getValue(entry.getKey()))){
-                        if(jsonObject.getValue(entry.getKey()) instanceof String
-                                && jsonObject.getValue(entry.getKey()).toString().trim().length()<=0) {
+                    Class<?> clazz = Class.forName(entry.getValue().toString());
+                    if (Objects.nonNull(jsonObject.getValue(entry.getKey())) && clazz.isInstance(jsonObject.getValue(entry.getKey()))) {
+                        if (jsonObject.getValue(entry.getKey()) instanceof String
+                                && jsonObject.getValue(entry.getKey()).toString().trim().length() <= 0) {
                             isFlag = false;//参数类型校验失败
                             break;
                         }
-                    }else{
-                        isFlag=false;//参数类型校验失败
+                    } else {
+                        isFlag = false;//参数类型校验失败
                         break;
                     }
                 } catch (Exception e) {
@@ -55,7 +55,7 @@ public class VerifyParamsUtil {
                 logger.info("VerifyParamsUtil==verifyParams==params type is Fail");
                 handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params type is Fail"));
             }
-        }else {
+        } else {
             logger.info("VerifyParamsUtil==verifyParams==params is null");
             handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params is null"));
         }

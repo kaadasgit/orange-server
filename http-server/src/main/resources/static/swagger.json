@@ -47,6 +47,30 @@
         "description": "Find out more about our store",
         "url": "http://swagger.io"
       }
+    },
+    {
+      "name": "adminlock",
+      "description": "设备相关",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "normallock",
+      "description": "设备权限相关",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "openlock",
+      "description": "锁记录相关",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
     }
   ],
   "schemes": [
@@ -576,6 +600,662 @@
           }
         }
       }
+    },
+    "/adminlock/reg/createadmindev": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "添加设备",
+        "description": "",
+        "operationId": "createadmindev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/createadmindev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/reg/deletevendordev": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "第三方重置设备",
+        "description": "",
+        "operationId": "deletevendordev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deletevendordev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/reg/deleteadmindev": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "用户主动删除设备",
+        "description": "",
+        "operationId": "deleteadmindev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deleteadmindev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/open/adminOpenLock": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "用户申请开锁",
+        "description": "",
+        "operationId": "adminOpenLock",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/adminOpenLock"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/getAdminDevlist": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "获取设备列表",
+        "description": "",
+        "operationId": "getAdminDevlist",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getAdminDevlist"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/editadmindev": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "管理员修改锁的位置信息",
+        "description": "",
+        "operationId": "editadmindev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/editadmindev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/getAdminDevlocklongtitude": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "获取设备经纬度等信息",
+        "description": "",
+        "operationId": "getAdminDevlocklongtitude",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getAdminDevlocklongtitude"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/updateAdminDevAutolock": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "修改设备是否开启自动解锁功能",
+        "description": "",
+        "operationId": "updateAdminDevAutolock",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/updateAdminDevAutolock"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/updateAdminlockNickName": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "修改设备昵称",
+        "description": "",
+        "operationId": "updateAdminlockNickName",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/updateAdminlockNickName"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/edit/checkadmindev": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "检测是否被绑定",
+        "description": "",
+        "operationId": "checkadmindev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/checkadmindev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/normallock/reg/deletenormaldev": {
+      "post": {
+        "tags": [
+          "normallock"
+        ],
+        "summary": "管理员删除用户",
+        "description": "",
+        "operationId": "deletenormaldev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deletenormaldev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/normallock/reg/createNormalDev": {
+      "post": {
+        "tags": [
+          "normallock"
+        ],
+        "summary": "管理员为设备添加普通用户",
+        "description": "",
+        "operationId": "createNormalDev",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/createNormalDev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/normallock/ctl/updateNormalDevlock": {
+      "post": {
+        "tags": [
+          "normallock"
+        ],
+        "summary": "管理员修改普通用户权限",
+        "description": "",
+        "operationId": "updateNormalDevlock",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/updateNormalDevlock"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/normallock/ctl/getNormalDevlist": {
+      "post": {
+        "tags": [
+          "normallock"
+        ],
+        "summary": "设备下的普通用户列表",
+        "description": "",
+        "operationId": "getNormalDevlist",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getNormalDevlist"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/openlock/downloadopenlocklist": {
+      "post": {
+        "tags": [
+          "openlock"
+        ],
+        "summary": "获取开锁记录",
+        "description": "",
+        "operationId": "downloadopenlocklist",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/downloadopenlocklist"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/openlock/uploadopenlocklist": {
+      "post": {
+        "tags": [
+          "openlock"
+        ],
+        "summary": "上传开门记录",
+        "description": "",
+        "operationId": "uploadopenlocklist",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/uploadopenlocklist"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -805,6 +1485,452 @@
         "suggest": {
           "type": "string",
           "description": "留言的内容"
+        }
+      }
+    },
+    "createadmindev": {
+      "type": "object",
+      "required": [
+        "devmac",
+        "devname",
+        "nickname",
+        "user_id"
+      ],
+      "properties": {
+        "devmac": {
+          "type": "string",
+          "description": "设备mac"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "deletevendordev": {
+      "type": "object",
+      "required": [
+        "adminid",
+        "devname"
+      ],
+      "properties": {
+        "adminid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        }
+      }
+    },
+    "deleteadmindev": {
+      "type": "object",
+      "required": [
+        "adminid",
+        "devname"
+      ],
+      "properties": {
+        "adminid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        }
+      }
+    },
+    "adminOpenLock": {
+      "type": "object",
+      "required": [
+        "devname",
+        "is_admin",
+        "open_type",
+        "user_id"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "is_admin": {
+          "type": "string",
+          "description": "是否是管理员"
+        },
+        "open_type": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "getAdminDevlist": {
+      "type": "object",
+      "required": [
+        "user_id"
+      ],
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "editadmindev": {
+      "type": "object",
+      "required": [
+        "center_latitude",
+        "center_longitude",
+        "circle_radius",
+        "devmac",
+        "devname",
+        "edge_latitude",
+        "edge_longitude",
+        "user_id"
+      ],
+      "properties": {
+        "center_latitude": {
+          "type": "string",
+          "description": "圆心经度"
+        },
+        "center_longitude": {
+          "type": "string",
+          "description": "圆心纬度"
+        },
+        "circle_radius": {
+          "type": "string",
+          "description": "园半径（单位：m）"
+        },
+        "devmac": {
+          "type": "string",
+          "description": "设备mac"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "edge_latitude": {
+          "type": "string",
+          "description": "圆心边缘经度也是线段的另一端经度"
+        },
+        "edge_longitude": {
+          "type": "string",
+          "description": "圆心边缘纬度也是线段的另一端纬度"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "getAdminDevlocklongtitude": {
+      "type": "object",
+      "required": [
+        "devname",
+        "user_id"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "updateAdminDevAutolock": {
+      "type": "object",
+      "required": [
+        "devname",
+        "user_id",
+        "auto_lock"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "auto_lock": {
+          "type": "string",
+          "description": "自动开锁标识"
+        }
+      }
+    },
+    "updateAdminlockNickName": {
+      "type": "object",
+      "required": [
+        "devname",
+        "user_id",
+        "lockNickName"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "lockNickName": {
+          "type": "string",
+          "description": "昵称"
+        }
+      }
+    },
+    "checkadmindev": {
+      "type": "object",
+      "required": [
+        "devname",
+        "user_id"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "deletenormaldev": {
+      "type": "object",
+      "required": [
+        "dev_username",
+        "adminid",
+        "devname"
+      ],
+      "properties": {
+        "dev_username": {
+          "type": "string",
+          "description": "账号"
+        },
+        "adminid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        }
+      }
+    },
+    "createNormalDev": {
+      "type": "object",
+      "required": [
+        "admin_id",
+        "device_username",
+        "devicemac",
+        "devname",
+        "end_time",
+        "lockNickName",
+        "open_purview",
+        "start_time",
+        "items"
+      ],
+      "properties": {
+        "admin_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "device_username": {
+          "type": "string",
+          "description": "账号"
+        },
+        "devicemac": {
+          "type": "string",
+          "description": "设备mac"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "end_time": {
+          "type": "string",
+          "description": "结束时间"
+        },
+        "lockNickName": {
+          "type": "string",
+          "description": "设备昵称"
+        },
+        "open_purview": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "start_time": {
+          "type": "string",
+          "description": "开始时间"
+        },
+        "items": {
+          "type": "array",
+          "xml": {
+            "name": "items",
+            "wrapped": true
+          },
+          "items": {
+            "type": "string"
+          },
+          "description": "星期 7天 jsonarray size 7"
+        }
+      }
+    },
+    "updateNormalDevlock": {
+      "type": "object",
+      "required": [
+        "admin_id",
+        "dev_username",
+        "datestart",
+        "dateend",
+        "devname",
+        "open_purview",
+        "items"
+      ],
+      "properties": {
+        "admin_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "dev_username": {
+          "type": "string",
+          "description": "账号"
+        },
+        "datestart": {
+          "type": "string",
+          "description": "开始时间"
+        },
+        "dateend": {
+          "type": "string",
+          "description": "结束时间"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "open_purview": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "items": {
+          "type": "array",
+          "xml": {
+            "name": "items",
+            "wrapped": true
+          },
+          "items": {
+            "type": "string"
+          },
+          "description": "星期 7天 jsonarray size 7"
+        }
+      }
+    },
+    "getNormalDevlist": {
+      "type": "object",
+      "required": [
+        "devname",
+        "user_id"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "downloadopenlocklist": {
+      "type": "object",
+      "required": [
+        "device_name",
+        "user_id",
+        "pagenum"
+      ],
+      "properties": {
+        "device_name": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "pagenum": {
+          "type": "string",
+          "description": "请求页码数"
+        }
+      }
+    },
+    "uploadopenlocklist": {
+      "type": "object",
+      "required": [
+        "device_name",
+        "device_nickname",
+        "openLockList",
+        "user_id"
+      ],
+      "properties": {
+        "device_name": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "device_nickname": {
+          "type": "string",
+          "description": "设备昵称"
+        },
+        "openLockList": {
+          "type": "array",
+          "xml": {
+            "name": "openLockList",
+            "wrapped": true
+          },
+          "items": {
+            "$ref": "#/definitions/openLockList"
+          },
+          "description": "开锁记录"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "openLockList": {
+      "type": "object",
+      "required": [
+        "open_time",
+        "open_type",
+        "user_num"
+      ],
+      "properties": {
+        "open_time": {
+          "type": "string",
+          "description": "开锁时间"
+        },
+        "open_type": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "user_num": {
+          "type": "string",
+          "description": "开锁编号"
         }
       }
     }

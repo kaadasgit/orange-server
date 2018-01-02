@@ -19,6 +19,7 @@ public enum  ErrorType {
     REQUIRED_PRECESSS_FAIL(501, "业务处理失败"),
     RESULT_DATA_FAIL(400, "请求数据或或格式不对"),   //请求数据或或格式不对
     RESULT_PARAMS_FAIL(401, "数据参数不对"),   //必需的参数没有传或参数类型不对null值
+    BODY_SIZE_FAIL(413, "图像体积过大"),   //必需的参数没有传或参数类型不对null值
     RESULT_CODE_NOREQUIRED(406, "不需要显示验证码"),   //不需要显示验证码
     RESULT_CODE_FAIL(408, "验证码错误"),   //验证码错误
     UPLOAD_FILE_FAIL(607, "上传文件失败"),
@@ -35,7 +36,15 @@ public enum  ErrorType {
     OPERATION_FAIL(782, "操作失敗"),
     OPEN_LOCK__NOTFAIL(785, "开锁失败！"),
     NOT_BIND(201, "未绑定"),
-    BINDED(202, "已绑定");
+    BINDED(202, "已绑定"),
+    DEV_REGED(409, "设备重复注册"),
+    EXCEPTION(410, "要赋权用户没找到！"),
+    DEV_REGED_FAIL(411, "要赋权用户没找到！"),
+    DEV_REQUEST_FAIL(412,"设备注册失败 重复的记录！"),
+    UPDATE_USER_PREMISSION_FAIL(413,"设备注册失败 重复的记录！"),
+    VERIFY_CODE_FAIL(445,"无效的随机码"),
+    REGISTER_USER_DICT_FAIL(405,"用户重复注册"),
+    UPDATE_NICKNAME_FAIL(601,"修改昵称失敗");
 
     private int key;
 

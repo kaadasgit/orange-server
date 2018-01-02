@@ -8,6 +8,7 @@ import cn.orangeiot.apidao.handler.dao.job.JobDao;
 import cn.orangeiot.apidao.handler.dao.message.MessageDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
+import cn.orangeiot.apidao.jwt.JwtFactory;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import cn.orangeiot.reg.file.FileAddr;
@@ -16,8 +17,9 @@ import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.auth.jwt.JWTAuth;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhang bo
@@ -54,6 +56,10 @@ public class RegisterHandler implements EventbusAddr{
             RedisClient redisClient=new RedisClient();
             redisClient.redisConf(vertx);
 
+            //jwt配置
+            JwtFactory jwtFactory=new JwtFactory();
+            JWTAuth jwtAuth=jwtFactory.JWTConf(vertx);
+
             //topic处理
             TopicDao topicHandler=new TopicDao();
             vertx.eventBus().consumer(config.getString("consumer_saveTopic"),topicHandler::saveTopic);
@@ -66,7 +72,7 @@ public class RegisterHandler implements EventbusAddr{
             vertx.eventBus().consumer(MessageAddr.class.getName()+GET_CODE_COUNT,messageHandler::onGetCodeCount);
 
             //连接处理
-            UserDao userDao=new UserDao();
+            UserDao userDao=new UserDao(jwtAuth);
             vertx.eventBus().consumer(config.getString("consumer_connect_dao"),userDao::getUser);
             vertx.eventBus().consumer(UserAddr.class.getName()+VERIFY_TEL,userDao::telLogin);
             vertx.eventBus().consumer(UserAddr.class.getName()+VERIFY_MAIL,userDao::mailLogin);
@@ -110,7 +116,7 @@ public class RegisterHandler implements EventbusAddr{
             vertx.eventBus().consumer(AdminlockAddr.class.getName()+UPLOAD_OPEN_LOCK_RECORD,adminDevDao::uploadOpenLockList);
         } else {
             // failed!
-            logger.fatal(res.cause().getMessage(), res.cause());
+            logger.error(res.cause().getMessage(), res.cause());
         }
     }
 

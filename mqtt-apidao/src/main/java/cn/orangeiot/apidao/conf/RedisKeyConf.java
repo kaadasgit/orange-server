@@ -16,4 +16,6 @@ public class RedisKeyConf {
     public final static String USER_ACCOUNT="user:account";//用户
 
     public final static String VERIFY_CODE_COUNT="code:count";//验证码次数
+
+    public final static String USER_INFO="user:info";//用户信息
 }
