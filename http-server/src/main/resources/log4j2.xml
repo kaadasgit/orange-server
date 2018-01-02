@@ -20,12 +20,6 @@
         <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
         <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
         <!--</RollingFile>-->
-
-
-        <appender name="ASYNCOUT" class="org.apache.log4j.AsyncAppender">
-            <param name="BufferSize" value="1" />
-            <appender-ref ref="DRFOUT" />
-        </appender>
     </Appenders>
     <Loggers>
         <!--配置日志的根节点-->

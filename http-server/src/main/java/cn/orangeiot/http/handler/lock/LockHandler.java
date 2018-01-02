@@ -2,6 +2,7 @@ package cn.orangeiot.http.handler.lock;
 
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import io.vertx.core.AsyncResult;
@@ -51,19 +52,20 @@ public class LockHandler implements AdminlockAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(AdminlockAddr.class.getName() + CREATE_ADMIN_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(null);
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(ErrorType.DEV_REGED.getKey(), ErrorType.DEV_REGED.getValue());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + CREATE_ADMIN_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(null);
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(ErrorType.DEV_REGED.getKey(), ErrorType.DEV_REGED.getValue());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -84,13 +86,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + DELETE_EVEND_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + DELETE_EVEND_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -111,13 +114,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + DELETE_ADMIN_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + DELETE_ADMIN_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -138,13 +142,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + DELETE_NORMAL_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + DELETE_NORMAL_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -170,20 +175,21 @@ public class LockHandler implements AdminlockAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(AdminlockAddr.class.getName() + CREATE_NORMAL_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(null);
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
-                                    , rs.result().headers().get("msg"));
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + CREATE_NORMAL_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(null);
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
+                                            , rs.result().headers().get("msg"));
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -204,13 +210,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + GET_OPEN_LOCK_RECORD, asyncResult.result(), (AsyncResult<Message<JsonArray>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + GET_OPEN_LOCK_RECORD, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
+                            }
+                        });
             }
         });
     }
@@ -232,21 +239,22 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + UPDATE_USER_PREMISSON, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        Result<JsonObject> result = new Result<>();
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(null);
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(ErrorType.UPDATE_USER_PREMISSION_FAIL.getKey()
-                                    , ErrorType.UPDATE_USER_PREMISSION_FAIL.getValue());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_USER_PREMISSON, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                Result<JsonObject> result = new Result<>();
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(null);
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(ErrorType.UPDATE_USER_PREMISSION_FAIL.getKey()
+                                            , ErrorType.UPDATE_USER_PREMISSION_FAIL.getValue());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -268,21 +276,22 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + REQUEST_USER_OPEN_LOCK, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        Result<JsonObject> result = new Result<>();
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(null);
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
-                                    , rs.result().headers().get("msg"));
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + REQUEST_USER_OPEN_LOCK, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                Result<JsonObject> result = new Result<>();
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(null);
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
+                                            , rs.result().headers().get("msg"));
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -302,13 +311,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_LIST, asyncResult.result(), (AsyncResult<Message<JsonArray>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_LIST, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
+                            }
+                        });
             }
         });
     }
@@ -328,13 +338,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_USER_LIST, asyncResult.result(), (AsyncResult<Message<JsonArray>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_USER_LIST, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
+                            }
+                        });
             }
         });
     }
@@ -358,13 +369,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + EDIT_ADMIN_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + EDIT_ADMIN_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -384,13 +396,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_LONGTITUDE, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>().setData(rs.result().body())).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + GET_DEV_LONGTITUDE, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>().setData(rs.result().body())).toString());
+                            }
+                        });
             }
         });
     }
@@ -411,13 +424,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + UPDATE_ADMIN_DEV_AUTO_LOCK, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_ADMIN_DEV_AUTO_LOCK, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -439,13 +453,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + UPDATE_DEV_NICKNAME, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_DEV_NICKNAME, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }
@@ -465,14 +480,15 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + CHECK_DEV, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>().setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
-                                , rs.result().headers().get("msg"))).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + CHECK_DEV, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>().setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
+                                        , rs.result().headers().get("msg"))).toString());
+                            }
+                        });
             }
         });
     }
@@ -494,13 +510,14 @@ public class LockHandler implements AdminlockAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + UPLOAD_OPEN_LOCK_RECORD, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                    }
-                });
+                eventBus.send(AdminlockAddr.class.getName() + UPLOAD_OPEN_LOCK_RECORD, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
             }
         });
     }

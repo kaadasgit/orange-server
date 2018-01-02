@@ -2,6 +2,7 @@ package cn.orangeiot.http.handler.user;
 
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
@@ -52,19 +53,20 @@ public class UserHandler implements UserAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result(),(AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(rs.result().body());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(rs.result().body());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
 
@@ -87,19 +89,20 @@ public class UserHandler implements UserAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            result.setData(rs.result().body());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        } else {
-                            result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
-                            routingContext.response().end(JsonObject.mapFrom(result).toString());
-                        }
-                    }
-                });
+                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(rs.result().body());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
             }
         });
 
@@ -146,7 +149,7 @@ public class UserHandler implements UserAddr {
                 String regex = "^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,15}$";//字符和数字 6-15
                 Result<JsonObject> result = new Result<>();
                 if (asyncResult.result().getString("password").matches(regex)) {
-                    eventBus.send(addr, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
+                    eventBus.send(addr, asyncResult.result(), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
                         if (rs.failed()) {
                             routingContext.fail(501);
                         } else {
@@ -186,7 +189,8 @@ public class UserHandler implements UserAddr {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);
                     } else {
-                        eventBus.send(UserAddr.class.getName() + GET_USER_NICKNAME, asyncResult.result(),(AsyncResult<Message<JsonObject>> rs) -> {
+                        eventBus.send(UserAddr.class.getName() + GET_USER_NICKNAME, asyncResult.result(), SendOptions.getInstance()
+                                , (AsyncResult<Message<JsonObject>> rs) -> {
                                     if (rs.failed()) {
                                         routingContext.fail(501);
                                     } else {
@@ -217,7 +221,8 @@ public class UserHandler implements UserAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + UPDATE_USER_NICKNAME, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
+                eventBus.send(UserAddr.class.getName() + UPDATE_USER_NICKNAME, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
@@ -247,18 +252,19 @@ public class UserHandler implements UserAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + UPDATE_USER_PWD, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
-                        } else {
-                            routingContext.response().end(JsonObject.mapFrom(
-                                    new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
-                        }
-                    }
-                });
+                eventBus.send(UserAddr.class.getName() + UPDATE_USER_PWD, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(
+                                            new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -278,18 +284,19 @@ public class UserHandler implements UserAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + FORGET_USER_PWD, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        routingContext.fail(501);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
-                        } else {
-                            routingContext.response().end(JsonObject.mapFrom(
-                                    new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
-                        }
-                    }
-                });
+                eventBus.send(UserAddr.class.getName() + FORGET_USER_PWD, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonObject>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(
+                                            new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
             }
         });
     }
@@ -313,18 +320,19 @@ public class UserHandler implements UserAddr {
                     routingContext.response().end(JsonObject.mapFrom(
                             new Result<String>().setErrorMessage(ErrorType.CONTENT_LENGTH_INDEX.getKey(), ErrorType.CONTENT_LENGTH_INDEX.getValue())).toString());
                 } else {
-                    eventBus.send(UserAddr.class.getName() + SUGGEST_MSG, asyncResult.result(), (AsyncResult<Message<JsonObject>> rs) -> {
-                        if (rs.failed()) {
-                            routingContext.fail(501);
-                        } else {
-                            if (Objects.nonNull(rs.result().body())) {
-                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
-                            } else {
-                                routingContext.response().end(JsonObject.mapFrom(
-                                        new Result<String>().setErrorMessage(ErrorType.CONTENT_SUGGEST_FAIL.getKey(), ErrorType.CONTENT_SUGGEST_FAIL.getValue())).toString());
-                            }
-                        }
-                    });
+                    eventBus.send(UserAddr.class.getName() + SUGGEST_MSG, asyncResult.result(), SendOptions.getInstance()
+                            , (AsyncResult<Message<JsonObject>> rs) -> {
+                                if (rs.failed()) {
+                                    routingContext.fail(501);
+                                } else {
+                                    if (Objects.nonNull(rs.result().body())) {
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                    } else {
+                                        routingContext.response().end(JsonObject.mapFrom(
+                                                new Result<String>().setErrorMessage(ErrorType.CONTENT_SUGGEST_FAIL.getKey(), ErrorType.CONTENT_SUGGEST_FAIL.getValue())).toString());
+                                    }
+                                }
+                            });
                 }
             }
         });
@@ -341,18 +349,19 @@ public class UserHandler implements UserAddr {
     public void logOut(RoutingContext routingContext) {
         String token = routingContext.request().getHeader("token");
         if (StringUtils.isNotBlank(token)) {
-            eventBus.send(UserAddr.class.getName() + USER_LOGOUT, new JsonObject().put("token", token), rs -> {
-                if (rs.failed()) {
-                    routingContext.fail(501);
-                } else {
-                    if (Objects.nonNull(rs.result().body())) {
-                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
-                    } else {
-                        routingContext.response().end(JsonObject.mapFrom(
-                                new Result<String>().setErrorMessage(ErrorType.LOGOUT_FAIL.getKey(), ErrorType.LOGOUT_FAIL.getValue())).toString());
-                    }
-                }
-            });
+            eventBus.send(UserAddr.class.getName() + USER_LOGOUT, new JsonObject().put("token", token), SendOptions.getInstance()
+                    , rs -> {
+                        if (rs.failed()) {
+                            routingContext.fail(501);
+                        } else {
+                            if (Objects.nonNull(rs.result().body())) {
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(
+                                        new Result<String>().setErrorMessage(ErrorType.LOGOUT_FAIL.getKey(), ErrorType.LOGOUT_FAIL.getValue())).toString());
+                            }
+                        }
+                    });
         }
     }
 

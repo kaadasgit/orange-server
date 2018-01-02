@@ -1,8 +1,11 @@
 package cn.orangeiot.memenet.handler;
 
 import cn.orangeiot.memenet.client.HttpClient;
+import cn.orangeiot.memenet.handler.device.DeviceHandler;
 import cn.orangeiot.memenet.handler.user.UserHandler;
 import cn.orangeiot.reg.EventbusAddr;
+import cn.orangeiot.reg.memenet.MemenetAddr;
+import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -12,7 +15,7 @@ import io.vertx.core.logging.LoggerFactory;
 /**
  * @author zhang bo
  * @version 1.0 集群的handler事件注册
- * @Description
+ * @Description  MIMI 网第三方的事件注册
  * @date 2017-11-23
  */
 public class RegisterHandler implements EventbusAddr{
@@ -43,7 +46,14 @@ public class RegisterHandler implements EventbusAddr{
 
             //用户相关
             UserHandler userHandler=new UserHandler(config);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER,userHandler::onRegisterUser);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+UPDATE_PWD,userHandler::onUpdatePwd);
 
+            //设备相关
+            DeviceHandler deviceHandler=new DeviceHandler(config);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+BIND_DEVICE_USER,deviceHandler::onBindDeviceByUser);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+RELIEVE_DEVICE_USER,deviceHandler::onRelieveDeviceByUser);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+DEL_DEVICE,deviceHandler::onDelDevice);
         } else {
             // failed!
             logger.fatal(res.cause().getMessage(), res.cause());

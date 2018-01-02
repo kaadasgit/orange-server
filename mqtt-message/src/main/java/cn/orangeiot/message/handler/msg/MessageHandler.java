@@ -1,5 +1,6 @@
 package cn.orangeiot.message.handler.msg;
 
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.KdsCreateRandom;
 import cn.orangeiot.message.handler.client.MailClient;
 import cn.orangeiot.message.sms.SmsSingleSender;
@@ -42,14 +43,15 @@ public class MessageHandler implements MessageAddr {
      */
     public void SMSCode(Message<JsonObject> message) {
         vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel", message.body().getString("tel"))
-                .put("count", config.getInteger("codeCount")), (AsyncResult<Message<Boolean>> ars) -> {//查找手机验证码次数上限
+                .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {//查找手机验证码次数上限
             if (ars.failed()) {
                 ars.cause().printStackTrace();
+                message.reply(null);
             } else {
                 if (ars.result().body()) {
                     message.reply(new JsonObject());
                     //请求tx短信验证码同步快不是异步请求代码
-                    vertx.executeBlocking(rs->{
+                    vertx.executeBlocking(rs -> {
                         String tokens = KdsCreateRandom.createRandom(6);
 
                         vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel", message.body().getString("tel"))
@@ -69,20 +71,20 @@ public class MessageHandler implements MessageAddr {
                                 ArrayList<String> params = new ArrayList<>();
                                 params.add(tokens);
                                 singleSenderResult = singleSender.sendWithParam(code, message.body().getString("tel"), tmplcnId, params, "", "", "");
-                                logger.info("====MessageHandler=SMSCode==sendResult==return -> "+singleSenderResult);
+                                logger.info("====MessageHandler=SMSCode==sendResult==return -> " + singleSenderResult);
                             } else {
                                 ArrayList<String> params = new ArrayList<>();
                                 params.add(tokens);
 
                                 singleSenderResult = singleSender.sendWithParam(code, message.body().getString("tel"), tmpworldId, params, "", "", "");
-                                logger.info("====MessageHandler=SMSCode==sendResult==return -> "+singleSenderResult);
+                                logger.info("====MessageHandler=SMSCode==sendResult==return -> " + singleSenderResult);
                             }
                             rs.complete(singleSenderResult);
                         } catch (Exception e) {
                             rs.fail(e);
                         }
-                    },asyncResult -> {
-                        if(ars.failed()){
+                    }, asyncResult -> {
+                        if (ars.failed()) {
                             ars.cause().printStackTrace();
                         }
                     });
@@ -104,9 +106,10 @@ public class MessageHandler implements MessageAddr {
      */
     public void mailCode(Message<JsonObject> message) {
         vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel", message.body().getString("mail"))
-                .put("count", config.getInteger("codeCount")), (AsyncResult<Message<Boolean>> ars) -> {
+                .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {
             if (ars.failed()) {
                 ars.cause().printStackTrace();
+                message.reply(null);
             } else {
                 if (ars.result().body()) {
                     message.reply(new JsonObject());

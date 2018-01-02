@@ -1,5 +1,6 @@
 package cn.orangeiot.auth.handler.user;
 
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
@@ -14,7 +15,7 @@ import io.vertx.core.logging.LoggerFactory;
  * @Description
  * @date 2017-12-11
  */
-public class UserHandler implements UserAddr{
+public class UserHandler implements UserAddr {
     private static Logger logger = LoggerFactory.getLogger(UserHandler.class);
 
 
@@ -23,8 +24,8 @@ public class UserHandler implements UserAddr{
     private JsonObject config;
 
     public UserHandler(Vertx vertx, JsonObject config) {
-        this.vertx=vertx;
-        this.config=config;
+        this.vertx = vertx;
+        this.config = config;
     }
 
     /**
@@ -33,14 +34,17 @@ public class UserHandler implements UserAddr{
      * @date 17-12-11
      * @version 1.0
      */
-    public void onByTelMessage(Message<JsonObject> message){
-        vertx.eventBus().send(UserAddr.class.getName()+VERIFY_TEL,message.body(),(AsyncResult<Message<JsonObject>> rs)->{
-            if(rs.failed()){
-                rs.cause().printStackTrace();
-            }else{
-                message.reply(rs.result().body());
-            }
-        });
+    @SuppressWarnings("Duplicates")
+    public void onByTelMessage(Message<JsonObject> message) {
+        vertx.eventBus().send(UserAddr.class.getName() + VERIFY_TEL, message.body(), SendOptions.getInstance()
+                , (AsyncResult<Message<JsonObject>> rs) -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                        message.reply(null);
+                    } else {
+                        message.reply(rs.result().body());
+                    }
+                });
     }
 
 
@@ -50,13 +54,16 @@ public class UserHandler implements UserAddr{
      * @date 17-12-11
      * @version 1.0
      */
-    public void onByMailMessage(Message<JsonObject> message){
-        vertx.eventBus().send(UserAddr.class.getName()+VERIFY_MAIL,message.body(),(AsyncResult<Message<JsonObject>> rs)->{
-            if(rs.failed()){
-                rs.cause().printStackTrace();
-            }else{
-                message.reply(rs.result().body());
-            }
-        });
+    @SuppressWarnings("Duplicates")
+    public void onByMailMessage(Message<JsonObject> message) {
+        vertx.eventBus().send(UserAddr.class.getName() + VERIFY_MAIL, message.body(), SendOptions.getInstance()
+                , (AsyncResult<Message<JsonObject>> rs) -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                        message.reply(null);
+                    } else {
+                        message.reply(rs.result().body());
+                    }
+                });
     }
 }

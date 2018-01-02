@@ -1,6 +1,7 @@
 package cn.orangeiot.publish.service;
 
 import cn.orangeiot.common.genera.ErrorType;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.publish.handler.message.FuncHandler;
 import cn.orangeiot.publish.model.ResultInfo;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
@@ -40,7 +41,7 @@ public abstract class BaseService {
      */
     @SuppressWarnings("Duplicates")
     public void send(String addr, JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
-        vertx.eventBus().send(addr, jsonObject, (AsyncResult<Message<Object>> rs) -> {
+        vertx.eventBus().send(addr, jsonObject, SendOptions.getInstance(), (AsyncResult<Message<Object>> rs) -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
             } else {

@@ -3,6 +3,7 @@ package cn.orangeiot.http.handler.file;
 import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.file.FileAddr;
 import cn.orangeiot.reg.user.UserAddr;
@@ -53,12 +54,12 @@ public class FileHandler implements EventbusAddr {
      */
     public void getHeaderImg(RoutingContext routingContext) {
         if (Objects.nonNull(routingContext.request().getParam("uid"))) {
-            isToken(routingContext,ars-> {
+            isToken(routingContext, ars -> {
                 if (ars.failed()) {
                     routingContext.fail(500);
                 } else {
                     vertx.eventBus().send(FileAddr.class.getName() + GET_FILE_HEADER, new JsonObject().put("uid"
-                            , routingContext.request().getParam("uid")), (AsyncResult<Message<JsonObject>> rs) -> {
+                            , routingContext.request().getParam("uid")), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
                         if (rs.failed()) {
                             routingContext.fail(501);
                         } else {
@@ -87,41 +88,40 @@ public class FileHandler implements EventbusAddr {
      */
     public void downHeaderImg(RoutingContext routingContext) {
         logger.info("==UserHandler=downHeaderImg==params->" + routingContext.getBodyAsString());
-        isToken(routingContext,ars->{
-            if(ars.failed()){
+        isToken(routingContext, ars -> {
+            if (ars.failed()) {
                 routingContext.fail(500);
-            }else{
-               if(ars.result() && Objects.nonNull(routingContext.request().formAttributes().get("uid"))){
-                   for (FileUpload f : routingContext.fileUploads()) {
-                       Buffer fileByteBuffer = vertx.fileSystem().readFileBlocking(f.uploadedFileName());
-                       vertx.eventBus().send(FileAddr.class.getName() + UPLOAD_HEADER_IMG, new JsonObject().put("name", f.fileName())
-                                       .put("contentType", f.contentType()).put("size", f.size()).put("content",
-                                       new JsonObject().put("$binary", fileByteBuffer.getBytes())).put("uid",
-                                       routingContext.request().formAttributes().get("uid")).put("uploadDate", new JsonObject().put("$date",
-                                       OffsetDateTime.of(LocalDateTime.now(),ZoneOffset.of("+08:00")).toString()))
-                               , (AsyncResult<Message<String>> rs) -> {
-                                   if (rs.failed()) {
-                                       routingContext.fail(501);
-                                   } else {
-                                       if (Objects.nonNull(rs.result())) {
-                                           routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
-                                       } else {
-                                           routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
-                                                   ErrorType.UPLOAD_FILE_FAIL.getKey(), ErrorType.UPLOAD_FILE_FAIL.getValue()
-                                           )).toString());
-                                       }
-                                   }
-                               });
-                   }
-               }else{
-                   routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
-                           ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
-                   )).toString());
-               }
+            } else {
+                if (ars.result() && Objects.nonNull(routingContext.request().formAttributes().get("uid"))) {
+                    for (FileUpload f : routingContext.fileUploads()) {
+                        Buffer fileByteBuffer = vertx.fileSystem().readFileBlocking(f.uploadedFileName());
+                        vertx.eventBus().send(FileAddr.class.getName() + UPLOAD_HEADER_IMG, new JsonObject().put("name", f.fileName())
+                                        .put("contentType", f.contentType()).put("size", f.size()).put("content",
+                                        new JsonObject().put("$binary", fileByteBuffer.getBytes())).put("uid",
+                                        routingContext.request().formAttributes().get("uid")).put("uploadDate", new JsonObject().put("$date",
+                                        OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.of("+08:00")).toString())), SendOptions.getInstance()
+                                , (AsyncResult<Message<String>> rs) -> {
+                                    if (rs.failed()) {
+                                        routingContext.fail(501);
+                                    } else {
+                                        if (Objects.nonNull(rs.result())) {
+                                            routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                        } else {
+                                            routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
+                                                    ErrorType.UPLOAD_FILE_FAIL.getKey(), ErrorType.UPLOAD_FILE_FAIL.getValue()
+                                            )).toString());
+                                        }
+                                    }
+                                });
+                    }
+                } else {
+                    routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
+                            ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
+                    )).toString());
+                }
             }
         });
     }
-
 
 
     /**
@@ -132,15 +132,16 @@ public class FileHandler implements EventbusAddr {
     public void isToken(RoutingContext routingContext, Handler<AsyncResult<Boolean>> handler) {
         Result<Object> result = new Result<>();
         String token = routingContext.request().getHeader("token");
-        if(StringUtils.isNotBlank(token)){
-            vertx.eventBus().send(UserAddr.class.getName()+VERIFY_LOGIN,token,(AsyncResult<Message<Boolean>> rs)->{
-                if(rs.failed()){
-                    handler.handle(Future.failedFuture(rs.cause()));
-                }else{
-                    handler.handle(Future.succeededFuture(rs.result().body()));
-                }
-            });
-        }else{
+        if (StringUtils.isNotBlank(token)) {
+            vertx.eventBus().send(UserAddr.class.getName() + VERIFY_LOGIN, token, SendOptions.getInstance()
+                    , (AsyncResult<Message<Boolean>> rs) -> {
+                        if (rs.failed()) {
+                            handler.handle(Future.failedFuture(rs.cause()));
+                        } else {
+                            handler.handle(Future.succeededFuture(rs.result().body()));
+                        }
+                    });
+        } else {
             routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
                     , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
                     ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()

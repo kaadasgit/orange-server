@@ -30,6 +30,7 @@ public class UserHandler {
      * @date 17-12-28
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void onRegisterUser(Message<JsonObject> message) {
         logger.info("==UserHandler=onRegisterUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
@@ -89,43 +90,5 @@ public class UserHandler {
             }
         });
     }
-
-
-
-    /**
-     * @Description MIMI设备用户删除
-     * @author zhang bo
-     * @date 17-12-28
-     * @version 1.0
-     */
-    public void onDelDeviceUser(Message<JsonObject> message){
-        logger.info("==UserHandler=onDelDeviceUser===params -> " + message.body());
-        String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
-        SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
-            if (as.failed()) {
-                as.cause().printStackTrace();
-                logger.error("==UserHandler==onDelDeviceUser Usersha256 encrypt is fail");
-            } else {
-                //设备用户删除请求
-                HttpClient.client.post("/v1/accsvr/deldevice")
-                        .addQueryParam("partid", conf.getString("partid"))
-                        .addQueryParam("appid", conf.getString("appId"))
-                        .addQueryParam("random", random)
-                        .sendJsonObject(new JsonObject().put("userid", message.body().getString("userid"))
-                                .put("password", message.body().getString("password")).put("sig", as.result()), rs -> {
-                            if (rs.failed()) {
-                                rs.cause().printStackTrace();
-                                logger.error("==UserHandler=onDelDeviceUser===request /v1/accsvr/deldevice timeout");
-                            } else {
-                                logger.info("==UserHandler=onDelDeviceUser===request /v1/accsvr/deldevice result -> " + rs.result().body());
-                            }
-                        });
-            }
-        });
-    }
-
-
-
 
 }

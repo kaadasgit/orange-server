@@ -1,6 +1,7 @@
 package cn.orangeiot.auth.handler.connect;
 
 
+import cn.orangeiot.common.options.SendOptions;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
@@ -37,7 +38,7 @@ public class ConnectHandler {
             JsonObject jsonObject=new JsonObject(message.body().toString());
 
             /*查找*/
-            vertx.eventBus().send(config.getString("send_connect_dao"),message.body(),(AsyncResult<Message<Boolean>> rs)->{
+            vertx.eventBus().send(config.getString("send_connect_dao"),message.body(), SendOptions.getInstance(),(AsyncResult<Message<Boolean>> rs)->{
                 if(rs.failed()){
                     rs.cause().printStackTrace();
                     message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",

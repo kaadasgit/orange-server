@@ -2,6 +2,7 @@ package cn.orangeiot.http.handler.message;
 
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.eventbus.EventBus;
@@ -48,7 +49,7 @@ public class MessageHandler implements UserAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + SMS_CODE, JsonObject.mapFrom(asyncResult.result())
+                eventBus.send(UserAddr.class.getName() + SMS_CODE, JsonObject.mapFrom(asyncResult.result()), SendOptions.getInstance()
                         , rs -> {
                             if (asyncResult.failed()) {
                                 routingContext.fail(501);
@@ -83,7 +84,7 @@ public class MessageHandler implements UserAddr {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);
                     } else {
-                        eventBus.send(UserAddr.class.getName() + MAIL_CODE, JsonObject.mapFrom(asyncResult.result())
+                        eventBus.send(UserAddr.class.getName() + MAIL_CODE, JsonObject.mapFrom(asyncResult.result()), SendOptions.getInstance()
                                 , rs -> {
                                     if (asyncResult.failed()) {
                                         routingContext.fail(501);
