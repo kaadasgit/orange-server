@@ -14,7 +14,7 @@ import java.util.List;
  */
 class PublishDecoder extends DemuxDecoder {
     
-//    private static Logger LOG = LoggerFactory.getLogger(PublishDecoder.class);
+//    private static Logger LOG = LogManager.getLogger(PublishDecoder.class);
 
 //    @Override
 //    void decode(ByteBuf in, List<Object> out) throws Exception {

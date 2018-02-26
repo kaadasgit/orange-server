@@ -9,8 +9,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,7 @@ import java.io.InputStream;
 public class MessageVerticle extends AbstractVerticle{
 
 
-    private static Logger logger = LoggerFactory.getLogger(MessageVerticle.class);
+    private static Logger logger = LogManager.getLogger(MessageVerticle.class);
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {

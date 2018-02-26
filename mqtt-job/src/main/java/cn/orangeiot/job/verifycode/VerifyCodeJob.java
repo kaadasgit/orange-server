@@ -5,8 +5,8 @@ import io.vertx.core.json.JsonObject;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  */
 public class VerifyCodeJob implements Job {
 
-    private static Logger logger = LoggerFactory.getLogger(VerifyCodeJob.class);
+    private static Logger logger = LogManager.getLogger(VerifyCodeJob.class);
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {

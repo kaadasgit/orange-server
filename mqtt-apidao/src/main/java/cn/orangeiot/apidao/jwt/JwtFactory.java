@@ -1,9 +1,15 @@
 package cn.orangeiot.apidao.jwt;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.cli.CLI;
+import io.vertx.core.cli.CommandLine;
+import io.vertx.core.cli.Option;
 import io.vertx.ext.auth.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author zhang bo
@@ -19,11 +25,10 @@ public class JwtFactory {
      * @param vertx
      * @return
      */
-    public JWTAuth JWTConf(Vertx vertx) {
-        String path = JwtFactory.class.getResource("/keystore.jceks").getPath();
-        // Create a JWT Auth Provider
+    public JWTAuth JWTConf(Vertx vertx, String args) {
         JWTAuth jwt = JWTAuth.create(vertx, new JWTAuthOptions()
-                .setKeyStore(new KeyStoreOptions().setPath(path).setType("jceks").setPassword("secret")));
+                .setKeyStore(new KeyStoreOptions().setPath(args).setType("jceks").setPassword("secret")));
         return jwt;
     }
+
 }

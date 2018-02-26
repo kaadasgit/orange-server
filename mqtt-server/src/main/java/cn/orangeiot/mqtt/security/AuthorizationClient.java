@@ -10,15 +10,15 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Created by giova_000 on 14/10/2015.
  */
 public class AuthorizationClient {
     
-    private static Logger logger = LoggerFactory.getLogger(AuthorizationClient.class);
+    private static Logger logger = LogManager.getLogger(AuthorizationClient.class);
 
     private EventBus eventBus;
     private String authenticatorAddress;

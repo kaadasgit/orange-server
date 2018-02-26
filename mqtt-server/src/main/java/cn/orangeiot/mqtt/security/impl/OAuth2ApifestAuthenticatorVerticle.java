@@ -38,7 +38,7 @@ import java.net.URL;
 
 public class OAuth2ApifestAuthenticatorVerticle extends AuthenticatorVerticle {
 
-//    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
+//    private static Logger logger = LogManager.getLogger("mqtt-broker-log");
 
     @Override
     public void startAuthenticator(String address, AuthenticatorConfig c) throws Exception {

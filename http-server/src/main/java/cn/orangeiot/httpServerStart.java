@@ -2,10 +2,10 @@ package cn.orangeiot;
 
 import cn.orangeiot.http.verticle.HttpServerVerticle;
 import io.vertx.core.Vertx;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
@@ -16,9 +16,9 @@ import java.io.InputStream;
  * @date 2017-12-08
  */
 public class httpServerStart {
+    private static Logger logger = LogManager.getLogger(httpServerStart.class);
 
-    private static Logger logger = LoggerFactory.getLogger(httpServerStart.class);
-
+    @SuppressWarnings("Duplicates")
     public static void main(String[] args){
         //日志使用log4j2
         System.setProperty("vertx.logger-delegate-factory-class-name","io.vertx.core.logging.Log4j2LogDelegateFactory");

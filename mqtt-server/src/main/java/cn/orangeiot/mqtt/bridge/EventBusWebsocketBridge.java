@@ -8,8 +8,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.parsetools.RecordParser;
 
 import java.util.UUID;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * Created by Giovanni Baleani on 15/07/2015.
  */
 public class EventBusWebsocketBridge {
-    private static Logger logger = LoggerFactory.getLogger(EventBusWebsocketBridge.class);
+    private static Logger logger = LogManager.getLogger(EventBusWebsocketBridge.class);
 
     private static final String BR_HEADER = "bridged";
 

@@ -8,8 +8,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
  */
 public class RestApiVerticle extends AbstractVerticle {
 
-    private Logger logger = LoggerFactory.getLogger(RestApiVerticle.class);
+    private Logger logger = LogManager.getLogger(RestApiVerticle.class);
 
     @Override
     public void start() throws Exception {

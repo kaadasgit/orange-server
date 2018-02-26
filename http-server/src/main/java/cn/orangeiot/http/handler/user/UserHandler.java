@@ -3,7 +3,11 @@ package cn.orangeiot.http.handler.user;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.common.utils.DataType;
+import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
+import cn.orangeiot.reg.EventbusAddr;
+import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -12,8 +16,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -23,9 +27,9 @@ import java.util.Objects;
  * @Description
  * @date 2017-12-08
  */
-public class UserHandler implements UserAddr {
+public class UserHandler implements EventbusAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(UserHandler.class);
+    private static Logger logger = LogManager.getLogger(UserHandler.class);
 
 
     private EventBus eventBus;
@@ -47,8 +51,8 @@ public class UserHandler implements UserAddr {
     public void getUserByTel(RoutingContext routingContext) {
         logger.info("==UserHandler=getUserByTel==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", String.class.getName())
-                .put("password", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
+                .put("password", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -83,8 +87,8 @@ public class UserHandler implements UserAddr {
     public void getUserByEmail(RoutingContext routingContext) {
         logger.info("==UserHandler=getUserByEmail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", String.class.getName())
-                .put("password", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
+                .put("password", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -117,8 +121,19 @@ public class UserHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void registerUserByTel(RoutingContext routingContext) {
-        register(routingContext, UserAddr.class.getName() + REGISTER_USER_TEL);
-
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("name", DataType.STRING)
+                .put("password", DataType.STRING).put("tokens", DataType.STRING), (AsyncResult<JsonObject> asyncResult) -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
+                if (!asyncResult.result().getString("name").matches(regex))//检验是否是合法的邮箱地址
+                    register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_TEL, routingContext);
+                else
+                    routingContext.fail(401);
+            }
+        });
     }
 
 
@@ -128,8 +143,23 @@ public class UserHandler implements UserAddr {
      * @date 17-12-12
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void registerUserByMail(RoutingContext routingContext) {
-        register(routingContext, UserAddr.class.getName() + REGISTER_USER_MAIL);
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("name", DataType.STRING)
+                .put("password", DataType.STRING).put("tokens", DataType.STRING), (AsyncResult<JsonObject> asyncResult) -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
+                if (asyncResult.result().getString("name").matches(regex)) //检验是否是合法的邮箱地址
+                    register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_MAIL, routingContext);
+                else
+                    routingContext.fail(401);
+
+            }
+        });
+
     }
 
 
@@ -139,39 +169,37 @@ public class UserHandler implements UserAddr {
      * @date 17-12-12
      * @version 1.0
      */
-    public void register(RoutingContext routingContext, String addr) {
+    public void register(JsonObject jsonObject, String addr, RoutingContext routingContext) {
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("name", String.class.getName())
-                .put("password", String.class.getName()).put("tokens", String.class.getName()), (AsyncResult<JsonObject> asyncResult) -> {
-            if (asyncResult.failed()) {
-                routingContext.fail(401);
-            } else {
-                String regex = "^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,15}$";//字符和数字 6-15
-                Result<JsonObject> result = new Result<>();
-                if (asyncResult.result().getString("password").matches(regex)) {
-                    eventBus.send(addr, asyncResult.result(), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
-                        if (rs.failed()) {
-                            routingContext.fail(501);
-                        } else {
-                            if (Objects.nonNull(rs.result().body())) {
-                                result.setData(rs.result().body());
-                                routingContext.response().end(JsonObject.mapFrom(result).toString());
-                            } else {
-                                if (!rs.result().headers().isEmpty())
-                                    routingContext.response().end(JsonObject.mapFrom(
-                                            result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg"))).toString());
-                                else
-                                    routingContext.response().end(JsonObject.mapFrom(
-                                            result.setErrorMessage(ErrorType.REGISTER_USER_FAIL.getKey(), ErrorType.REGISTER_USER_FAIL.getValue())).toString());
-                            }
-                        }
-                    });
+        String regex = "^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$";//字符和数字 6-16
+        Result<JsonObject> result = new Result<>();
+        if (jsonObject.getString("password").matches(regex)) {
+            eventBus.send(addr, jsonObject, SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
+                if (rs.failed()) {
+                    routingContext.fail(501);
                 } else {
-                    result.setErrorMessage(ErrorType.PASSWORD_FAIL.getKey(), ErrorType.PASSWORD_FAIL.getValue());
-                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                    if (Objects.nonNull(rs.result().body())) {
+                        String meUsername = UUIDUtils.getUUID();
+                        String mePassword = UUIDUtils.getUUID();
+                        result.setData(rs.result().body().put("meUsername", meUsername).put("mePassword", mePassword));
+                        routingContext.response().end(JsonObject.mapFrom(result).toString());
+
+                        eventBus.send(MemenetAddr.class.getName() + REGISTER_USER, new JsonObject().put("username", meUsername)
+                                .put("password", mePassword).put("uid", rs.result().body().getString("uid")), SendOptions.getInstance());//第三方数据同步
+                    } else {
+                        if (!rs.result().headers().isEmpty())
+                            routingContext.response().end(JsonObject.mapFrom(
+                                    result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg"))).toString());
+                        else
+                            routingContext.response().end(JsonObject.mapFrom(
+                                    result.setErrorMessage(ErrorType.REGISTER_USER_FAIL.getKey(), ErrorType.REGISTER_USER_FAIL.getValue())).toString());
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            result.setErrorMessage(ErrorType.PASSWORD_FAIL.getKey(), ErrorType.PASSWORD_FAIL.getValue());
+            routingContext.response().end(JsonObject.mapFrom(result).toString());
+        }
     }
 
 
@@ -184,7 +212,7 @@ public class UserHandler implements UserAddr {
     public void getNickName(RoutingContext routingContext) {
         logger.info("==UserHandler=getNickName==");
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", String.class.getName())
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
                 , asyncResult -> {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);
@@ -216,8 +244,8 @@ public class UserHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void updateNickName(RoutingContext routingContext) {
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", String.class.getName())
-                .put("nickname", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("nickname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -247,24 +275,30 @@ public class UserHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void updateUserPwd(RoutingContext routingContext) {
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("newpwd", String.class.getName())
-                .put("oldpwd", String.class.getName()).put("uid", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("newpwd", DataType.STRING)
+                .put("oldpwd", DataType.STRING).put("uid", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + UPDATE_USER_PWD, asyncResult.result(), SendOptions.getInstance()
-                        , (AsyncResult<Message<JsonObject>> rs) -> {
-                            if (rs.failed()) {
-                                routingContext.fail(501);
-                            } else {
-                                if (Objects.nonNull(rs.result().body())) {
-                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                String regex = "^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$";//字符和数字 6-16
+                if (asyncResult.result().getString("newpwd").matches(regex)) {
+                    eventBus.send(UserAddr.class.getName() + UPDATE_USER_PWD, asyncResult.result(), SendOptions.getInstance()
+                            , (AsyncResult<Message<JsonObject>> rs) -> {
+                                if (rs.failed()) {
+                                    routingContext.fail(501);
                                 } else {
-                                    routingContext.response().end(JsonObject.mapFrom(
-                                            new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                    if (Objects.nonNull(rs.result().body())) {
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                    } else {
+                                        routingContext.response().end(JsonObject.mapFrom(
+                                                new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                    }
                                 }
-                            }
-                        });
+                            });
+                } else {
+                    routingContext.response().end(JsonObject.mapFrom(
+                            new Result<>().setErrorMessage(ErrorType.PASSWORD_FAIL.getKey(), ErrorType.PASSWORD_FAIL.getValue())).toString());
+                }
             }
         });
     }
@@ -279,24 +313,34 @@ public class UserHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void forgetPwd(RoutingContext routingContext) {
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("name", String.class.getName())
-                .put("pwd", String.class.getName()).put("type", Integer.class.getName()).put("tokens", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("name", DataType.STRING)
+                .put("pwd", DataType.STRING).put("type", DataType.INTEGER).put("tokens", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + FORGET_USER_PWD, asyncResult.result(), SendOptions.getInstance()
-                        , (AsyncResult<Message<JsonObject>> rs) -> {
-                            if (rs.failed()) {
-                                routingContext.fail(501);
-                            } else {
-                                if (Objects.nonNull(rs.result().body())) {
-                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                String regex = "^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,16}$";//字符和数字 6-16
+                if (asyncResult.result().getString("pwd").matches(regex)) {
+                    eventBus.send(UserAddr.class.getName() + FORGET_USER_PWD, asyncResult.result(), SendOptions.getInstance()
+                            , (AsyncResult<Message<JsonObject>> rs) -> {
+                                if (rs.failed()) {
+                                    routingContext.fail(501);
                                 } else {
-                                    routingContext.response().end(JsonObject.mapFrom(
-                                            new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                    if (Objects.nonNull(rs.result().body())) {
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                    } else {
+                                        if (!rs.result().headers().isEmpty())
+                                            routingContext.response().end(JsonObject.mapFrom(
+                                                    new Result<String>().setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg"))).toString());
+                                        else
+                                            routingContext.response().end(JsonObject.mapFrom(
+                                                    new Result<String>().setErrorMessage(ErrorType.UPDATE_USER_PWD_FAIL.getKey(), ErrorType.UPDATE_USER_PWD_FAIL.getValue())).toString());
+                                    }
                                 }
-                            }
-                        });
+                            });
+                } else {
+                    routingContext.response().end(JsonObject.mapFrom(
+                            new Result<>().setErrorMessage(ErrorType.PASSWORD_FAIL.getKey(), ErrorType.PASSWORD_FAIL.getValue())).toString());
+                }
             }
         });
     }
@@ -311,8 +355,8 @@ public class UserHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void suggestMsg(RoutingContext routingContext) {
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("suggest", String.class.getName())
-                .put("uid", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("suggest", DataType.STRING)
+                .put("uid", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {

@@ -3,8 +3,8 @@ package cn.orangeiot.mqtt;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
 /**
@@ -12,7 +12,7 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
  */
 public class MQTTWebSocketWrapper extends WebSocketWrapper {
 
-    private static Logger logger = LoggerFactory.getLogger(MQTTWebSocketWrapper.class);
+    private static Logger logger = LogManager.getLogger(MQTTWebSocketWrapper.class);
 
     private MQTTEncoder encoder = new MQTTEncoder();
 

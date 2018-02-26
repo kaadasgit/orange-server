@@ -4,8 +4,8 @@ import cn.orangeiot.topic.handler.dao.topic.TopicHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RegisterHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(RegisterHandler.class);
+    private static Logger logger = LogManager.getLogger(RegisterHandler.class);
 
     private JsonObject config;
 

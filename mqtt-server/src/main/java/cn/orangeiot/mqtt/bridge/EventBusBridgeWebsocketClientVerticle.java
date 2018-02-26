@@ -8,8 +8,8 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.*;
 
 /**
@@ -17,7 +17,7 @@ import io.vertx.core.net.*;
  */
 public class EventBusBridgeWebsocketClientVerticle extends AbstractVerticle implements Handler<WebSocket> {
 
-    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeWebsocketClientVerticle.class);
+    private static Logger logger = LogManager.getLogger(EventBusBridgeWebsocketClientVerticle.class);
 
     private String address;
     private HttpClient netClient;

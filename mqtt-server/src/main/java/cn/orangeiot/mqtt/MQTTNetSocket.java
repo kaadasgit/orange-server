@@ -2,8 +2,8 @@ package cn.orangeiot.mqtt;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class MQTTNetSocket extends MQTTSocket {
 
-    private static Logger logger = LoggerFactory.getLogger(MQTTNetSocket.class);
+    private static Logger logger = LogManager.getLogger(MQTTNetSocket.class);
 
     private NetSocket netSocket;
 
@@ -40,6 +40,7 @@ public class MQTTNetSocket extends MQTTSocket {
     }
 
 
+    @SuppressWarnings("Duplicates")
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {

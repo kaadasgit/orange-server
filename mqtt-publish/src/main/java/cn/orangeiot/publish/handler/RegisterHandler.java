@@ -1,13 +1,14 @@
 package cn.orangeiot.publish.handler;
 
+import cn.orangeiot.publish.handler.event.EventHandler;
 import cn.orangeiot.publish.handler.message.FuncHandler;
 import cn.orangeiot.publish.handler.message.PublishHandler;
 import cn.orangeiot.reg.EventbusAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RegisterHandler implements EventbusAddr{
 
-    private static Logger logger = LoggerFactory.getLogger(RegisterHandler.class);
+    private static Logger logger = LogManager.getLogger(RegisterHandler.class);
 
     private JsonObject config;
 
@@ -38,8 +39,11 @@ public class RegisterHandler implements EventbusAddr{
             //业务处理分发
             FuncHandler funcHandler=new FuncHandler(vertx,config);
 
+            //网关事件上报
+            EventHandler eventHandler=new EventHandler(vertx,config);
+
             //消息处理
-            PublishHandler publishHandler=new PublishHandler(config,funcHandler);
+            PublishHandler publishHandler=new PublishHandler(config,funcHandler,eventHandler);
             vertx.eventBus().consumer(PUBLISH_MSG,publishHandler::onMessage);//qos1和2回调
         } else {
             // failed!

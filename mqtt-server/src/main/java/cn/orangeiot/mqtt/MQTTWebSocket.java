@@ -3,8 +3,8 @@ package cn.orangeiot.mqtt;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Map;
 
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class MQTTWebSocket extends MQTTSocket {
     
-    private static Logger logger = LoggerFactory.getLogger(MQTTWebSocket.class);
+    private static Logger logger = LogManager.getLogger(MQTTWebSocket.class);
     
     private ServerWebSocket netSocket;
 

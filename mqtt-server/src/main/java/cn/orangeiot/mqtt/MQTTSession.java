@@ -7,6 +7,7 @@ import cn.orangeiot.mqtt.persistence.Subscription;
 import cn.orangeiot.mqtt.security.AuthorizationClient;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -15,8 +16,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.dna.mqtt.moquette.proto.messages.*;
 
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MQTTSession implements Handler<Message<Buffer>> {
 
-    private static Logger logger = LoggerFactory.getLogger(MQTTSession.class);
+    private static Logger logger = LogManager.getLogger(MQTTSession.class);
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
@@ -525,11 +526,16 @@ public class MQTTSession implements Handler<Message<Buffer>> {
      * @date 17-12-11
      * @version 1.0
      */
-    public void handlerPublishMessage(PublishMessage publishMessage,String clientId,Handler<JsonObject> asyncResultHandler){
+    public void handlerPublishMessage(PublishMessage publishMessage,String clientId,Handler<AsyncResult<JsonObject>> asyncResultHandler){
         logger.debug("Message payload from " + publishMessage.getPayloadAsString());
         vertx.eventBus().send(publish,new JsonObject(publishMessage.getPayloadAsString())
                 .put("topicName",publishMessage.getTopicName()).put("clientId",clientId),(AsyncResult<Message<JsonObject>> rs)->{
-                   asyncResultHandler.handle(rs.result().body());
+            if(rs.failed()){
+                rs.cause().printStackTrace();
+                asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
+            }else{
+                asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
+            }
         });
 
     }

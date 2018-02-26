@@ -37,4 +37,8 @@ public interface UserAddr {
      String SUGGEST_MSG="suggestMsg";//用户留言
 
      String USER_LOGOUT="logout";//用户登出
+
+     String MEME_USER="memeUser";//同步米米用户信息
+
+     String MEME_REGISTER_USER_BULK="memeRegisterUserBulk";//批量注册用户
 }

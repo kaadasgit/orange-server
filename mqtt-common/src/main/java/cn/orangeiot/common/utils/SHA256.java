@@ -37,6 +37,7 @@ public class SHA256 {
                         handler.handle(Future.succeededFuture(rs.result()));
                 });
             } catch (Exception e) {
+                e.getCause().getStackTrace();
                 handler.handle(Future.failedFuture(e.getCause()));
             }
         } else {
@@ -50,6 +51,7 @@ public class SHA256 {
      * @param bytes
      * @return
      */
+    @SuppressWarnings("Duplicates")
     private static void byte2Hex(byte[] bytes, Handler<AsyncResult<String>> handler) {
         StringBuffer stringBuffer = new StringBuffer();
         String temp = null;
@@ -63,4 +65,6 @@ public class SHA256 {
         }
         handler.handle(Future.succeededFuture(stringBuffer.toString()));
     }
+
+
 }

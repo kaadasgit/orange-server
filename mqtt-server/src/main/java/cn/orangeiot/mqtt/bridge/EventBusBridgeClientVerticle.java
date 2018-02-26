@@ -6,8 +6,8 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.*;
 
 /**
@@ -15,7 +15,7 @@ import io.vertx.core.net.*;
  */
 public class EventBusBridgeClientVerticle extends AbstractVerticle implements Handler<AsyncResult<NetSocket>> {
 
-    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeClientVerticle.class);
+    private static Logger logger = LogManager.getLogger(EventBusBridgeClientVerticle.class);
     
     private String address;
     private NetClient netClient;

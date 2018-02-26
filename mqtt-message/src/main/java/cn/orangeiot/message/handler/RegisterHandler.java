@@ -1,13 +1,16 @@
 package cn.orangeiot.message.handler;
 
 import cn.orangeiot.message.handler.client.MailClient;
+import cn.orangeiot.message.handler.client.SMSClient;
+import cn.orangeiot.message.handler.notify.NotifyHandler;
 import cn.orangeiot.reg.EventbusAddr;
+import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -15,14 +18,14 @@ import org.slf4j.LoggerFactory;
  * @Description
  * @date 2017-11-23
  */
-public class RegisterHandler implements EventbusAddr{
+public class RegisterHandler implements EventbusAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(RegisterHandler.class);
+    private static Logger logger = LogManager.getLogger(RegisterHandler.class);
 
     private JsonObject config;
 
     public RegisterHandler(JsonObject config) {
-        this.config=config;
+        this.config = config;
     }
 
     /**
@@ -31,7 +34,7 @@ public class RegisterHandler implements EventbusAddr{
      * @date 17-11-23
      * @version 1.0
      */
-    public void consumer(AsyncResult<Vertx> res){
+    public void consumer(AsyncResult<Vertx> res) {
         if (res.succeeded()) {
             Vertx vertx = res.result();
 
@@ -47,11 +50,20 @@ public class RegisterHandler implements EventbusAddr{
 //            });//发送消息
 
             //注册mailclient
-            MailClient mailClient =new MailClient();
+            MailClient mailClient = new MailClient();
             mailClient.mailConf(vertx);
-            cn.orangeiot.message.handler.msg.MessageHandler msgHandler=new cn.orangeiot.message.handler.msg.MessageHandler(vertx,config);
-            vertx.eventBus().consumer(UserAddr.class.getName()+SMS_CODE,msgHandler::SMSCode);
-            vertx.eventBus().consumer(UserAddr.class.getName()+MAIL_CODE,msgHandler::mailCode);
+            //注册smsclient
+            SMSClient smsClient = new SMSClient();
+            smsClient.smsConf(vertx);
+            //通知相關
+            cn.orangeiot.message.handler.msg.MessageHandler msgHandler = new cn.orangeiot.message.handler.msg.MessageHandler(vertx, config);
+            vertx.eventBus().consumer(UserAddr.class.getName() + SMS_CODE, msgHandler::SMSCode);
+            vertx.eventBus().consumer(UserAddr.class.getName() + MAIL_CODE, msgHandler::mailCode);
+
+            //通知相关
+            NotifyHandler notifyHandler = new NotifyHandler(vertx, config);
+            vertx.eventBus().consumer(MessageAddr.class.getName() + NOTIFY_GATEWAY_USER_ADMIN, notifyHandler::notifyGatewayAdmin);
+            vertx.eventBus().consumer(MessageAddr.class.getName() + REPLY_GATEWAY_USER, notifyHandler::replyGatewayUser);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());

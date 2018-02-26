@@ -3,8 +3,8 @@ package cn.orangeiot.apidao.handler.dao.job;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import io.vertx.core.eventbus.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  */
 public class JobDao {
 
-    private static Logger logger = LoggerFactory.getLogger(JobDao.class);
+    private static Logger logger = LogManager.getLogger(JobDao.class);
 
 
     /**

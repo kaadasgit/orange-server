@@ -6,7 +6,7 @@ package cn.orangeiot.reg.memenet;
  * @Description
  * @date 2018-01-02
  */
-public interface MemenetAddr {
+public interface MemenetAddr{
 
     String REGISTER_USER="registerUser";//MIMI用户注册
 
@@ -16,5 +16,11 @@ public interface MemenetAddr {
 
     String RELIEVE_DEVICE_USER="relieveDeviceByUser";//MIMI用户解除设备绑定
 
+    String DEL_DEVICE_USER="delDeviceByUser";//管理员删除普通用户MIMI解除设备绑定
+
     String DEL_DEVICE="delDevice";//MIMI终端设备删除
+
+    String PRODUCTION_DEVICESN="productionDeviceSN";//生产设备
+
+    String REGISTER_USER_BULK="registerUserBulk";//MIMI用户批量注册
 }

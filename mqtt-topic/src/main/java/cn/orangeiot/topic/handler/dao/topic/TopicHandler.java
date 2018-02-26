@@ -5,8 +5,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ import java.util.Objects;
  */
 public class TopicHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(TopicHandler.class);
+    private static Logger logger = LogManager.getLogger(TopicHandler.class);
 
     private Vertx vertx;
 

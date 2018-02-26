@@ -2,8 +2,8 @@ package cn.orangeiot.mqtt;
 
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
@@ -12,7 +12,7 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
  */
 public class MQTTNetSocketWrapper extends NetSocketWrapper {
 
-    private static Logger logger = LoggerFactory.getLogger(MQTTNetSocketWrapper.class);
+    private static Logger logger = LogManager.getLogger(MQTTNetSocketWrapper.class);
 
     private MQTTEncoder encoder = new MQTTEncoder();
 

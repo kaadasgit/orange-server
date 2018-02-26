@@ -2,15 +2,15 @@ package cn.orangeiot.mqtt;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Created by giova_000 on 29/06/2015.
  */
 public class WebSocketWrapper {
 
-    private static Logger logger = LoggerFactory.getLogger(WebSocketWrapper.class);
+    private static Logger logger = LogManager.getLogger(WebSocketWrapper.class);
 
     private WebSocketBase webSocket;
 

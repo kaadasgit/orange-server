@@ -3,13 +3,14 @@ package cn.orangeiot.mqtt;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.prometheus.PromMetrics;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
+import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
@@ -17,14 +18,17 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
+import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.EXACTLY_ONCE;
+import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.LEAST_ONE;
+import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.MOST_ONE;
 
 /**
  * Created by giovanni on 07/05/2014.
  * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
-public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerListener, Handler<Buffer> {
+public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerListener, Handler<Buffer>, MessageAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(MQTTSocket.class);
+    private static Logger logger = LogManager.getLogger(MQTTSocket.class);
 
     protected Vertx vertx;
     private MQTTDecoder decoder;
@@ -188,10 +192,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 logger.info("==client publish topic:" + publish.getTopicName() + "==payload:" + publish.getPayloadAsString());
 
                 session.handlerPublishMessage(publish, session.getClientID(), rs -> {
-                    if (Objects.nonNull(rs) && Objects.nonNull(rs.getValue("flag"))) {
-                        publishMsg(publish, rs, false);
-                    } else if (Objects.nonNull(rs)) {
-                        publishMsg(publish, rs, true);
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage());
+                    } else {
+                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("flag")))
+                            publishMsg(publish, rs.result(), false);
+                        else if (Objects.nonNull(rs.result()))
+                            publishMsg(publish, rs.result(), true);
                     }
                 });
                 break;
@@ -201,7 +208,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 PubRecMessage pubRec = (PubRecMessage) msg;
                 PubRelMessage prelResp = new PubRelMessage();
                 prelResp.setMessageID(pubRec.getMessageID());
-                prelResp.setQos(QOSType.LEAST_ONE);
+                prelResp.setQos(LEAST_ONE);
                 sendMessageToClient(prelResp);
                 break;
             case PUBREL:
@@ -225,7 +232,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case PINGREQ:
                 session.resetKeepAliveTimer();
                 PingRespMessage pingResp = new PingRespMessage();
-                sendMessageToClient(pingResp);
+//                sendMessageToClient(pingResp);
                 break;
             case DISCONNECT:
                 PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
@@ -285,37 +292,60 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     //qos发送消息
     public void sendMessage() {
-        vertx.eventBus().consumer("cn.orangeiot.message.publish", (Message<JsonObject> rs) -> {
-            sessions.forEach((k, v) -> {
-                PublishMessage publish = new PublishMessage();
-                publish.setTopicName(rs.body().getString("topic"));
-                try {
-                    publish.setPayload(rs.body().getString("msg"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-                switch (rs.body().getInteger("qos")) {
-                    case 0:
+        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_ADMIN_MSG, (Message<JsonObject> rs) -> {
+            PublishMessage publish = new PublishMessage();
+            publish.setTopicName(SEND_USER_REPLAY.replace("clientId", rs.headers().get("uid").replace("app:", "")));
+            try {
+                publish.setPayload(rs.body().toString());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            switch (Integer.parseInt(rs.headers().get("qos"))) {
+                case 0:
+                    if (Objects.nonNull(session)) {
                         session.handlePublishMessage(publish, null);
-                        break;
-                    case 1:
+                    } else {
+                        publish.setQos(MOST_ONE);
+                        publish.setMessageID(1);
+                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, null);
+                    }
+                    break;
+                case 1:
+                    if (Objects.nonNull(session)) {
                         session.handlePublishMessage(publish, permitted -> {
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubAck);
-                            vertx.eventBus().send("cn.orangeiod.message.callBack", rs);//回调
                         });
-                        break;
-                    case 2:
+                    } else {
+                        publish.setQos(LEAST_ONE);
+                        publish.setMessageID(1);
+                        sessions.get(rs.headers().get("uid").indexOf("app") < 0 ? "app:" + rs.headers().get("uid")
+                                : rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
+                            PubAckMessage pubAck = new PubAckMessage();
+                            pubAck.setMessageID(publish.getMessageID());
+                            sendMessageToClient(pubAck);
+                        });
+                    }
+                    break;
+                case 2:
+                    if (Objects.nonNull(session)) {
                         session.handlePublishMessage(publish, permitted -> {
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubRec);
-                            vertx.eventBus().send("cn.orangeiod.message.callBack", rs);//回调
                         });
-                        break;
-                }
-            });
+                    } else {
+                        publish.setQos(EXACTLY_ONCE);
+                        publish.setMessageID(1);
+                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
+                            PubRecMessage pubRec = new PubRecMessage();
+                            pubRec.setMessageID(publish.getMessageID());
+                            sendMessageToClient(pubRec);
+                        });
+                    }
+                    break;
+            }
         });
     }
 

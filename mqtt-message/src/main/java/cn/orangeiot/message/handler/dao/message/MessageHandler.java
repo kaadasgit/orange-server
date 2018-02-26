@@ -7,8 +7,8 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MessageHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
+    private static Logger logger = LogManager.getLogger(MessageHandler.class);
 
     private Vertx vertx;
 

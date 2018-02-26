@@ -1,0 +1,12 @@
+//yun.tim.qq.com  183.61.56.115
+{
+"host":"yun.tim.qq.com",
+"port":443,
+"is_ssl":true,
+"verifyHost":false,
+"trustAll":true,
+"timeout":2000,
+"maxPoolSize":100
+}
+
+

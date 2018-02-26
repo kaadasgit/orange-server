@@ -38,13 +38,23 @@ public enum  ErrorType {
     NOT_BIND(201, "未绑定"),
     BINDED(202, "已绑定"),
     DEV_REGED(409, "设备重复注册"),
-    EXCEPTION(410, "要赋权用户没找到！"),
+    EXCEPTION(401, "要赋权用户没找到！"),
     DEV_REGED_FAIL(411, "要赋权用户没找到！"),
+    NO_ADMIN_FAIL(433, "不是管理员"),
+    USERNAME_INVALID_FAIL(409, "已经存在用户"),
     DEV_REQUEST_FAIL(412,"设备注册失败 重复的记录！"),
     UPDATE_USER_PREMISSION_FAIL(413,"设备注册失败 重复的记录！"),
     VERIFY_CODE_FAIL(445,"无效的随机码"),
     REGISTER_USER_DICT_FAIL(405,"用户重复注册"),
-    UPDATE_NICKNAME_FAIL(601,"修改昵称失敗");
+    UPDATE_NICKNAME_FAIL(601,"修改昵称失敗"),
+    PRODUCTION_DEVICESN_FAIL(991,"生产失败"),
+    NOTIFY_ADMIN_BY_GATEWAY(812,"已经通知管理员确认"),
+    BIND_GATEWAY_FAIL(871,"绑定网关失败"),
+    APPROVAL_FAIL(816,"审批失败"),
+    GET_GATEWAY_BIND_FAIL(819,"获取列表失败"),
+    DATA_MAP_FAIL(436,"数据不是映射关系"),
+    SELECT_DATA_NULL(419,"没有数据，参数不匹配"),
+    REGISTER_USER_BULK_FAIL(567,"批量注册用户失败");
 
     private int key;
 

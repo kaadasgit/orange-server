@@ -4,8 +4,8 @@ import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -17,7 +17,7 @@ import java.util.Objects;
  */
 public class TopicDao {
 
-    private static Logger logger = LoggerFactory.getLogger(TopicDao.class);
+    private static Logger logger = LogManager.getLogger(TopicDao.class);
 
     /**
      * @Description 保存主题

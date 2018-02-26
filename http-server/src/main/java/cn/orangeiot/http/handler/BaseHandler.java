@@ -18,8 +18,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.InputStream;
 import java.util.HashSet;
@@ -41,7 +41,7 @@ public class BaseHandler implements UserAddr {
 
     private List<String> excludePathList;//过滤排除的url路径集合
 
-    private static Logger logger = LoggerFactory.getLogger(BaseHandler.class);
+    private static Logger logger = LogManager.getLogger(BaseHandler.class);
 
     private Vertx vertx;
 
@@ -57,6 +57,7 @@ public class BaseHandler implements UserAddr {
      *
      * @param router
      */
+    @SuppressWarnings("Duplicates")
     public void enableCorsSupport(Router router) {
         allowMethods.add(HttpMethod.GET);
         allowMethods.add(HttpMethod.POST);
@@ -103,6 +104,7 @@ public class BaseHandler implements UserAddr {
     /**
      * 全局异常和超时处理
      */
+    @SuppressWarnings("Duplicates")
     public void ExceptionAndTimeout(Router router) {
         /** 全局异常处理*/
         router.route("/*").failureHandler(failureRoutingContext -> {
@@ -244,6 +246,7 @@ public class BaseHandler implements UserAddr {
     /**
      * 参数是否是jsonObject
      */
+    @SuppressWarnings("Duplicates")
     public boolean paramsIsJsonObject(RoutingContext routingContext, String params) {
         boolean flag = true;
         //验证参数

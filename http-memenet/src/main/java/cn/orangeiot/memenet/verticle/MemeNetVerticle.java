@@ -6,8 +6,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
@@ -24,7 +24,7 @@ import java.io.InputStream;
 @SuppressWarnings("Duplicates")
 public class MemeNetVerticle extends AbstractVerticle{
 
-    private static Logger logger = LoggerFactory.getLogger(MemeNetVerticle.class);
+    private static Logger logger = LogManager.getLogger(MemeNetVerticle.class);
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {

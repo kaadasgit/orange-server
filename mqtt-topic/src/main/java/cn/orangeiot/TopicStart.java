@@ -2,8 +2,8 @@ package cn.orangeiot;
 
 import cn.orangeiot.topic.verticle.TopicVerticle;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class TopicStart {
 
 
-    private static Logger logger = LoggerFactory.getLogger(TopicStart.class);
+    private static Logger logger = LogManager.getLogger(TopicStart.class);
 
     public static void main(String[] args){
         Vertx.vertx().deployVerticle(TopicVerticle.class.getName(), rs->{

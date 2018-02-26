@@ -6,8 +6,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -16,7 +16,7 @@ import io.vertx.core.logging.LoggerFactory;
  * @date 2017-12-11
  */
 public class UserHandler implements UserAddr {
-    private static Logger logger = LoggerFactory.getLogger(UserHandler.class);
+    private static Logger logger = LogManager.getLogger(UserHandler.class);
 
 
     private Vertx vertx;

@@ -43,6 +43,13 @@
             <artifactId>vertx-mail-client</artifactId>
             <version>${vertx.version}</version>
         </dependency>
+
+        <!--vertx webClient配置-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -62,7 +69,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>cn.orangeiot.message.handler.client.MailClient</mainClass>
+                                    <mainClass>cn.orangeiot.MessageStart</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -70,5 +77,15 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.json</include>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>

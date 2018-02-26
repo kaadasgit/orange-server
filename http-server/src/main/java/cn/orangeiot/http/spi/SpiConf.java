@@ -4,6 +4,7 @@ import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.http.handler.BaseHandler;
 import cn.orangeiot.http.handler.file.FileHandler;
 import cn.orangeiot.http.handler.lock.LockHandler;
+import cn.orangeiot.http.handler.mac.MacHandler;
 import cn.orangeiot.http.handler.message.MessageHandler;
 import cn.orangeiot.http.handler.user.UserHandler;
 import io.vertx.core.AsyncResult;
@@ -17,8 +18,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +31,7 @@ import java.io.InputStream;
  * @date 2017-12-08
  */
 public class SpiConf {
-    private static Logger logger = LoggerFactory.getLogger(SpiConf.class);
+    private static Logger logger = LogManager.getLogger(SpiConf.class);
 
     private JsonObject configJson;
 
@@ -91,7 +92,7 @@ public class SpiConf {
 
 
             //TODO 锁相关
-            LockHandler lockHandler=new LockHandler(vertx.eventBus(),configJson);
+            LockHandler lockHandler = new LockHandler(vertx.eventBus(), configJson);
             router.post(ApiConf.CREATE_ADMIN_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::createAdminDev);
             router.post(ApiConf.DELETE_EVEND_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::deletevendorDev);
             router.post(ApiConf.DELETE_ADMIN_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::deleteAdminDev);
@@ -109,6 +110,10 @@ public class SpiConf {
             router.post(ApiConf.CHECK_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::checkAdmindev);
             router.post(ApiConf.UPLOAD_OPEN_LOCK_RECORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::uploadOpenLockList);
 
+            //mac地址相关
+            MacHandler macHandler = new MacHandler(vertx.eventBus(), configJson);
+            router.post(ApiConf.MODEL_PWD_BY_MAC).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(macHandler::getMacAddr);
+
             createHttpServer();//创建httpServer
         } else {
             // failed!
@@ -123,6 +128,7 @@ public class SpiConf {
      * @date 17-12-8
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void createHttpServer() {
         InputStream jksIn = SpiConf.class.getResourceAsStream("/server.jks");
         Buffer buffer = null;
@@ -147,6 +153,7 @@ public class SpiConf {
      * @date 17-12-8
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void loadClusting() {
         InputStream zkIn = SpiConf.class.getResourceAsStream("/zkConf.json");
         InputStream configIn = SpiConf.class.getResourceAsStream("/config.json");//全局配置

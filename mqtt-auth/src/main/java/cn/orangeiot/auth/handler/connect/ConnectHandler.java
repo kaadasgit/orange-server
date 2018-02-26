@@ -6,8 +6,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 public class ConnectHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(ConnectHandler.class);
+    private static Logger logger = LogManager.getLogger(ConnectHandler.class);
 
 
     private Vertx vertx;

@@ -9,8 +9,8 @@ import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -20,7 +20,7 @@ import io.vertx.core.logging.LoggerFactory;
  */
 public class RegisterHandler implements EventbusAddr{
 
-    private static Logger logger = LoggerFactory.getLogger(RegisterHandler.class);
+    private static Logger logger = LogManager.getLogger(RegisterHandler.class);
 
     private JsonObject config;
 
@@ -45,15 +45,17 @@ public class RegisterHandler implements EventbusAddr{
 
 
             //用户相关
-            UserHandler userHandler=new UserHandler(config);
+            UserHandler userHandler=new UserHandler(config,vertx);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER,userHandler::onRegisterUser);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+UPDATE_PWD,userHandler::onUpdatePwd);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER_BULK,userHandler::onRegisterUserBulk);
 
             //设备相关
-            DeviceHandler deviceHandler=new DeviceHandler(config);
+            DeviceHandler deviceHandler=new DeviceHandler(config,vertx);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+BIND_DEVICE_USER,deviceHandler::onBindDeviceByUser);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+RELIEVE_DEVICE_USER,deviceHandler::onRelieveDeviceByUser);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+DEL_DEVICE,deviceHandler::onDelDevice);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+DEL_DEVICE_USER,deviceHandler::onDelGatewayByUser);
         } else {
             // failed!
             logger.fatal(res.cause().getMessage(), res.cause());

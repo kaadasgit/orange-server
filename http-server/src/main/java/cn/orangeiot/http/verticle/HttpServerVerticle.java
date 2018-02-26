@@ -3,8 +3,8 @@ package cn.orangeiot.http.verticle;
 import cn.orangeiot.http.spi.SpiConf;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 public class HttpServerVerticle extends AbstractVerticle {
 
 
-    private static Logger logger = LoggerFactory.getLogger(HttpServerVerticle.class);
+    private static Logger logger = LogManager.getLogger(HttpServerVerticle.class);
 
 
     @Override

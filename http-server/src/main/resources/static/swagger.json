@@ -71,6 +71,14 @@
         "description": "Find out more about our store",
         "url": "http://swagger.io"
       }
+    },
+    {
+      "name": "mac",
+      "description": "mac地址相关",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
     }
   ],
   "schemes": [
@@ -252,7 +260,7 @@
         }
       }
     },
-    "/user/reg/putuserbymail": {
+    "/user/reg/putuserbyemail": {
       "post": {
         "tags": [
           "user"
@@ -1256,6 +1264,47 @@
           }
         }
       }
+    },
+    "/model/getpwdBymac": {
+      "post": {
+        "tags": [
+          "mac"
+        ],
+        "summary": "根据mac地址根据password1",
+        "description": "",
+        "operationId": "getpwdBymac",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getpwdBymac"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1931,6 +1980,18 @@
         "user_num": {
           "type": "string",
           "description": "开锁编号"
+        }
+      }
+    },
+    "getpwdBymac": {
+      "type": "object",
+      "required": [
+        "mac"
+      ],
+      "properties": {
+        "mac": {
+          "type": "string",
+          "description": "模块mac地址"
         }
       }
     }

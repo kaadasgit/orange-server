@@ -11,8 +11,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -41,7 +41,7 @@ public abstract class BaseService {
      */
     @SuppressWarnings("Duplicates")
     public void send(String addr, JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
-        vertx.eventBus().send(addr, jsonObject, SendOptions.getInstance(), (AsyncResult<Message<Object>> rs) -> {
+        vertx.eventBus().send(addr, jsonObject, SendOptions.getInstance(),(AsyncResult<Message<Object>> rs) -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
             } else {

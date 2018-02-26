@@ -3,13 +3,14 @@ package cn.orangeiot.http.handler.message;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -21,7 +22,7 @@ import java.util.Objects;
  */
 public class MessageHandler implements UserAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
+    private static Logger logger = LogManager.getLogger(MessageHandler.class);
 
 
     private EventBus eventBus;
@@ -44,8 +45,8 @@ public class MessageHandler implements UserAddr {
     public void sendSMS(RoutingContext routingContext) {
         logger.info("==UserHandler=sendSMS==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", String.class.getName())
-                .put("code", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
+                .put("code", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -79,7 +80,7 @@ public class MessageHandler implements UserAddr {
     public void sendMail(RoutingContext routingContext) {
         logger.info("==UserHandler=sendMail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", String.class.getName())
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
                 , asyncResult -> {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);

@@ -1,8 +1,8 @@
 package cn.orangeiot.mqtt.security;
 
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 
 import javax.naming.InvalidNameException;
@@ -19,7 +19,7 @@ import java.io.FileNotFoundException;
  */
 public class CertInfo {
 
-    private static Logger logger = LoggerFactory.getLogger(CertInfo.class);
+    private static Logger logger = LogManager.getLogger(CertInfo.class);
 
     private X509Certificate[] certs;
 

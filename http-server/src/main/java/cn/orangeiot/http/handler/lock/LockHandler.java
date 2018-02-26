@@ -3,6 +3,7 @@ package cn.orangeiot.http.handler.lock;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import io.vertx.core.AsyncResult;
@@ -11,8 +12,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -24,7 +25,7 @@ import java.util.Objects;
  */
 public class LockHandler implements AdminlockAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(LockHandler.class);
+    private static Logger logger = LogManager.getLogger(LockHandler.class);
 
     private EventBus eventBus;
 
@@ -46,8 +47,8 @@ public class LockHandler implements AdminlockAddr {
     public void createAdminDev(RoutingContext routingContext) {
         logger.info("==LockHandler=createAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devmac", String.class.getName())
-                .put("devname", String.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devmac", DataType.STRING)
+                .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -61,8 +62,12 @@ public class LockHandler implements AdminlockAddr {
                                     result.setData(null);
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
-                                    result.setErrorMessage(ErrorType.DEV_REGED.getKey(), ErrorType.DEV_REGED.getValue());
-                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                    if (!rs.result().headers().isEmpty())
+                                        routingContext.response().end(JsonObject.mapFrom(
+                                                result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg"))).toString());
+                                    else
+                                        routingContext.response().end(JsonObject.mapFrom(
+                                                result.setErrorMessage(ErrorType.DEV_REGED.getKey(), ErrorType.DEV_REGED.getValue())).toString());
                                 }
                             }
                         });
@@ -81,8 +86,8 @@ public class LockHandler implements AdminlockAddr {
     public void deletevendorDev(RoutingContext routingContext) {
         logger.info("==LockHandler=deletevendorDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("adminid", String.class.getName())
-                .put("devname", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("adminid", DataType.STRING)
+                .put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -109,8 +114,8 @@ public class LockHandler implements AdminlockAddr {
     public void deleteAdminDev(RoutingContext routingContext) {
         logger.info("==LockHandler=deleteAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", String.class.getName())
-                .put("adminid", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
+                .put("adminid", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -137,8 +142,8 @@ public class LockHandler implements AdminlockAddr {
     public void deleteNormalDev(RoutingContext routingContext) {
         logger.info("==LockHandler=deleteNormalDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("dev_username", String.class.getName())
-                .put("adminid", String.class.getName()).put("devname", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("dev_username", DataType.STRING)
+                .put("adminid", DataType.STRING).put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -166,11 +171,11 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=createNormalDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("admin_id", String.class.getName()).put("device_username", String.class.getName())
-                .put("devicemac", String.class.getName()).put("devname", String.class.getName())
-                .put("end_time", String.class.getName()).put("lockNickName", String.class.getName())
-                .put("open_purview", String.class.getName()).put("start_time", String.class.getName())
-                .put("items", JsonArray.class.getName()), asyncResult -> {
+                .put("admin_id", DataType.STRING).put("device_username", DataType.STRING)
+                .put("devicemac", DataType.STRING).put("devname", DataType.STRING)
+                .put("end_time", DataType.STRING).put("lockNickName", DataType.STRING)
+                .put("open_purview", DataType.STRING).put("start_time", DataType.STRING)
+                .put("items", DataType.JSONARRAY), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -205,8 +210,8 @@ public class LockHandler implements AdminlockAddr {
     public void downloadOpenLocklist(RoutingContext routingContext) {
         logger.info("==LockHandler=downloadOpenLocklist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("pagenum", String.class.getName())
-                .put("device_name", String.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("pagenum", DataType.STRING)
+                .put("device_name", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -232,10 +237,10 @@ public class LockHandler implements AdminlockAddr {
     public void updateNormalDevlock(RoutingContext routingContext) {
         logger.info("==LockHandler=updateNormalDevlock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("admin_id", String.class.getName())
-                .put("dateend", String.class.getName()).put("datestart", String.class.getName())
-                .put("dev_username", String.class.getName()).put("devname", String.class.getName())
-                .put("items", JsonArray.class.getName()).put("open_purview", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("admin_id", DataType.STRING)
+                .put("dateend", DataType.STRING).put("datestart", DataType.STRING)
+                .put("dev_username", DataType.STRING).put("devname", DataType.STRING)
+                .put("items", DataType.JSONARRAY).put("open_purview", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -270,9 +275,9 @@ public class LockHandler implements AdminlockAddr {
     public void adminOpenLock(RoutingContext routingContext) {
         logger.info("==LockHandler=adminOpenLock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", String.class.getName())
-                .put("is_admin", String.class.getName()).put("open_type", String.class.getName())
-                .put("user_id", String.class.getName()), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
+                .put("is_admin", DataType.STRING).put("open_type", DataType.STRING)
+                .put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -307,7 +312,7 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=getAdminDevlist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("user_id", String.class.getName()), asyncResult -> {
+                .put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -316,7 +321,10 @@ public class LockHandler implements AdminlockAddr {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
-                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(rs.result().body())).toString());
+                                routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>().setData(
+                                        rs.result().body())).toString().replaceAll("lockName", "device_name")
+                                        .replaceAll("lockNickName", "device_nickname")
+                                        .replaceAll("macLock", "devmac"));
                             }
                         });
             }
@@ -334,7 +342,7 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=getNormalDevlist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("devname", String.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+                .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -362,10 +370,10 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=editAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("center_latitude", String.class.getName()).put("center_longitude", String.class.getName())
-                .put("circle_radius", String.class.getName()).put("devmac", String.class.getName())
-                .put("devname", String.class.getName()).put("edge_latitude", String.class.getName())
-                .put("edge_longitude", String.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+                .put("center_latitude", DataType.STRING).put("center_longitude", DataType.STRING)
+                .put("circle_radius", DataType.STRING).put("devmac", DataType.STRING)
+                .put("devname", DataType.STRING).put("edge_latitude", DataType.STRING)
+                .put("edge_longitude", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -392,7 +400,7 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=getAdminDevlocklongtitude==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("devname", String.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+                .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -419,8 +427,8 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=updateAdminDevAutolock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("auto_lock", String.class.getName()).put("user_id", String.class.getName())
-                .put("devname", String.class.getName()), asyncResult -> {
+                .put("auto_lock", DataType.STRING).put("user_id", DataType.STRING)
+                .put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -448,8 +456,8 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=updateAdminlockNickName==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("lockNickName", String.class.getName()).put("user_id", String.class.getName())
-                .put("devname", String.class.getName()), asyncResult -> {
+                .put("lockNickName", DataType.STRING).put("user_id", DataType.STRING)
+                .put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -476,7 +484,7 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=checkAdmindev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("user_id", String.class.getName()).put("devname", String.class.getName()), asyncResult -> {
+                .put("user_id", DataType.STRING).put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -505,8 +513,8 @@ public class LockHandler implements AdminlockAddr {
         logger.info("==LockHandler=uploadOpenLockList==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
-                .put("device_name", String.class.getName()).put("device_nickname", String.class.getName())
-                .put("openLockList", JsonArray.class.getName()).put("user_id", String.class.getName()), asyncResult -> {
+                .put("device_name", DataType.STRING).put("device_nickname", DataType.STRING)
+                .put("openLockList", DataType.JSONARRAY).put("user_id", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {

@@ -17,8 +17,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 public class FileHandler implements EventbusAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(FileHandler.class);
+    private static Logger logger = LogManager.getLogger(FileHandler.class);
 
 
     private Vertx vertx;

@@ -6,8 +6,8 @@ import cn.orangeiot.mqtt.MQTTNetSocketWrapper;
 import cn.orangeiot.mqtt.NetSocketWrapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 public class EventBusNetBridge {
 
-    private static Logger logger = LoggerFactory.getLogger(EventBusNetBridge.class);
+    private static Logger logger = LogManager.getLogger(EventBusNetBridge.class);
 
     private static final String BR_HEADER = "bridged";
 

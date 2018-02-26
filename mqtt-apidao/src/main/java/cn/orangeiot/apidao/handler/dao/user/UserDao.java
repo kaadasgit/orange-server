@@ -4,19 +4,31 @@ import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import cn.orangeiot.common.genera.ErrorType;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.KdsCreateMD5;
 import cn.orangeiot.common.utils.SHA1;
+import cn.orangeiot.common.utils.UUIDUtils;
+import cn.orangeiot.reg.memenet.MemenetAddr;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTOptions;
+import io.vertx.ext.mongo.BulkOperation;
+import io.vertx.ext.mongo.FindOptions;
+import io.vertx.ext.mongo.UpdateOptions;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author zhang bo
@@ -24,15 +36,17 @@ import java.util.Objects;
  * @Description
  * @date 2017-12-07
  */
-public class UserDao extends SynchUserDao {
+public class UserDao extends SynchUserDao implements MemenetAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(UserDao.class);
-
+    private static Logger logger = LogManager.getLogger(UserDao.class);
 
     private JWTAuth jwtAuth;
 
-    public UserDao(JWTAuth jwtAuth) {
+    private Vertx vertx;
+
+    public UserDao(JWTAuth jwtAuth, Vertx vertx) {
         this.jwtAuth = jwtAuth;
+        this.vertx = vertx;
     }
 
     /**
@@ -51,7 +65,7 @@ public class UserDao extends SynchUserDao {
                 message.reply(false);
             } else {
                 int flag = Objects.nonNull(message.body().getString("clientId")) ? message.body().getString("clientId").indexOf(":") : 0;//验证标识
-                String pwd = flag == 2 ? SHA1.encode(message.body().getString("password")) : message.body().getString("password");
+                String pwd = message.body().getString("password");
 
                 if (Objects.nonNull(rs.result()) && pwd.equals(rs.result())) {
                     message.reply(true);
@@ -147,7 +161,8 @@ public class UserDao extends SynchUserDao {
     public void telLogin(Message<JsonObject> message) {
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel")), new JsonObject()
-                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1), res -> {
+                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
+                .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
             if (res.failed()) {
                 res.cause().printStackTrace();
             } else {
@@ -175,7 +190,8 @@ public class UserDao extends SynchUserDao {
     public void mailLogin(Message<JsonObject> message) {
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userMail", message.body().getString("mail")), new JsonObject()
-                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1), res -> {
+                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
+                .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
             if (res.failed()) {
                 res.cause().printStackTrace();
             } else {
@@ -230,7 +246,7 @@ public class UserDao extends SynchUserDao {
             } else {
                 if (Objects.nonNull(rs.result()) && rs.result().equals(message.body().getString("tokens"))) {//验证码验证通过
                     MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                            , new JsonObject().put("_id", ""), as -> {//是否已经注册
+                            , new JsonObject().put("_id", 1), as -> {//是否已经注册
                                 if (as.failed()) {
                                     as.cause().printStackTrace();
                                 } else {
@@ -286,7 +302,8 @@ public class UserDao extends SynchUserDao {
                     jwts[1], rs -> {
                         if (rs.failed()) rs.cause().printStackTrace();
                     });
-            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1]));
+            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
+                    .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
             if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
                 onSynchUserInfo(jsonObject);
             }
@@ -305,7 +322,7 @@ public class UserDao extends SynchUserDao {
      */
     @SuppressWarnings("Duplicates")
     public void getNickname(Message<JsonObject> message) {
-        logger.info("==UserDao=getNickname==params->"+message.body().toString());
+        logger.info("==UserDao=getNickname==params->" + message.body().toString());
         RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), ars -> {
             if (ars.failed()) {
                 ars.cause().printStackTrace();
@@ -399,6 +416,9 @@ public class UserDao extends SynchUserDao {
                                         } else {
                                             if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
                                                 message.reply(new JsonObject());
+                                                onSynchUpdateUserInfo(new JsonObject().put("userPwd", KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
+                                                        jsonObject.getString("pwdSalt") + message.body().getString("newpwd"))))
+                                                        .put("uid", message.body().getString("uid")));
                                             } else {
                                                 message.reply(null);
                                             }
@@ -415,6 +435,8 @@ public class UserDao extends SynchUserDao {
                                         } else {
                                             if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
                                                 message.reply(new JsonObject());
+                                                onSynchUpdateUserInfo(new JsonObject().put("userPwd", SHA1.encode(message.body().getString("newpwd")))
+                                                        .put("uid", message.body().getString("uid")));
                                             } else {
                                                 message.reply(null);
                                             }
@@ -453,7 +475,7 @@ public class UserDao extends SynchUserDao {
                     }
                     String finalField = field;
                     MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name")),
-                            new JsonObject().put("pwdSalt", "").put("_id", 0), mrs -> {
+                            new JsonObject().put("pwdSalt", "").put("_id", 1), mrs -> {
                                 if (mrs.failed()) {
                                     mrs.cause().printStackTrace();
                                 } else {
@@ -476,14 +498,17 @@ public class UserDao extends SynchUserDao {
                                                         message.reply(null);
                                                     }
                                                 });
+                                        onSynchUpdateUserInfo(new JsonObject().put("userPwd", pwd).put("uid", mrs.result().getString("_id")));
                                     } else {
-                                        message.reply(null);
+                                        message.reply(null, new DeliveryOptions().addHeader("code",
+                                                String.valueOf(ErrorType.RESULT_CODE_FAIL.getKey())).addHeader("msg", ErrorType.RESULT_CODE_FAIL.getValue()));
                                     }
 
                                 }
                             });
                 } else {
-                    message.reply(null);
+                    message.reply(null, new DeliveryOptions().addHeader("code",
+                            String.valueOf(ErrorType.VERIFY_CODE_FAIL.getKey())).addHeader("msg", ErrorType.VERIFY_CODE_FAIL.getValue()));
                 }
             }
         });
@@ -524,4 +549,152 @@ public class UserDao extends SynchUserDao {
         });//清除缓存打用户信息
         message.reply(new JsonObject());
     }
+
+
+    /**
+     * @Description 米米网同步用户
+     * @author zhang bo
+     * @date 18-1-12
+     * @version 1.0
+     */
+    public void meMeUser(Message<JsonObject> message) {
+        //同步緩存
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+            if (rs.failed()) {
+                rs.cause().printStackTrace();
+            } else {
+                if (Objects.nonNull(rs.result()))
+                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid"),
+                            new JsonObject(rs.result()).put("meUsername", message.body().getString("username"))
+                                    .put("mePwd", message.body().getString("password"))
+                                    .put("userid", message.body().getLong("userid")).toString(), as -> {
+                                if (as.failed()) as.cause().printStackTrace();
+                            });
+            }
+        });
+        //同步db
+        MongoClient.client.updateCollectionWithOptions("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
+                , new JsonObject().put("$set", new JsonObject().put("meUsername", message.body().getString("username"))
+                        .put("mePwd", message.body().getString("password")).put("userid", message.body().getLong("userid")))
+                , new UpdateOptions().setUpsert(true), rs -> {
+                    if (rs.failed()) rs.cause().printStackTrace();
+                });
+    }
+
+
+    /**
+     * @Description 米米网用户批量注册
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    public void meMeUserBulk(Message<JsonObject> message) {
+        MongoClient.client.count("kdsUser", new JsonObject().put("userid", new JsonObject().put("$exists", false))
+                , rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(rs.result()) && rs.result() > 0) {//存在未注册的用户
+                            boolean flag = rs.result() % 100 == 0 ? true : false;//是否是倍数
+                            Long num = rs.result() / 100;//次数
+                            if (flag) {
+                                bulkRequestRegister(num, 100L);
+                                message.reply(new JsonObject());
+                            } else {
+                                bulkRequestRegister(num, 100L);
+                                Long endTotal = rs.result() - 100 * num;//100倍数的余数
+                                bulkRequestRegister(1L, endTotal);//餘下一次
+                                message.reply(new JsonObject());
+                            }
+                        } else {
+                            message.reply(new JsonObject());
+                        }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 批量请求注册 涕归
+     * @author zhang bo
+     * @date 18-1-27
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public boolean bulkRequestRegister(Long num, Long count) {
+        if (num == 0) {
+            return true;
+        } else {
+            Future.<List<JsonObject>>future(f -> MongoClient.client.findWithOptions("kdsUser", new JsonObject().put("userid"
+                    , new JsonObject().put("$exists", false)), new FindOptions().setFields(new JsonObject().put("_id", 1))
+                    .setLimit(count.intValue()), f))
+                    .compose(users -> {//异步处理数据
+                        if (Objects.nonNull(users) && users.size() > 0) {//用户id
+                            List<BulkOperation> bulkOperations = new ArrayList<>();
+                            JsonArray jsonArray = new JsonArray();//用户信息集合
+                            for (int j = 0; j < count; j++) {//最大100次
+                                String username = UUIDUtils.getUUID();
+                                String password = UUIDUtils.getUUID();
+                                jsonArray.add(new JsonObject().put("username", username).put("password", password));
+                                //批量處理
+                                JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                                        .put("filter", new JsonObject().put("_id", new JsonObject().put("$oid", users.get(j).getString("_id"))))
+                                        .put("document", new JsonObject().put("$set",
+                                                new JsonObject().put("meUsername", username).put("mePwd", password)))
+                                        .put("upsert", true).put("multi", false);
+                                bulkOperations.add(new BulkOperation(params));
+                            }
+                            return Future.<Map<String, Object>>future(f -> f.complete(new HashMap<String, Object>() {{
+                                put("jsonList", jsonArray);
+                                put("bulks", bulkOperations);
+                            }}));
+                        } else {
+                            return Future.future(f -> f.fail("null data"));
+                        }
+                    }).compose(f ->//异步请求第三方接口
+                    Future.<List<BulkOperation>>future(fu -> vertx.eventBus().send(MemenetAddr.class.getName() + REGISTER_USER_BULK, new JsonArray(f.get("jsonList").toString())
+                            , (AsyncResult<Message<JsonObject>> as) -> {
+                                if (as.failed()) {
+                                    as.cause().printStackTrace();
+                                    Future.future(e -> e.fail("request ===result ->  error"));
+                                } else {
+                                    JsonObject jsonObject = as.result().body().getJsonArray("results").getJsonObject(0);
+                                    JsonArray results = as.result().body().getJsonArray("results");
+                                    if (jsonObject.getInteger("result") == 0) {//成功
+                                        logger.info("=========success============" + jsonObject.toString());
+                                        List<BulkOperation> bulkOperations = ((List<BulkOperation>) f.get("bulks"));
+                                        bulkOperations.forEach(e -> {
+                                            Long userid = results.stream().filter(r -> new JsonObject(r.toString()).getString("username")
+                                                    .equals(e.getDocument().getJsonObject("$set").getString("meUsername")))
+                                                    .map(uid -> new JsonObject(uid.toString()).getLong("userid")).findFirst().orElse(null);
+                                            if (Objects.nonNull(userid))
+                                                e.getDocument().getJsonObject("$set").put("userid", userid);
+                                        });
+                                        fu.complete(bulkOperations);
+                                    } else {
+                                        logger.error("=========error============" + jsonObject.toString());
+                                        fu.fail("request ===result ->  error");
+                                    }
+                                }
+                            }))
+            ).setHandler(f -> {//接口返回处理
+                if (f.failed()) {
+                    f.cause().printStackTrace();
+                } else {
+                    //修改用户数据
+                    MongoClient.client.bulkWrite("kdsUser", f.result(), ars -> {
+                        if (ars.failed()) {
+                            ars.cause().printStackTrace();
+                        } else {
+                            logger.info("=========mongoBulk============" + JsonObject.mapFrom(ars.result()).toString());
+                            bulkRequestRegister(num - 1, count);
+                        }
+                    });
+                }
+            });
+        }
+        return false;
+    }
+
 }

@@ -4,7 +4,7 @@
     <Appenders>
         <!--控制台输出-->
         <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n" />
         </Console>
         <!--按天分日志文件-->
         <!--<RollingFile name="RollingFile" fileName="/home/linuxzhangbo/test/server-log.log"-->
@@ -28,8 +28,8 @@
             <!--<AppenderRef ref="RollingFile"/>-->
         <!--</AsyncLogger>-->
         <!--配置日志的根节点-->
-        <Root level="all">
-            <AppenderRef ref="Console"/>
+        <Root level="info">
+            <AppenderRef ref="Console" />
         </Root>
     </Loggers>
 </Configuration>

@@ -1,8 +1,8 @@
 package cn.orangeiot.mqtt;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -10,7 +10,7 @@ import io.vertx.core.net.NetSocket;
  */
 public class NetSocketWrapper {
 
-    private static Logger logger = LoggerFactory.getLogger(NetSocketWrapper.class);
+    private static Logger logger = LogManager.getLogger(NetSocketWrapper.class);
 
     private NetSocket netSocket;
 

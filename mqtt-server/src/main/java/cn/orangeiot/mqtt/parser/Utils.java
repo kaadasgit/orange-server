@@ -3,8 +3,8 @@ package cn.orangeiot.mqtt.parser;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.CorruptedFrameException;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
 import java.io.UnsupportedEncodingException;
@@ -15,7 +15,7 @@ import java.io.UnsupportedEncodingException;
  */
 public class Utils {
 
-    private static Logger logger = LoggerFactory.getLogger(Utils.class);
+    private static Logger logger = LogManager.getLogger(Utils.class);
 
     public static final int MAX_LENGTH_LIMIT = 268435455;
 

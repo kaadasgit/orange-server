@@ -2,19 +2,18 @@ package cn.orangeiot.message.handler.msg;
 
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.KdsCreateRandom;
+import cn.orangeiot.common.utils.SHA256;
 import cn.orangeiot.message.handler.client.MailClient;
-import cn.orangeiot.message.sms.SmsSingleSender;
-import cn.orangeiot.message.sms.SmsSingleSenderResult;
+import cn.orangeiot.message.handler.client.SMSClient;
 import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * @author zhang bo
@@ -24,7 +23,7 @@ import java.util.ArrayList;
  */
 public class MessageHandler implements MessageAddr {
 
-    private static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
+    private static Logger logger = LogManager.getLogger(MessageHandler.class);
 
     private Vertx vertx;
 
@@ -51,41 +50,44 @@ public class MessageHandler implements MessageAddr {
                 if (ars.result().body()) {
                     message.reply(new JsonObject());
                     //请求tx短信验证码同步快不是异步请求代码
-                    vertx.executeBlocking(rs -> {
-                        String tokens = KdsCreateRandom.createRandom(6);
+                    String tokens = KdsCreateRandom.createRandom(6);//验证码
+                    vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel", message.body().getString("tel"))
+                            .put("verifyCode", tokens));//缓存验证码
+                    //请求参数
+                    String appid = config.getString("appid");//appiid
+                    String appkey = config.getString("appkey");//appkey
+                    String random = KdsCreateRandom.createRandom(10);//随机数
+                    Long time = System.currentTimeMillis() / 1000;//时间戳
+                    int tpl_id;
+                    if (message.body().getString("code").equals("86")) {//地区限制
+                        tpl_id = config.getInteger("tmplcnId");//国内模板id
 
-                        vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel", message.body().getString("tel"))
-                                .put("verifyCode", tokens));//缓存验证码
-
-                        //请根据实际 appid 和 appkey 进行开发，以下只作为演示 sdk 使用
-                        int appid = config.getInteger("appid");
-                        String appkey = config.getString("appkey");
-
-                        int tmplcnId = config.getInteger("tmplcnId");
-                        int tmpworldId = config.getInteger("tmpworldId");
-                        try {
-                            SmsSingleSender singleSender = new SmsSingleSender(appid, appkey);
-                            SmsSingleSenderResult singleSenderResult;
-                            String code = message.body().getString("code");
-                            if (code.equals("86")) {//地区限制
-                                ArrayList<String> params = new ArrayList<>();
-                                params.add(tokens);
-                                singleSenderResult = singleSender.sendWithParam(code, message.body().getString("tel"), tmplcnId, params, "", "", "");
-                                logger.info("====MessageHandler=SMSCode==sendResult==return -> " + singleSenderResult);
-                            } else {
-                                ArrayList<String> params = new ArrayList<>();
-                                params.add(tokens);
-
-                                singleSenderResult = singleSender.sendWithParam(code, message.body().getString("tel"), tmpworldId, params, "", "", "");
-                                logger.info("====MessageHandler=SMSCode==sendResult==return -> " + singleSenderResult);
-                            }
-                            rs.complete(singleSenderResult);
-                        } catch (Exception e) {
-                            rs.fail(e);
-                        }
-                    }, asyncResult -> {
-                        if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                    } else {
+                        tpl_id = config.getInteger("tmpworldId");//国外模板id
+                    }
+                    //sha256签名
+                    SHA256.getSHA256Str("appkey=APPKEY&random=RANDOM&time=TIME&mobile=MOBILE"
+                            .replace("APPKEY", appkey).replace("RANDOM"
+                                    , random).replace("TIME", time.toString()).replace("MOBILE", message.body().getString("tel")), rs -> {
+                        if (rs.failed()) {
+                            rs.cause().printStackTrace();
+                        } else {
+                            JsonObject jsonObject = new JsonObject();
+                            logger.info("====MessageHandler=SMSCode==sendResult==params ->tel= {},nationcode = {}", message.body().getString("tel")
+                                    , message.body().getString("code"));
+                            jsonObject.put("tel", new JsonObject().put("nationcode", message.body().getString("code")).put("mobile", message.body().getString("tel")))
+                                    .put("tpl_id", tpl_id).put("params", new JsonArray().add(tokens))
+                                    .put("sig", rs.result()).put("time", time).put("extend", "").put("ext", "");
+                            SMSClient.client.post("/v5/tlssmssvr/sendsms")
+                                    .addQueryParam("sdkappid", appid)
+                                    .addQueryParam("random", random)
+                                    .sendJsonObject(jsonObject, qrs -> {
+                                        if (qrs.failed()) {
+                                            qrs.cause().printStackTrace();
+                                        } else {
+                                            logger.info("====MessageHandler=SMSCode==sendResult==return -> " + qrs.result().body());
+                                        }
+                                    });
                         }
                     });
                 } else {

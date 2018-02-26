@@ -5,8 +5,8 @@ import cn.orangeiot.apidao.conf.Constant;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ import java.util.Objects;
  */
 public class MessageDao {
 
-    private static Logger logger = LoggerFactory.getLogger(MessageDao.class);
+    private static Logger logger = LogManager.getLogger(MessageDao.class);
 
     /**
      * @Description 存储用户离线消息

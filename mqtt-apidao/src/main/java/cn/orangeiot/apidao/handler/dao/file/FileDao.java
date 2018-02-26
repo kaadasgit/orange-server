@@ -3,8 +3,8 @@ package cn.orangeiot.apidao.handler.dao.file;
 import cn.orangeiot.apidao.client.MongoClient;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Objects;
 
@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 public class FileDao {
 
-    private static Logger logger = LoggerFactory.getLogger(FileDao.class);
+    private static Logger logger = LogManager.getLogger(FileDao.class);
 
 
     /**

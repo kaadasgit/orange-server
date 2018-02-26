@@ -1,15 +1,15 @@
 package cn.orangeiot.mqtt.security.impl;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Created by giova_000 on 15/10/2015.
  */
 public abstract class AuthenticatorVerticle extends AbstractVerticle {
 
-    protected Logger logger = LoggerFactory.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public void start() throws Exception {
