@@ -2,13 +2,9 @@ package cn.orangeiot.sip;
 
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.handler.PorcessHandler;
-import cn.orangeiot.sip.proto.codec.MsgParserDecode;
-import gov.nist.javax.sip.message.SIPRequest;
-import gov.nist.javax.sip.message.SIPResponse;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Log4JLoggerFactory;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
@@ -20,9 +16,6 @@ import org.apache.logging.log4j.Logger;
 import javax.sip.address.AddressFactory;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
-import javax.sip.message.Response;
-import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Objects;
 
 
@@ -46,7 +39,9 @@ public class SipVertxFactory {
 
     private static DatagramSocket socket = null;
 
-    public Vertx vertx;
+    private static Vertx vertx;
+
+    private static JsonObject config;
 
     public static synchronized SipVertxFactory getInstance() {
         if (myFactory == null) {
@@ -55,6 +50,13 @@ public class SipVertxFactory {
         return myFactory;
     }
 
+    public static Vertx getVertx() {
+        return vertx;
+    }
+
+    public static JsonObject getConfig() {
+        return config;
+    }
 
     /**
      * @Description 获取udp实例
@@ -79,6 +81,7 @@ public class SipVertxFactory {
         Objects.requireNonNull(var3);
         Objects.requireNonNull(jsonObject);
         this.vertx = vertx;
+        this.config = jsonObject;
         switch (var3) {
             case TCP://TCP服务器
                 InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);

@@ -36,12 +36,9 @@ public class RegisterHandler {
 
     private MessageFactory msgFactory;
 
-    private Map<String, URI> currUser;
-
-    public RegisterHandler(Map<String, Object> pool, MessageFactory msgFactory, Map<String, URI> currUser) {
+    public RegisterHandler(Map<String, Object> pool, MessageFactory msgFactory) {
         this.pool = pool;
         this.msgFactory = msgFactory;
-        this.currUser = currUser;
     }
 
     /**
@@ -66,11 +63,9 @@ public class RegisterHandler {
                 pool.put(toURI.toString(), netSocket);
             else
                 pool.put(toURI.toString(), socketAddress);
-            currUser.put(toURI.toString(), contactURI);
             logger.info("register user " + toURI);
         } else {
             pool.remove(toURI.toString());
-            currUser.remove(toURI.toString());
             logger.info("unregister user " + toURI);
         }
 

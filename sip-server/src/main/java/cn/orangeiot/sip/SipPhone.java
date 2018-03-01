@@ -61,7 +61,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
     /**
      * 服务器侦听IP地址
      */
-    private String ipAddr = "172.16.1.87";
+    private String ipAddr = "192.168.1.100";
 
 
     /**
@@ -620,7 +620,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             headerFactory = sipFactory.createHeaderFactory();
             addressFactory = sipFactory.createAddressFactory();
             msgFactory = sipFactory.createMessageFactory();
-            ListeningPoint lp = sipStack.createListeningPoint("172.16.1.87",
+            ListeningPoint lp = sipStack.createListeningPoint("192.168.1.100",
                     5061, "UDP");
             SipPhone listener = this;
 

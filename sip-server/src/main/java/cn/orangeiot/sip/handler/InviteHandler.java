@@ -3,6 +3,8 @@ package cn.orangeiot.sip.handler;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
+import gov.nist.javax.sip.header.CallID;
+import gov.nist.javax.sip.header.To;
 import gov.nist.javax.sip.header.Via;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.vertx.core.json.JsonObject;
@@ -14,6 +16,7 @@ import javax.sip.address.AddressFactory;
 import javax.sip.address.URI;
 import javax.sip.header.ContactHeader;
 import javax.sip.header.HeaderFactory;
+import javax.sip.header.ToHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -40,16 +43,13 @@ public class InviteHandler {
 
     private AddressFactory addressFactory;
 
-    private Map<String, URI> currUser;
-
     public InviteHandler(Map<String, Object> pool, MessageFactory msgFactory
-            , HeaderFactory headerFactory, JsonObject jsonObject, AddressFactory addressFactory, Map<String, URI> currUser) {
+            , HeaderFactory headerFactory, JsonObject jsonObject, AddressFactory addressFactory) {
         this.pool = pool;
         this.msgFactory = msgFactory;
         this.headerFactory = headerFactory;
         this.jsonObject = jsonObject;
         this.addressFactory = addressFactory;
-        this.currUser = currUser;
     }
 
 
@@ -69,19 +69,20 @@ public class InviteHandler {
             e.printStackTrace();
         }
 
-        //查询目标地址
-        String uri = request.getRequestURI().toString();
-        String reqUri = uri.matches("^(sip):\\w+@[0-9.]+:[\\s\\S]*") ? uri.substring(0, uri.lastIndexOf(":")) : uri;
-        URI contactURI = currUser.get(reqUri);
-        logger.info("processInvite rqStr=" + reqUri + " contact=" + contactURI);
-
         //根据Request uri来路由，后续的响应消息通过VIA来路由
         MsgParserDecode.parseSIPMessage(request.toString().getBytes(), true, false, rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
             } else {
                 try {
+                    //查找目標地址
                     Request cliReq = (SIPRequest) rs.result();
+                    To to = (To) cliReq.getHeader(To.NAME);
+                    ContactHeader contactHeader = (ContactHeader) request.getHeader("Contact");
+                    Address contactAddr = contactHeader.getAddress();
+                    URI contactURI = contactAddr.getURI();
+                    logger.info("processInvite contact=" + contactURI);
+
                     cliReq.setRequestURI(contactURI);
 
                     Via callerVia = (Via) request.getHeader(Via.NAME);
@@ -93,17 +94,17 @@ public class InviteHandler {
                     cliReq.addHeader(via);
 
                     // 更新contact的地址
-                    ContactHeader contactHeader = headerFactory.createContactHeader();
+                    ContactHeader contactHeaders = headerFactory.createContactHeader();
                     Address address = addressFactory.createAddress("sip:sipsoft@" + jsonObject.getString("host") + ":" + jsonObject.getInteger("port"));
-                    contactHeader.setAddress(address);
-                    contactHeader.setExpires(3600);
-                    cliReq.setHeader(contactHeader);
+                    contactHeaders.setAddress(address);
+                    contactHeaders.setExpires(3600);
+                    cliReq.setHeader(contactHeaders);
 
-                    ResponseMsgUtil.sendMessage(reqUri.toString(), cliReq.toString(), sipOptions);
+                    ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), cliReq.toString(), sipOptions);
 
-
-                    PorcessHandler.getTransactions().put(request.getTransactionId(), reqUri.toString());//加入會畫管理
-                    PorcessHandler.getTransactions().put(via.getBranch(), request.getFrom().getAddress().getURI().toString());//加入會畫管理
+                    PorcessHandler.getBranchs().put(via.getBranch(), request.getFrom().getAddress().getURI().toString());//加入會畫管理branch
+                    CallID callID=(CallID)request.getHeader(CallID.NAME);
+                    PorcessHandler.getTransactions().put(callID.getCallIdentifer().getLocalId(), via.getBranch());//加入會畫管理
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

@@ -17,6 +17,7 @@ import javax.sip.header.ContactHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.header.ToHeader;
 import javax.sip.message.MessageFactory;
+import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.text.ParseException;
 import java.util.Objects;
@@ -65,9 +66,10 @@ public class ResponseHandler {
             return;
         }
 
+
         Response callerResp = null;
         Via via = (Via) response.getHeader(Via.NAME);
-        String uri = PorcessHandler.getTransactions().get(via.getBranch());
+        String uri = PorcessHandler.getBranchs().get(via.getBranch());
         try {
             callerResp = msgFactory.createResponse(code, response.getCallId(),
                     response.getCSeq(), response.getFrom(), response.getTo()
@@ -109,7 +111,7 @@ public class ResponseHandler {
         }
 
         if (Objects.nonNull(uri)) {
-            ResponseMsgUtil.sendMessage(uri, callerResp.toString(),sipOptions);
+            ResponseMsgUtil.sendMessage(uri, callerResp.toString(), sipOptions);
         } else {
             logger.error("uri is null.");
         }

@@ -7,4 +7,7 @@ package cn.orangeiot.sip.model;
  * @date 2018-01-30
  */
 public interface ListingInfo {
+
+
+
 }

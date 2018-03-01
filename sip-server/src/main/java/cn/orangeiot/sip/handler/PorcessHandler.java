@@ -4,6 +4,13 @@ import cn.orangeiot.sip.SipVertxFactory;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
+import gov.nist.core.InternalErrorHandler;
+import gov.nist.core.LogLevels;
+import gov.nist.core.LogWriter;
+import gov.nist.core.NameValueList;
+import gov.nist.javax.sip.ListeningPointImpl;
+import gov.nist.javax.sip.Utils;
+import gov.nist.javax.sip.address.SipUri;
 import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
@@ -15,21 +22,20 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sun.java2d.loops.ProcessPath;
 
+import javax.print.DocFlavor;
 import javax.sip.*;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
+import javax.sip.address.SipURI;
 import javax.sip.address.URI;
-import javax.sip.header.ExpiresHeader;
-import javax.sip.header.HeaderFactory;
-import javax.sip.header.ToHeader;
+import javax.sip.header.*;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author zhang bo
@@ -49,7 +55,7 @@ public class PorcessHandler {
 
     private static final Map<String, Object> pool = new HashMap<>();//保存当前注册的用户
 
-    private static Map<String, URI> currUser = new HashMap<>();//保存用户打contact url
+    private static Map<String, String> branchs = new HashMap<>();//保存会话branch
 
     private static Map<String, String> transactions = new HashMap<>();//保存會畫
 
@@ -59,21 +65,10 @@ public class PorcessHandler {
 
     private AddressFactory addressFactory;
 
-    /**
-     * 主叫对话
-     */
-    private Dialog calleeDialog = null;
-
-    /**
-     * 被叫对话
-     */
-    private Dialog callerDialog = null;
-
-
     public PorcessHandler(MessageFactory msgFactory, HeaderFactory headerFactory, JsonObject jsonObject
             , AddressFactory addressFactory) {
-        this.registerHandler = new RegisterHandler(pool, msgFactory, currUser);
-        this.inviteHandler = new InviteHandler(pool, msgFactory, headerFactory, jsonObject, addressFactory, currUser);
+        this.registerHandler = new RegisterHandler(pool, msgFactory);
+        this.inviteHandler = new InviteHandler(pool, msgFactory, headerFactory, jsonObject, addressFactory);
         this.responseHandler = new ResponseHandler(msgFactory, headerFactory, addressFactory, jsonObject);
         this.msgFactory = msgFactory;
         this.headerFactory = headerFactory;
@@ -102,6 +97,16 @@ public class PorcessHandler {
         return transactions;
     }
 
+
+    /**
+     * @Description 获取会话branch
+     * @author zhang bo
+     * @date 18-2-28
+     * @version 1.0
+     */
+    public static Map<String, String> getBranchs() {
+        return branchs;
+    }
 
     /**
      * 服务处理tcp
@@ -192,41 +197,63 @@ public class PorcessHandler {
             case Request.ACK://ACK
                 this.processAck(sipMessage, sipOptions);
                 break;
-            case Request.SUBSCRIBE:
-                logger.error("===========" + Request.SUBSCRIBE);
+            case Request.SUBSCRIBE://订阅
                 this.processSubscribe(sipMessage, sipOptions);
                 break;
-            case Request.CANCEL:
-                System.exit(0);
-                logger.error("===========" + Request.CANCEL);
+            case Request.CANCEL://断开请求
+                this.processCancel(sipMessage, sipOptions);
                 break;
-            case Request.BYE:
+            case Request.BYE://呼叫释放
                 this.processBye(sipMessage, sipMessage.getViaHeaders(), sipOptions);
-                logger.error("===========" + Request.BYE);
                 break;
             default:
                 logger.error("no support the method!");
                 break;
         }
-
-
-//        if (Request.INVITE.equals(method)) {
-//            registerHandler.processRegister(sipMessage);
-//        } else if (Request.REGISTER.equals(method)) {
-//            processRegister(request, arg0);
-//        } else if (Request.SUBSCRIBE.equals(method)) {
-//            processSubscribe(request);
-//        } else if (Request.ACK.equalsIgnoreCase(method)) {
-//            processAck(request, arg0);
-//        } else if (Request.BYE.equalsIgnoreCase(method)) {
-//            processBye(request, arg0);
-//        } else if (Request.CANCEL.equalsIgnoreCase(method)) {
-//            processCancel(request, arg0);
-//        } else {
-//            System.out.println("no support the method!");
-//        }
     }
 
+
+    /**
+     * 处理CANCEL请求
+     *
+     * @param request 请求消息
+     */
+    @SuppressWarnings("Duplicates")
+    private void processCancel(Request request, SipOptions sipOptions) {
+        try {
+            // 发送CANCEL 200 OK消息
+            To to = (To) request.getHeader(To.NAME);
+            From from = (From) request.getHeader(From.NAME);
+            Response response = msgFactory.createResponse(Response.OK, request);
+            ResponseMsgUtil.sendMessage(from.getAddress().getURI().toString(), response.toString(), sipOptions);
+
+            // 向对端发送CANCEL消息
+            Request cancelReq = null;
+            List list = new ArrayList();
+            Via viaHeader = (Via) request.getHeader(Via.NAME);
+            list.add(viaHeader);
+
+            CSeq cseq = (CSeq) request.getHeader(CSeq.NAME);
+            CSeq cancelCSeq = (CSeq) headerFactory.createCSeqHeader(cseq.getSeqNumber(), Request.CANCEL);
+            cancelReq = msgFactory.createRequest(request.getRequestURI(),
+                    request.getMethod(),
+                    (CallIdHeader) request.getHeader(CallIdHeader.NAME),
+                    cancelCSeq,
+                    (FromHeader) request.getHeader(From.NAME),
+                    (ToHeader) request.getHeader(ToHeader.NAME),
+                    list,
+                    (MaxForwardsHeader) request.getHeader(MaxForwardsHeader.NAME));
+            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), cancelReq.toString(), sipOptions);
+
+            //回收废数据
+            CallID callID = (CallID) request.getHeader(CallID.NAME);
+            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
+            transactions.remove(callID.getCallIdentifer().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 
     /**
      * 处理BYE请求
@@ -235,13 +262,10 @@ public class PorcessHandler {
      */
     @SuppressWarnings("Duplicates")
     private void processBye(Request request, ViaList vias, SipOptions sipOptions) {
-        Response byeReq = null;
+        Request byeReq = null;
         try {
-            Via via = (Via) request.getHeader(Via.NAME);
-            String uri = PorcessHandler.getTransactions().get(via.getBranch());
-            byeReq = msgFactory.createResponse(Response.OK, (CallID) request.getHeader(CallID.NAME),
-                    (CSeq) request.getHeader(CSeq.NAME), (From) request.getHeader(From.NAME), (To) request.getHeader(To.NAME)
-                    , vias, new MaxForwards(70));
+            To to = (To) request.getHeader(To.NAME);
+            byeReq = msgFactory.createRequest(request.toString());
             // 拷贝相应的消息体
             ContentLength contentLen = (ContentLength) request.getContentLength();
             if (contentLen != null && contentLen.getContentLength() != 0) {
@@ -255,9 +279,14 @@ public class PorcessHandler {
                     e.printStackTrace();
                 }
             } else {
-                logger.info("sdp is null.");
+                logger.info("sdp is null");
             }
-            ResponseMsgUtil.sendMessage(uri, byeReq.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), byeReq.toString(), sipOptions);
+
+            //回收废数据
+            CallID callID = (CallID) request.getHeader(CallID.NAME);
+            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
+            transactions.remove(callID.getCallIdentifer().toString());
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -314,15 +343,36 @@ public class PorcessHandler {
     @SuppressWarnings("Duplicates")
     private void processAck(Request request, SipOptions sipOptions) {
         try {
-            Request ackRequest = null;
-            CSeq csReq = (CSeq) request.getHeader(CSeq.NAME);
-            ackRequest = calleeDialog.createAck(csReq.getSeqNumber());
-            calleeDialog.sendAck(ackRequest);
-            System.out.println("send ack to callee:" + ackRequest.toString());
-        } catch (SipException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidArgumentException e) {
+            SIPRequest sipRequest = new SIPRequest();
+            sipRequest.setMethod(Request.ACK);
+            ToHeader head = (ToHeader) request.getHeader(ToHeader.NAME);
+            Address toAddress = head.getAddress();
+            URI toURI = toAddress.getURI();
+            sipRequest.setRequestURI(toURI);
+            sipRequest.setCallId((CallID) request.getHeader(CallID.NAME));
+            sipRequest.setCSeq((CSeq) request.getHeader(CSeq.NAME));
+            List<Via> vias = new ArrayList<>();
+
+            Via via = (Via) request.getHeader(Via.NAME);
+            via.removeParameters();
+            if (request != null && via != null) {
+                NameValueList originalRequestParameters = via.getParameters();
+                if (originalRequestParameters != null
+                        && originalRequestParameters.size() > 0) {
+                    via.setParameters((NameValueList) originalRequestParameters
+                            .clone());
+                }
+            }
+            via.setBranch(Utils.getInstance().generateBranchId()); // new branch
+            vias.add(via);
+            sipRequest.setVia(vias);
+//            sipRequest.addHeader(via);
+            sipRequest.setFrom((From) request.getHeader(From.NAME));
+            sipRequest.setTo((To) request.getHeader(To.NAME));
+            sipRequest.setMaxForwards((MaxForwards) request.getHeader(MaxForwards.NAME));
+
+            ResponseMsgUtil.sendMessage(toURI.toString(), sipRequest.toString(), sipOptions);
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
