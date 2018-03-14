@@ -1,34 +1,26 @@
 package cn.orangeiot.sip.handler;
 
-import cn.orangeiot.sip.SipVertxFactory;
+import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
-import gov.nist.core.InternalErrorHandler;
-import gov.nist.core.LogLevels;
-import gov.nist.core.LogWriter;
+import cn.orangeiot.sip.timer.RePlayCallTime;
 import gov.nist.core.NameValueList;
-import gov.nist.javax.sip.ListeningPointImpl;
 import gov.nist.javax.sip.Utils;
-import gov.nist.javax.sip.address.SipUri;
 import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sun.java2d.loops.ProcessPath;
 
-import javax.print.DocFlavor;
-import javax.sip.*;
+import javax.sip.InvalidArgumentException;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
-import javax.sip.address.SipURI;
 import javax.sip.address.URI;
 import javax.sip.header.*;
 import javax.sip.message.MessageFactory;
@@ -36,6 +28,7 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author zhang bo
@@ -53,8 +46,6 @@ public class PorcessHandler {
 
     private final ResponseHandler responseHandler;
 
-    private static final Map<String, Object> pool = new HashMap<>();//保存当前注册的用户
-
     private static Map<String, String> branchs = new HashMap<>();//保存会话branch
 
     private static Map<String, String> transactions = new HashMap<>();//保存會畫
@@ -65,25 +56,17 @@ public class PorcessHandler {
 
     private AddressFactory addressFactory;
 
+    private Vertx vertx;
+
     public PorcessHandler(MessageFactory msgFactory, HeaderFactory headerFactory, JsonObject jsonObject
-            , AddressFactory addressFactory) {
-        this.registerHandler = new RegisterHandler(pool, msgFactory);
-        this.inviteHandler = new InviteHandler(pool, msgFactory, headerFactory, jsonObject, addressFactory);
+            , AddressFactory addressFactory, Vertx vertx) {
+        this.registerHandler = new RegisterHandler(msgFactory,headerFactory);
+        this.inviteHandler = new InviteHandler(msgFactory, headerFactory, jsonObject, addressFactory);
         this.responseHandler = new ResponseHandler(msgFactory, headerFactory, addressFactory, jsonObject);
         this.msgFactory = msgFactory;
         this.headerFactory = headerFactory;
         this.addressFactory = addressFactory;
-    }
-
-
-    /**
-     * @Description 獲取連接集合
-     * @author zhang bo
-     * @date 18-2-2
-     * @version 1.0
-     */
-    public static Map<String, Object> getNetSocketList() {
-        return pool;
+        this.vertx = vertx;
     }
 
 
@@ -122,30 +105,26 @@ public class PorcessHandler {
                     rs.cause().printStackTrace();
                     netSocket.close();
                 } else {
-                    try {
+                    if (rs.result() instanceof SIPResponse)
                         responseSwitch((SIPResponse) rs.result(), SipOptions.TCP);//回包
-                    } catch (ClassCastException e) {
+                    else
                         redirectSwitch((SIPRequest) rs.result(), netSocket, SipOptions.TCP, null);//转发处理
-                    }
                 }
             });
         });
         //end
         netSocket.endHandler(socket -> {
             logger.info("=====end====");
-            pool.remove(netSocket);
             netSocket.close();
         });
         //close
         netSocket.closeHandler(socket -> {
             logger.info("=====close====");
-            pool.remove(netSocket);
             netSocket.close();
         });
         //exception
         netSocket.exceptionHandler(socket -> {
             logger.info("=====exception====");
-            pool.remove(netSocket);
             netSocket.close();
         });
     }
@@ -164,11 +143,10 @@ public class PorcessHandler {
             if (rs.failed()) {//不是sip标准协议
                 rs.cause().printStackTrace();
             } else {
-                try {
+                if (rs.result() instanceof SIPResponse)
                     responseSwitch((SIPResponse) rs.result(), SipOptions.UDP);//回包
-                } catch (ClassCastException e) {
+                else
                     redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
-                }
             }
         });
     }
@@ -189,7 +167,7 @@ public class PorcessHandler {
         logger.info("==PorcessHandler==redirectSwitch===request method====" + sipMessage.getMethod());
         switch (sipMessage.getMethod()) {
             case Request.REGISTER://注冊處理
-                registerHandler.processRegister(sipMessage, netSocket, sipOptions, socketAddress);
+                registerHandler.processRegister(sipMessage, netSocket, sipOptions, socketAddress, vertx);
                 break;
             case Request.INVITE://invite請求
                 inviteHandler.processInvite(sipMessage, sipOptions);
@@ -207,7 +185,7 @@ public class PorcessHandler {
                 this.processBye(sipMessage, sipMessage.getViaHeaders(), sipOptions);
                 break;
             default:
-                logger.error("no support the method!");
+                logger.error("PorcessHandler==redirectSwitch   no support the method!");
                 break;
         }
     }

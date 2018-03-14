@@ -1,12 +1,10 @@
 {
-  "port": 5059,
-  "host": "192.168.1.100",
   "receBufferSize": 16384,
   "idleTimeout": 1200,
   "maxTimes": 5,
   "intervalTimes": 1000,
   "audioPort": 7090,
-  "audioHost": "192.168.1.100",
+  "audioHost": "114.67.58.242",
   "videoPort": 7091,
-  "videoHost": "192.168.1.100"
+  "videoHost": "114.67.58.242"
 }

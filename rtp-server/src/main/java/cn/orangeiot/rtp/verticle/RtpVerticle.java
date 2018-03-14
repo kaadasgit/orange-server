@@ -1,10 +1,7 @@
-package cn.orangeiot.sip.verticle;
+package cn.orangeiot.rtp.verticle;
 
-import cn.orangeiot.sip.SipServerStart;
-import cn.orangeiot.sip.SipVertxFactory;
-import cn.orangeiot.sip.constant.SipOptions;
+import cn.orangeiot.rtp.RtpVertFactory;
 import io.vertx.core.*;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
@@ -13,7 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.sip.SipFactory;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,20 +19,18 @@ import java.io.InputStream;
  * @Description
  * @date 2018-01-30
  */
-public class SipVerticle extends AbstractVerticle {
+public class RtpVerticle extends AbstractVerticle {
 
     private JsonObject jsonObject;//配置數據
 
-    private static Logger logger = LogManager.getLogger(SipVerticle.class);
+    private static Logger logger = LogManager.getLogger(RtpVerticle.class);
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
 
         loadConf();
-        //todo 建立sip实例
         startFuture.complete();
     }
-
 
     /**
      * @Description 加載配置
@@ -46,8 +40,8 @@ public class SipVerticle extends AbstractVerticle {
      */
     @SuppressWarnings("Duplicates")
     public void loadConf() {
-        InputStream zkIn = SipVerticle.class.getResourceAsStream("/zkConf.json");
-        InputStream configIn = SipVerticle.class.getResourceAsStream("/config.json");//全局配置
+        InputStream zkIn = RtpVerticle.class.getResourceAsStream("/zkConf.json");
+        InputStream configIn = RtpVerticle.class.getResourceAsStream("/config.json");//全局配置
         String zkConf = "";//jdbc连接配置
         String config = "";
         try {
@@ -83,6 +77,7 @@ public class SipVerticle extends AbstractVerticle {
         }
     }
 
+
     /**
      * @Description 注册
      * @author zhang bo
@@ -93,8 +88,8 @@ public class SipVerticle extends AbstractVerticle {
         if (res.succeeded()) {
             Vertx vertx = res.result();
 
-            //连接处理
-            SipVertxFactory.getInstance().createListeningPoint(SipOptions.UDP, vertx, jsonObject);
+            //todo 建立RTP实例
+            RtpVertFactory.getInstance().createListeningPoint(vertx, jsonObject);
         }
     }
 }

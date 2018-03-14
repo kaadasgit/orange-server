@@ -67,7 +67,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
     /**
      * 服务器侦听端口
      */
-    private int port = 5061;
+    private int port = 5058;
 
     /**
      * 处理register请求
@@ -621,7 +621,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             addressFactory = sipFactory.createAddressFactory();
             msgFactory = sipFactory.createMessageFactory();
             ListeningPoint lp = sipStack.createListeningPoint("192.168.1.100",
-                    5061, "UDP");
+                    5058, "UDP");
             SipPhone listener = this;
 
             sipProvider = sipStack.createSipProvider(lp);

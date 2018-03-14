@@ -342,7 +342,8 @@ public class AdminDevDao implements AdminlockAddr {
                             paramsJsonObject.put("lockName", jsonObject.getString("device_name"));
                         else
                             paramsJsonObject.put("lockName", jsonObject.getString("device_name")).put("uname", ars.result().getString("uname"));
-                        MongoClient.client.findWithOptions("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("device_name")),
+
+                        MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
                                 new FindOptions().setLimit(pageNum * 20).setSkip((pageNum - 1) * 20).setSort(
                                         new JsonObject().put("open_time", -1)), rs -> {
                                     if (rs.failed()) {

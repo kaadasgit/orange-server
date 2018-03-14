@@ -41,4 +41,14 @@ public interface UserAddr {
      String MEME_USER="memeUser";//同步米米用户信息
 
      String MEME_REGISTER_USER_BULK="memeRegisterUserBulk";//批量注册用户
+
+     String SAVE_REGISTER_USER="saveRegisterUser";//注冊用戶信息
+
+     String GET_REGISTER_USER="getRegisterUser";//獲取用戶信息
+
+     String DEL_REGISTER_USER="delRegisterUser";//刪除用戶信息
+
+     String SAVE_CALL_ID="saveCallIdAddr";//會話話的用戶地址映射
+
+     String GET_CALL_ID="getCallIdAddr";//獲取用戶地址映射
 }

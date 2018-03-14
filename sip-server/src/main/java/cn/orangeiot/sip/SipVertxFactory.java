@@ -92,7 +92,7 @@ public class SipVertxFactory {
                 MessageFactory msgFactory = this.createMessageFactory();
                 HeaderFactory headerFactory = this.createHeaderFactory();
                 AddressFactory addressFactory = this.createAddressFactory();
-                PorcessHandler porcessHandler = new PorcessHandler(msgFactory, headerFactory, jsonObject, addressFactory);
+                PorcessHandler porcessHandler = new PorcessHandler(msgFactory, headerFactory, jsonObject, addressFactory,vertx);
 
                 server.connectHandler(porcessHandler::processTcp);//连接处理
                 server.listen(jsonObject.getInteger("port"), jsonObject.getString("host"), res -> {
@@ -107,12 +107,12 @@ public class SipVertxFactory {
                 break;
             case UDP://UDP服务器
                 socket = vertx.createDatagramSocket(new DatagramSocketOptions()
-                        .setReuseAddress(true));
+                        .setReuseAddress(true).setReusePort(true));
 
                 MessageFactory msgFactoryUdp = this.createMessageFactory();
                 HeaderFactory headerFactoryUdp = this.createHeaderFactory();
                 AddressFactory addressFactoryUdp = this.createAddressFactory();
-                PorcessHandler porcessHandlerUdp = new PorcessHandler(msgFactoryUdp, headerFactoryUdp, jsonObject, addressFactoryUdp);
+                PorcessHandler porcessHandlerUdp = new PorcessHandler(msgFactoryUdp, headerFactoryUdp, jsonObject, addressFactoryUdp,vertx);
 
                 socket.listen(jsonObject.getInteger("port"), jsonObject.getString("host"), asyncResult -> {
                     if (asyncResult.succeeded()) {

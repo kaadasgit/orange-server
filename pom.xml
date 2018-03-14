@@ -25,6 +25,7 @@
         <module>http-memenet</module>
         <module>http-managent</module>
         <module>sip-server</module>
+        <module>rtp-server</module>
     </modules>
 
 

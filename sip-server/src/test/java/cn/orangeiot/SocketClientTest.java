@@ -53,8 +53,8 @@ public class SocketClientTest {
                 "Expires: 3600\n" +
                 "User-Agent: LinphoneAndroid/1.0 (belle-sip/1.5.0)\n" +
                 "\n";
-        String netAddress = "172.16.1.87";
-        final int PORT_NUM = 5061;
+        String netAddress = "183.15.177.77";
+        final int PORT_NUM = 7076;
         DatagramSocket datagramSocket = null;
         DatagramPacket datagramPacket = null;
         try {
@@ -67,18 +67,20 @@ public class SocketClientTest {
             InetAddress address = InetAddress.getByName(netAddress);
             datagramPacket = new DatagramPacket(buf, buf.length, address, PORT_NUM);
             // 发送数据
-            datagramSocket.send(datagramPacket);
+            for (int i = 0; i < 10; i ++) {
+                datagramSocket.send(datagramPacket);
+            }
 
-            /*** 接收数据***/
-            byte[] receBuf = new byte[1024];
-            DatagramPacket recePacket = new DatagramPacket(receBuf, receBuf.length);
-            datagramSocket.receive(recePacket);
-
-            String receStr = new String(recePacket.getData(), 0, recePacket.getLength());
-            System.out.println("Client Rece Ack:" + receStr);
-            System.out.println(recePacket.getPort());
-            System.out.println(recePacket.getAddress());
-            datagramSocket.close();
+//            /*** 接收数据***/
+//            byte[] receBuf = new byte[1024];
+//            DatagramPacket recePacket = new DatagramPacket(receBuf, receBuf.length);
+//            datagramSocket.receive(recePacket);
+//
+//            String receStr = new String(recePacket.getData(), 0, recePacket.getLength());
+//            System.out.println("Client Rece Ack:" + receStr);
+//            System.out.println(recePacket.getPort());
+//            System.out.println(recePacket.getAddress());
+//            datagramSocket.close();
 
         } catch (SocketException e) {
             e.printStackTrace();

@@ -8,6 +8,7 @@ import cn.orangeiot.apidao.handler.dao.file.FileDao;
 import cn.orangeiot.apidao.handler.dao.gateway.GatewayDao;
 import cn.orangeiot.apidao.handler.dao.job.JobDao;
 import cn.orangeiot.apidao.handler.dao.message.MessageDao;
+import cn.orangeiot.apidao.handler.dao.register.RegisterDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
 import cn.orangeiot.apidao.jwt.JwtFactory;
@@ -40,9 +41,9 @@ public class RegisterHandler implements EventbusAddr {
 
     private String args;
 
-    public RegisterHandler(JsonObject config,String args) {
+    public RegisterHandler(JsonObject config, String args) {
         this.config = config;
-        this.args=args;
+        this.args = args;
     }
 
     /**
@@ -147,6 +148,15 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(GatewayAddr.class.getName() + DEL_GW_USER, gatewayDao::onDelGatewayUser);
             vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_USER_LIST, gatewayDao::onGetGatewayUserList);
             vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
+
+
+            //stream 相關
+            RegisterDao registerDao = new RegisterDao();
+            vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_REGISTER_USER, registerDao::saveRegisterInfo);
+            vertx.eventBus().consumer(UserAddr.class.getName() + GET_REGISTER_USER, registerDao::getRegisterInfo);
+            vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
+            vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);
+            vertx.eventBus().consumer(UserAddr.class.getName() + GET_CALL_ID, registerDao::getCallIdAddr);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());

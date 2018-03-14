@@ -64,7 +64,7 @@ public class DeviceHandler implements GatewayAddr {
                                         .addQueryParam("partid", conf.getString("partid"))
                                         .addQueryParam("appid", conf.getString("appId"))
                                         .addQueryParam("random", random)
-                                        .sendJsonObject(new JsonObject().put("userid", ers.result().body().getLong("userid"))
+                                        .sendJsonObject(new JsonObject().put("userid", ers.result().body().getLong("userid").toString())
                                                 .put("devicesn", message.body().getString("devicesn")).put("sig", as.result()), rs -> {
                                             if (rs.failed()) {
                                                 rs.cause().printStackTrace();

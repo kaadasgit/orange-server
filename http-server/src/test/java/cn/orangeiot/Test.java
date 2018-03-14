@@ -40,7 +40,7 @@ public class Test extends AbstractVerticle {
     public static void main(String[] args) {
 
 //        System.out.println(LocalDate.now().get(ChronoField.ALIGNED_WEEK_OF_YEAR));//获取当前年的第几周
-////        Buffer buffer = Test.loadConf();
+//        Buffer buffer = Test.loadConf();
 //
 //
 //        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
@@ -53,9 +53,9 @@ public class Test extends AbstractVerticle {
 //        String mobile = "13510513746";
 //        String appid = "1400034036";
 //        String appkey = "3baf2aa7c9cdede6f90545995d68b959";
-////        String str = getSHA256Str("appkey=APPKEY&random=RANDOM&time=TIME&mobile=MOBILE"
-////                .replace("APPKEY", appkey).replace("RANDOM"
-////                        , random).replace("TIME", time.toString()).replace("MOBILE", mobile));
+//        String str = getSHA256Str("appkey=APPKEY&random=RANDOM&time=TIME&mobile=MOBILE"
+//                .replace("APPKEY", appkey).replace("RANDOM"
+//                        , random).replace("TIME", time.toString()).replace("MOBILE", mobile));
 //
 //
 //        SHA256.getSHA256Str("appkey=APPKEY&random=RANDOM&time=TIME&mobile=MOBILE"
@@ -82,26 +82,22 @@ public class Test extends AbstractVerticle {
 //            }
 //        });
 
+        Buffer buffer = Test.loadConf();
+        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
+                .setMaxPoolSize(100)
+                .setSsl(true)
+                .setPfxTrustOptions(new PfxOptions().setValue(buffer).setPassword("123456"))
+                .setVerifyHost(false));
 
-//        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
-//                .setMaxPoolSize(100)
-//                .setSsl(true)
-//                .setPfxTrustOptions(new PfxOptions().setValue(buffer).setPassword("123456")));
-//
-//        webClient.post(11123, "192.168.6.87", "/hello")
-//                .send(rs -> {
-//                    if (rs.failed()) {
-//                        rs.cause().printStackTrace();
-//                    } else {
-//                        rs.result().body());
-//                    }
-//                });
-
-
-//        System.out.println(Integer.valueOf('a'));
-//        System.out.println((char) 97);
-
-        SN(70000, 1, 7890);
+        webClient.post(8090, "114.67.58.242", "/user/login/getuserbytel")
+                .putHeader("Content-Type", "application/json")
+                .sendJsonObject(new JsonObject().put("tel", "13510513746").put("password", "zb123456"), rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                    } else {
+                        System.out.println(rs.result().body().toString());
+                    }
+                });
 
     }
 
@@ -179,7 +175,7 @@ public class Test extends AbstractVerticle {
     }
 
     public static Buffer loadConf() {
-        InputStream jksIn = SpiConf.class.getResourceAsStream("/server.p12");
+        InputStream jksIn = Test.class.getResourceAsStream("/server.p12");
         Buffer buffer = null;
         try {
             byte[] jksByte = IOUtils.toByteArray(jksIn);
