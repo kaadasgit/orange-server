@@ -1,42 +1,42 @@
 #orange_server#
 
-##http-managent##
+##http-managent
 
     後臺管理端rust API接口
 
-##http-managent##
+##http-managent
 
     第三方米米網對接模塊
 
-##http-server##
+##http-server
 
     對外用戶rust APi接口
 
-##mqtt-apidao##
+##mqtt-apidao
 
     數據訪問層
 
-##mqtt-auth##
+##mqtt-auth
 
     mqtt連接認證
 
-##mqtt-common##
+##mqtt-common
 
     項目公共組件和工具類、包
 
-##mqtt-job##
+##mqtt-job
 
     服務的定時任務model
 
-##mqtt-message##
+##mqtt-message
 
     消息推送，message收發model
 
-##mqtt-publish##
+##mqtt-publish
 
     mqtt業務處理model
 
-##mqtt-server##
+##mqtt-server
 
     mqtt服務器
 
