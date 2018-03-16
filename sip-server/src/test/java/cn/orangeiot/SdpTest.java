@@ -101,6 +101,8 @@ public class SdpTest {
             }
             MediaDescription md = (MediaDescription) sessiondescription.getMediaDescriptions(
                     false).get(0);
+            md.getMedia().getMediaPort();
+            parsedDescription.getConnection().getAddress();
 
             Object cc = md.getAttributes(false).stream().filter(r -> r.toString().startsWith("a=candidate"))
                     .filter(r -> r.toString().startsWith("a=candidate:2")).findFirst().orElseGet(null);

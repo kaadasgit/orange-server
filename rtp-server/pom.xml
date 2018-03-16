@@ -100,6 +100,8 @@
                     <include>**/*.json</include>
                 </includes>
                 <excludes>
+                    <exclude>zkConf.json</exclude>
+                    <exclude>log4j2.xml</exclude>
                     <exclude>conf.json</exclude>
                 </excludes>
             </resource>
@@ -108,6 +110,7 @@
                 <directory>src/main/${package.target}</directory>
                 <includes>
                     <include>*.json</include>
+                    <include>*.xml</include>
                 </includes>
             </resource>
         </resources>

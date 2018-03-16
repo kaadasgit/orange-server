@@ -1,0 +1,9 @@
+{
+  "host":"127.0.0.1",
+  "send_reply_num":5,
+  "send_reply_time":2000,
+  "repeat_message":"/type/gwId/call",
+  "reply_message":"/clientId/rpc/reply",
+  "app_fuc_message":"/request/app/func",
+  "app_return_message":"/response/app/return"
+}

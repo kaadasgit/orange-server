@@ -1,5 +1,5 @@
 {
-  "port": 5059,
+  "port": 5058,
   "host": "192.168.1.100",
   "receBufferSize": 16384,
   "idleTimeout": 1200,

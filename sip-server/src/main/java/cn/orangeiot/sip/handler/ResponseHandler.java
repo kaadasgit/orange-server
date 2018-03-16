@@ -60,7 +60,7 @@ public class ResponseHandler implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public void processResponse(SIPResponse response, SipOptions sipOptions) {
+    public void processResponse(SIPResponse response, SipOptions sipOptions, SocketAddress socketAddress) {
         int code = response.getStatusCode();
         logger.info("==PorcessHandler==processResponse===request content====" + response.getContent());
         logger.info("==PorcessHandler==processResponse===request method====" + code);
@@ -111,70 +111,58 @@ public class ResponseHandler implements UserAddr {
 
             callerResp.setContentLength(contentLen);
             try {
-                if (response.getCSeq().getMethod() == Request.INVITE) {//relay
-                    //todo sdp解析
-                    String contents = response.getMultipartMimeContent().getContents().next().getContent().toString();
-                    SDPAnnounceParser parser = new SDPAnnounceParser(contents);
-                    SessionDescriptionImpl parsedDescription = parser.parse();
-                    //回复100 Trying
-                    ContactHeader contactHeader = (ContactHeader) response.getHeader("Contact");
-                    SipURI sipURI = (SipURI) contactHeader.getAddress().getURI();
-//                    if (!parsedDescription.getConnection().getAddress().equals(sipURI.getHost())) {//relay
-                    String finalUri = uri;
-                    final String ipAddress = parsedDescription.getConnection().getAddress();
-                    parsedDescription.getMediaDescriptions(false)
-                            .forEach(e -> {
-                                MediaDescription md = (MediaDescription) e;
-                                Object cc = md.getAttributes(false).stream().filter(r -> r.toString().startsWith("a=candidate"))
-                                        .filter(r -> r.toString().startsWith("a=candidate:2")).findFirst().orElseGet(null);
-                                String host = "";
-                                String port = "";
-                                if (Objects.nonNull(cc)) {
-                                    String[] address = cc.toString().split("\\s+");
-                                    host = address[4];
-                                    port = address[5];
-                                    System.out.println("host:" + host + "::port:" + port);
-                                }
-                                try {
-                                    if (md.getMedia().getMediaType().equalsIgnoreCase(MediaTypeEnum.AUDIO.toString())) {
-                                        //保存映射關系
-                                        SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
-                                                , new JsonObject().put("receAddr", host + ":" + port)
-                                                        .put("sendAddr", finalUri)
-                                                        .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
-                                    } else {
-                                        //保存映射關系
-                                        SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
-                                                , new JsonObject().put("receAddr", host + ":" + port)
-                                                        .put("sendAddr", finalUri)
-                                                        .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
-                                    }
-                                    parsedDescription.getOrigin().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改本地地址
-                                    parsedDescription.getConnection().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改接收地址
-                                    md.getMedia().setMediaPort(jsonObject.getInteger(md.getMedia().getMediaType().toLowerCase() + "Port"));//修改接收端口
-                                } catch (Exception e1) {
-                                    e1.printStackTrace();
-                                }
-                            });
-
-                    callerResp.setContentLength(new ContentLength(parsedDescription.toString().length()));
-                    callerResp.setContent(parsedDescription.toString(), contentType);
-                } else {
-                    callerResp.setContent(response.getContent(), contentType);
-                }
+//                if (response.getCSeq().getMethod() == Request.INVITE) {//relay
+//                    //todo sdp解析
+//                    String contents = response.getMultipartMimeContent().getContents().next().getContent().toString();
+//                    SDPAnnounceParser parser = new SDPAnnounceParser(contents);
+//                    SessionDescriptionImpl parsedDescription = parser.parse();
+//                    //回复100 Trying
+//                    ContactHeader contactHeader = (ContactHeader) response.getHeader("Contact");
+//                    SipURI sipURI = (SipURI) contactHeader.getAddress().getURI();
+////                    if (!parsedDescription.getConnection().getAddress().equals(sipURI.getHost())) {//relay
+//                    String finalUri = uri;
+//                    final String ipAddress = parsedDescription.getConnection().getAddress();
+//                    parsedDescription.getMediaDescriptions(false)
+//                            .forEach(e -> {
+//                                MediaDescription md = (MediaDescription) e;
+//                                try {
+//                                    //保存映射關系
+//                                    SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
+//                                            , new JsonObject().put("receAddr", ipAddress + ":" + md.getMedia().getMediaPort())
+//                                                    .put("sendAddr", finalUri)
+//                                                    .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
+//                                    parsedDescription.getOrigin().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改本地地址
+//                                    parsedDescription.getConnection().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改接收地址
+//                                    md.getMedia().setMediaPort(jsonObject.getInteger(md.getMedia().getMediaType().toLowerCase() + "Port"));//修改接收端口
+//                                } catch (Exception e1) {
+//                                    e1.printStackTrace();
+//                                }
+//                            });
+//
+//                    callerResp.setContentLength(new ContentLength(parsedDescription.toString().length()));
+//                    callerResp.setContent(parsedDescription.toString(), contentType);
+////                } else {
+////                    callerResp.setContent(response.getContent(), contentType);
+////                }
 //                } else {
-//                    callerResp.setContent(response.getContent(), contentType);
+                callerResp.setContent(response.getContent(), contentType);
 //                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
+        } else
+
+        {
             logger.info("sdp is null.");
         }
 
-        if (Objects.nonNull(uri)) {
+        if (Objects.nonNull(uri))
+
+        {
             ResponseMsgUtil.sendMessage(uri, callerResp.toString(), sipOptions);
-        } else {
+        } else
+
+        {
             logger.error("uri is null.");
         }
 

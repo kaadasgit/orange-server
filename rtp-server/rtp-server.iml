@@ -11,6 +11,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="reg-addr" />
+    <orderEntry type="module" module-name="mqtt-common" />
+    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:3.8.1" level="project" />
     <orderEntry type="library" name="Maven: io.vertx:vertx-core:3.5.0" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.15.Final" level="project" />

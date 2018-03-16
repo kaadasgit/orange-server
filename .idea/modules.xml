@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/http-managent/http-managent.iml" filepath="$PROJECT_DIR$/http-managent/http-managent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/http-memenet/http-memenet.iml" filepath="$PROJECT_DIR$/http-memenet/http-memenet.iml" />
+      <module fileurl="file://$PROJECT_DIR$/http-server/http-server.iml" filepath="$PROJECT_DIR$/http-server/http-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-apidao/mqtt-apidao.iml" filepath="$PROJECT_DIR$/mqtt-apidao/mqtt-apidao.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-auth/mqtt-auth.iml" filepath="$PROJECT_DIR$/mqtt-auth/mqtt-auth.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-common/mqtt-common.iml" filepath="$PROJECT_DIR$/mqtt-common/mqtt-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-job/mqtt-job.iml" filepath="$PROJECT_DIR$/mqtt-job/mqtt-job.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-message/mqtt-message.iml" filepath="$PROJECT_DIR$/mqtt-message/mqtt-message.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-publish/mqtt-publish.iml" filepath="$PROJECT_DIR$/mqtt-publish/mqtt-publish.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-server/mqtt-server.iml" filepath="$PROJECT_DIR$/mqtt-server/mqtt-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-subscribe/mqtt-subscribe.iml" filepath="$PROJECT_DIR$/mqtt-subscribe/mqtt-subscribe.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt-topic/mqtt-topic.iml" filepath="$PROJECT_DIR$/mqtt-topic/mqtt-topic.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/orangeiot.iml" filepath="$PROJECT_DIR$/.idea/orangeiot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/reg-addr/reg-addr.iml" filepath="$PROJECT_DIR$/reg-addr/reg-addr.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rtp-server/rtp-server.iml" filepath="$PROJECT_DIR$/rtp-server/rtp-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sip-server/sip-server.iml" filepath="$PROJECT_DIR$/sip-server/sip-server.iml" />
+    </modules>
+  </component>
+</project>

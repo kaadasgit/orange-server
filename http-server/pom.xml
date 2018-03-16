@@ -122,23 +122,27 @@
             </plugin>
         </plugins>
         <resources>
-            <!--<resource>-->
-                <!--<directory>src/main/resources</directory>-->
-                <!--<includes>-->
-                    <!--<include>**/*.json</include>-->
-                    <!--<include>**/*.jks</include>-->
-                <!--</includes>-->
-                <!--<excludes>-->
-                    <!--<exclude>zkConf.json</exclude>-->
-                <!--</excludes>-->
-            <!--</resource>-->
-            <!--<resource>-->
-                <!--<filtering>true</filtering>-->
-                <!--<directory>src/main/${package.target}</directory>-->
-                <!--<includes>-->
-                    <!--<include>zkConf.json</include>-->
-                <!--</includes>-->
-            <!--</resource>-->
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.json</include>
+                    <include>**/*.jks</include>
+                </includes>
+                <excludes>
+                    <exclude>zkConf.json</exclude>
+                    <exclude>log4j2.xml</exclude>
+                    <exclude>static/*.json</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/${package.target}</directory>
+                <includes>
+                    <include>*.json</include>
+                    <include>*.xml</include>
+                </includes>
+            </resource>
         </resources>
     </build>
 </project>

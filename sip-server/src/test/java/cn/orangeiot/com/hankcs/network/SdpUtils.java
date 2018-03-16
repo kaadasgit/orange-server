@@ -167,7 +167,6 @@ public class SdpUtils
         long priority = Long.parseLong(tokenizer.nextToken());
         String address = tokenizer.nextToken();
         int port = Integer.parseInt(tokenizer.nextToken());
-
         TransportAddress transAddr
             = new TransportAddress(address, port, transport);
 

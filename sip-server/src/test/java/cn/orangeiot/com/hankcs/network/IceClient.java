@@ -1,30 +1,23 @@
 package cn.orangeiot.com.hankcs.network;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.DatagramSocket;
-import java.net.SocketAddress;
-import java.util.List;
-
+import gov.nist.javax.sdp.SessionDescriptionImpl;
+import gov.nist.javax.sdp.parser.SDPAnnounceParser;
+import io.vertx.core.AbstractVerticle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.ice4j.Transport;
 import org.ice4j.TransportAddress;
-import org.ice4j.ice.Agent;
-import org.ice4j.ice.Component;
-import org.ice4j.ice.IceMediaStream;
-import org.ice4j.ice.IceProcessingState;
-import org.ice4j.ice.LocalCandidate;
-import org.ice4j.ice.NominationStrategy;
-import org.ice4j.ice.RemoteCandidate;
+import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.StunCandidateHarvester;
 import org.ice4j.ice.harvest.TurnCandidateHarvester;
 import org.ice4j.security.LongTermCredential;
 
-public class IceClient
-{
+import javax.sdp.MediaDescription;
+import java.net.DatagramSocket;
+import java.net.SocketAddress;
+import java.util.List;
+
+public class IceClient extends AbstractVerticle {
 
     private int port;
 
@@ -38,7 +31,7 @@ public class IceClient
 
     private String[] turnServers = new String[]{"114.67.58.242:3479"};
 
-    private String[] stunServers = new String[]{"114.67.58.243:3479"};
+    private String[] stunServers = new String[]{"114.67.58.242:3479"};
 
 //    private String username = "700";
 //
@@ -48,25 +41,19 @@ public class IceClient
 
     private String password = null;
 
-    private IceProcessingListener listener;
-
     static Logger log = Logger.getLogger(IceClient.class);
 
-    public IceClient(int port, String streamName)
-    {
+    public IceClient(int port, String streamName) {
         this.port = port;
         this.streamName = streamName;
-        this.listener = new IceProcessingListener();
     }
 
-    public void init() throws Throwable
-    {
+    public void init() throws Throwable {
 
         agent = createAgent(port, streamName);
 
         agent.setNominationStrategy(NominationStrategy.NOMINATE_HIGHEST_PRIO);
 
-        agent.addStateChangeListener(listener);
 
         agent.setControlling(false);
 
@@ -75,24 +62,59 @@ public class IceClient
         localSdp = SdpUtils.createSDPDescription(agent);
 
         log.info("=================== feed the following"
-                         + " to the remote agent ===================");
+                + " to the remote agent ===================");
 
         System.out.println(localSdp);
 
+        SDPAnnounceParser parser = new SDPAnnounceParser(localSdp);
+        SessionDescriptionImpl parsedDescription = null;
+        try {
+            parsedDescription = parser.parse();
+            MediaDescription md = (MediaDescription) parsedDescription.getMediaDescriptions(false).get(0);
+
+//            socket.listen(8888, "192.168.42.8", asyncResult -> {
+//                if (asyncResult.succeeded()) {
+//                    socket.handler(rs -> {
+//                        System.out.println("rece data -> " + new String(rs.data().getBytes()));
+//                    });//数据包处理
+//
+//                    try {
+//                        String msg = new JsonObject().put("host", md.getConnection().getAddressType())
+//                                .put("port", md.getMedia().getMediaPort()).toString();
+//                        socket.send(msg, 14500, "114.67.58.243", as -> {
+//                            System.out.println("send data -> " + as.succeeded());
+//                            if (!as.succeeded()) {
+//                                reSend(vertx, msg, 14500, "114.67.58.243", socket);
+//                            }
+//                        });
+//                    } catch (SdpParseException e) {
+//                        e.printStackTrace();
+//                    }
+//                } else {
+//                    System.out.println("Listen failed" + asyncResult.cause());
+//                    System.out.println("Failed to bind!");
+//                    System.exit(0);
+//                }
+//            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         log.info("======================================"
-                         + "========================================\n");
+                + "========================================\n");
+
+
     }
 
-    public DatagramSocket getDatagramSocket() throws Throwable
-    {
+
+    public DatagramSocket getDatagramSocket() throws Throwable {
 
         LocalCandidate localCandidate = agent
                 .getSelectedLocalCandidate(streamName);
 
         IceMediaStream stream = agent.getStream(streamName);
         List<Component> components = stream.getComponents();
-        for (Component c : components)
-        {
+        for (Component c : components) {
             log.info(c);
         }
         log.info(localCandidate.toString());
@@ -101,20 +123,19 @@ public class IceClient
 
     }
 
-    public SocketAddress getRemotePeerSocketAddress()
-    {
+    public SocketAddress getRemotePeerSocketAddress() {
         RemoteCandidate remoteCandidate = agent
                 .getSelectedRemoteCandidate(streamName);
         log.info("Remote candinate transport address:"
-                         + remoteCandidate.getTransportAddress());
+                + remoteCandidate.getTransportAddress());
         log.info("Remote candinate host address:"
-                         + remoteCandidate.getHostAddress());
+                + remoteCandidate.getHostAddress());
         log.info("Remote candinate mapped address:"
-                         + remoteCandidate.getMappedAddress());
+                + remoteCandidate.getMappedAddress());
         log.info("Remote candinate relayed address:"
-                         + remoteCandidate.getRelayedAddress());
+                + remoteCandidate.getRelayedAddress());
         log.info("Remote candinate reflexive address:"
-                         + remoteCandidate.getReflexiveAddress());
+                + remoteCandidate.getReflexiveAddress());
         return remoteCandidate.getTransportAddress();
     }
 
@@ -123,59 +144,34 @@ public class IceClient
      * environment that we can exchange SDP with peer through signaling
      * server(SIP server)
      */
-    public void exchangeSdpWithPeer() throws Throwable
-    {
+    public void exchangeSdpWithPeer() throws Throwable {
         log.info("Paste remote SDP here. Enter an empty line to proceed:");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                System.in));
 
-        StringBuilder buff = new StringBuilder();
-        String line = new String();
-
-        while ((line = reader.readLine()) != null)
-        {
-            line = line.trim();
-            if (line.length() == 0)
-            {
-                break;
-            }
-            buff.append(line);
-            buff.append("\r\n");
-        }
-
-        remoteSdp = buff.toString();
+        remoteSdp = "v=0\r\n" +
+                "o=ice4j.org 0 0 IN IP4 114.67.85.243\r\n" +
+                "s=-\r\n" +
+                "t=0 0\r\n" +
+                "a=ice-options:trickle\r\n" +
+                "a=ice-ufrag:24g801c8jnumts\r\n" +
+                "a=ice-pwd:7hlr33oiseo1aub5vdjhssa993\r\n" +
+                "m=text 14500 RTP/AVP 0\r\n" +
+                "c=IN 114.67.85.243 IP4v\r\n" +
+                "a=mid:text\r\n" +
+                "a=candidate:1 1 udp 2130706431 fe80:0:0:0:1e6d:4818:c0a:a273 8888 typ host\r\n" +
+                "a=candidate:2 1 udp 2130706431 192.168.42.8 8888 typ host\r\n" +
+                "a=candidate:3 1 udp 1677724415 117.136.40.222 38388 typ srflx raddr 192.168.42.8 rport 8888";
 
         SdpUtils.parseSDP(agent, remoteSdp);
     }
 
-    public void startConnect() throws InterruptedException
-    {
 
-        if (StringUtils.isBlank(remoteSdp))
-        {
-            throw new NullPointerException(
-                    "Please exchange sdp information with peer before start connect! ");
-        }
 
-        agent.startConnectivityEstablishment();
-
-        // agent.runInStunKeepAliveThread();
-
-        synchronized (listener)
-        {
-            listener.wait();
-        }
-
-    }
-
-    private Agent createAgent(int rtpPort, String streamName) throws Throwable
-    {
+    private Agent createAgent(int rtpPort, String streamName) throws Throwable {
         return createAgent(rtpPort, streamName, false);
     }
 
     private Agent createAgent(int rtpPort, String streamName,
-                              boolean isTrickling) throws Throwable
-    {
+                              boolean isTrickling) throws Throwable {
 
         long startTime = System.currentTimeMillis();
 
@@ -184,20 +180,18 @@ public class IceClient
         agent.setTrickling(isTrickling);
 
         // STUN
-        for (String server : stunServers)
-        {
+        for (String server : stunServers) {
             String[] pair = server.split(":");
             agent.addCandidateHarvester(new StunCandidateHarvester(
                     new TransportAddress(pair[0], Integer.parseInt(pair[1]),
-                                         Transport.UDP)));
+                            Transport.UDP)));
         }
 
         // TURN
         LongTermCredential longTermCredential = new LongTermCredential(username,
-                                                                       password);
+                password);
 
-        for (String server : turnServers)
-        {
+        for (String server : turnServers) {
             String[] pair = server.split(":");
             agent.addCandidateHarvester(new TurnCandidateHarvester(
                     new TransportAddress(pair[0], Integer.parseInt(pair[1]), Transport.UDP),
@@ -215,119 +209,17 @@ public class IceClient
     }
 
     private IceMediaStream createStream(int rtpPort, String streamName,
-                                        Agent agent) throws Throwable
-    {
+                                        Agent agent) throws Throwable {
         long startTime = System.currentTimeMillis();
         IceMediaStream stream = agent.createMediaStream(streamName);
         // rtp
         Component component = agent.createComponent(stream, Transport.UDP,
-                                                    rtpPort, rtpPort, rtpPort + 100);
+                rtpPort, rtpPort, rtpPort + 100);
 
         long endTime = System.currentTimeMillis();
         log.info("Component Name:" + component.getName());
         log.info("RTP Component created in " + (endTime - startTime) + " ms");
 
         return stream;
-    }
-
-    /**
-     * Receive notify event when ice processing state has changed.
-     */
-    public static final class IceProcessingListener implements
-            PropertyChangeListener
-    {
-
-        private long startTime = System.currentTimeMillis();
-
-        public void propertyChange(PropertyChangeEvent event)
-        {
-
-            Object state = event.getNewValue();
-
-            log.info("Agent entered the " + state + " state.");
-            if (state == IceProcessingState.COMPLETED)
-            {
-                long processingEndTime = System.currentTimeMillis();
-                log.info("Total ICE processing time: "
-                                 + (processingEndTime - startTime) + "ms");
-                Agent agent = (Agent) event.getSource();
-                List<IceMediaStream> streams = agent.getStreams();
-
-                for (IceMediaStream stream : streams)
-                {
-                    log.info("Stream name: " + stream.getName());
-                    List<Component> components = stream.getComponents();
-                    for (Component c : components)
-                    {
-                        log.info("------------------------------------------");
-                        log.info("Component of stream:" + c.getName()
-                                         + ",selected of pair:" + c.getSelectedPair());
-                        log.info("------------------------------------------");
-                    }
-                }
-
-                log.info("Printing the completed check lists:");
-                for (IceMediaStream stream : streams)
-                {
-
-                    log.info("Check list for  stream: " + stream.getName());
-
-                    log.info("nominated check list:" + stream.getCheckList());
-                }
-                synchronized (this)
-                {
-                    this.notifyAll();
-                }
-            }
-            else if (state == IceProcessingState.TERMINATED)
-            {
-                log.info("ice processing TERMINATED");
-            }
-            else if (state == IceProcessingState.FAILED)
-            {
-                log.info("ice processing FAILED");
-                ((Agent) event.getSource()).free();
-            }
-        }
-    }
-
-    public String[] getTurnServers()
-    {
-        return turnServers;
-    }
-
-    public void setTurnServers(String[] turnServers)
-    {
-        this.turnServers = turnServers;
-    }
-
-    public String[] getStunServers()
-    {
-        return stunServers;
-    }
-
-    public void setStunServers(String[] stunServers)
-    {
-        this.stunServers = stunServers;
-    }
-
-    public String getUsername()
-    {
-        return username;
-    }
-
-    public void setUsername(String username)
-    {
-        this.username = username;
-    }
-
-    public String getPassword()
-    {
-        return password;
-    }
-
-    public void setPassword(String password)
-    {
-        this.password = password;
     }
 }

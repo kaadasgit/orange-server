@@ -28,7 +28,6 @@
         <module>rtp-server</module>
     </modules>
 
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.8</jdk.version>
@@ -38,6 +37,14 @@
         <log4j2.version>2.6.2</log4j2.version>
         <slf4j.version>1.7.21</slf4j.version>
         <disruptor.version>3.3.6</disruptor.version>
+
+        <!--ssh配置-->
+        <ssh.userName>zhangbo</ssh.userName>
+        <ssh.pwd>564739784123</ssh.pwd>
+        <ssh.scp.url>114.67.58.242</ssh.scp.url>
+        <ssh.scp.directory>/home/zhangbo/file</ssh.scp.directory>
+        <ssh.exec.command>sh /home/zhangbo/file/run.sh restart
+        </ssh.exec.command>
     </properties>
 
     <dependencies>

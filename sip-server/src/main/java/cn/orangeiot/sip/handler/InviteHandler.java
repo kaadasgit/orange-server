@@ -12,6 +12,7 @@ import gov.nist.javax.sdp.SessionDescriptionImpl;
 import gov.nist.javax.sdp.fields.AttributeField;
 import gov.nist.javax.sdp.fields.MediaField;
 import gov.nist.javax.sdp.parser.SDPAnnounceParser;
+import gov.nist.javax.sip.address.SipUri;
 import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.vertx.core.json.JsonObject;
@@ -69,7 +70,7 @@ public class InviteHandler implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public void processInvite(SIPRequest request, SipOptions sipOptions) {
+    public void processInvite(SIPRequest request, SipOptions sipOptions,SocketAddress socketAddress) {
         //todo 查询是否存在相关账户信息
         To to = (To) request.getHeader(To.NAME);
         Via via = (Via) request.getHeader(Via.NAME);
@@ -102,47 +103,26 @@ public class InviteHandler implements UserAddr {
             SDPAnnounceParser parser = new SDPAnnounceParser(contents);
             SessionDescriptionImpl parsedDescription = parser.parse();
 //            if (!parsedDescription.getConnection().getAddress().equals(sipURI.getHost())) {//relay
-            final String ipAddress = parsedDescription.getConnection().getAddress();
-            parsedDescription.getMediaDescriptions(false)
-                    .forEach(e -> {
-                        MediaDescription md = (MediaDescription) e;
-                        Object cc = md.getAttributes(false).stream().filter(r -> r.toString().startsWith("a=candidate"))
-                                .filter(r -> r.toString().startsWith("a=candidate:2")).findFirst().orElseGet(null);
-                        String host = "";
-                        String port="";
-                        if (Objects.nonNull(cc)) {
-                            String[] address = cc.toString().split("\\s+");
-                            host = address[4];
-                            port = address[5];
-                            System.out.println("host:"+host+"::port:"+port);
-                        }
-                        try {
-                            if (md.getMedia().getMediaType().equalsIgnoreCase(MediaTypeEnum.AUDIO.toString())) {
-                                //保存映射關系
-                                SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
-                                        , new JsonObject().put("receAddr", host + ":" + port)
-                                                .put("sendAddr", to.getAddress().getURI().toString())
-                                                .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
-                            } else {
-                                //保存映射關系
-                                SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
-                                        , new JsonObject().put("receAddr", host + ":" + port)
-                                                .put("sendAddr", to.getAddress().getURI().toString())
-                                                .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
-                            }
-
-                            parsedDescription.getOrigin().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改本地地址
-                            parsedDescription.getConnection().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改接收地址
-                            md.getMedia().setMediaPort(jsonObject.getInteger(md.getMedia().getMediaType().toLowerCase() + "Port"));//修改接收端口
-
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                        }
-                    });
-            request.setContentLength(new ContentLength(parsedDescription.toString().length()));
-            ContentType contentType = (ContentType) request.getHeader(ContentType.NAME);
-            request.setContent(parsedDescription.toString(), contentType);
-//            }
+//            final String ipAddress = parsedDescription.getConnection().getAddress();
+//            parsedDescription.getMediaDescriptions(false)
+//                    .forEach(e -> {
+//                        MediaDescription md = (MediaDescription) e;
+//                        try {
+//                            SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + SAVE_CALL_ID
+//                                    , new JsonObject().put("receAddr", ipAddress + ":" + md.getMedia().getMediaPort())
+//                                            .put("sendAddr", to.getAddress().getURI().toString())
+//                                            .put("mediaType", md.getMedia().getMediaType().toLowerCase()));
+//                            parsedDescription.getOrigin().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改本地地址
+//                            parsedDescription.getConnection().setAddress(jsonObject.getString(md.getMedia().getMediaType().toLowerCase() + "Host"));//修改接收地址
+//                            md.getMedia().setMediaPort(jsonObject.getInteger(md.getMedia().getMediaType().toLowerCase() + "Port"));//修改接收端口
+//                        } catch (Exception e1) {
+//                            e1.printStackTrace();
+//                        }
+//                    });
+//            request.setContentLength(new ContentLength(parsedDescription.toString().length()));
+//            ContentType contentType = (ContentType) request.getHeader(ContentType.NAME);
+//            request.setContent(parsedDescription.toString(), contentType);
+//        }
 
             //根据Request uri来路由，后续的响应消息通过VIA来路由
             URI contactURI = contactAddr.getURI();
@@ -170,7 +150,10 @@ public class InviteHandler implements UserAddr {
 
             PorcessHandler.getBranchs().put(via.getBranch(), request.getFrom().getAddress().getURI().toString());//加入會畫管理branch
             PorcessHandler.getTransactions().put(callID.getCallIdentifer().getLocalId(), via.getBranch());//加入會畫管理
-        } catch (Exception e) {
+        } catch (
+                Exception e)
+
+        {
             e.printStackTrace();
         }
     }

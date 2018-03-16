@@ -4,6 +4,8 @@ import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import gov.nist.javax.sip.address.SipUri;
+import gov.nist.javax.sip.header.Expires;
+import gov.nist.javax.sip.header.To;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -50,8 +52,8 @@ public class RegisterHandler implements UserAddr {
      */
     public void processRegister(SIPRequest request, NetSocket netSocket, SipOptions sipOptions, SocketAddress socketAddress, Vertx vertx) {
         Response response = null;
-        ToHeader head = (ToHeader) request.getHeader(ToHeader.NAME);
-        Address toAddress = head.getAddress();
+        To to = (To) request.getHeader(To.NAME);
+        Address toAddress = to.getAddress();
         URI toURI = toAddress.getURI();
         ContactHeader contactHeader = (ContactHeader) request.getHeader("Contact");
         Address contactAddr = contactHeader.getAddress();
@@ -80,7 +82,8 @@ public class RegisterHandler implements UserAddr {
             }
             response = msgFactory.createResponse(200, request);//回复code200的成功
             response.setHeader(contactHeader);
-            response.setExpires(request.getExpires());
+            if (Objects.nonNull(request.getExpires()))
+                response.setExpires(request.getExpires());
             ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
         } catch (ParseException e) {
             e.printStackTrace();

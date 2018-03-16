@@ -1,86 +1,90 @@
 package cn.orangeiot.com.hankcs.network;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketAddress;
+import io.vertx.core.Vertx;
+import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.json.JsonObject;
+import org.ice4j.stack.StunServerTransaction;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class Peer
-{
-    public static void main(String[] args) throws Throwable
-    {
-        try
-        {
-            IceClient client = new IceClient(8888, "text");
-            client.init();
-            client.exchangeSdpWithPeer();
-            client.startConnect();
-            final DatagramSocket socket = client.getDatagramSocket();
-            final SocketAddress remoteAddress = client
-                    .getRemotePeerSocketAddress();
-            System.out.println(socket.toString());
-//            new Thread(new Runnable()
-//            {
-//
-//                public void run()
-//                {
-//                    while (true)
-//                    {
-//                        try
-//                        {
-//                            byte[] buf = new byte[1024];
-//                            DatagramPacket packet = new DatagramPacket(buf,
-//                                                                       buf.length);
-//                            socket.receive(packet);
-//                            System.out.println(packet.getAddress() + ":" + packet.getPort() + " says: " + new String(packet.getData(), 0, packet.getLength()));
-//                        }
-//                        catch (IOException e)
-//                        {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            }).start();
-//
-//            new Thread(new Runnable()
-//            {
-//
-//                public void run()
-//                {
-//                    try
-//                    {
-//                        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-//                        String line;
-//                        // 从键盘读取
-//                        while ((line = reader.readLine()) != null)
-//                        {
-//                            line = line.trim();
-//                            if (line.length() == 0)
-//                            {
-//                                break;
+public class Peer {
+    public static void main(String[] args) throws Throwable {
+        try {
+            Vertx vertx = Vertx.vertx();
+            io.vertx.core.datagram.DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions()
+                    .setReuseAddress(true));
+
+            String bindRequest ="[Response In: 6]\n" +
+                    "Message Type: Binding Request (0x0001)\n" +
+                    "Message Length: 0x0008\n" +
+                    "Message Transaction ID: 016dac016686ea581213b4283d0ba104\n" +
+                    "Attributes\n" +
+                    "Attribute: CHANGE-REQUEST\n";
+
+
+            socket.listen(8888, "192.168.42.8", asyncResult -> {
+                if (asyncResult.succeeded()) {
+                    socket.handler(rs -> {
+                        System.out.println("rece data -> " + new String(rs.data().getBytes()));
+                    });//数据包处理
+
+                    socket.send(bindRequest, 3479, "114.67.58.242", as -> {
+                        System.out.println("send data -> " + as.succeeded());
+                        if (!as.succeeded()) {
+                            reSend(vertx, bindRequest, 14500, "114.67.58.242", socket);
+                        }
+                    });
+//                    try {
+//                        String msg = new JsonObject().put("host", md.getConnection().getAddressType())
+//                                .put("port", md.getMedia().getMediaPort()).toString();
+//                        socket.send(msg, 14500, "114.67.58.243", as -> {
+//                            System.out.println("send data -> " + as.succeeded());
+//                            if (!as.succeeded()) {
+//                                reSend(vertx, msg, 14500, "114.67.58.243", socket);
 //                            }
-//                            byte[] buf = (line).getBytes();
-//                            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-//                            packet.setSocketAddress(remoteAddress);
-//                            socket.send(packet);
-//                        }
-//                    }
-//                    catch (Exception e)
-//                    {
+//                        });
+//                    } catch (Exception e) {
 //                        e.printStackTrace();
 //                    }
-//
-//                }
-//            }).start();
-        }
-        catch (Exception e)
-        {
+                } else {
+                    System.out.println("Listen failed" + asyncResult.cause());
+                    System.out.println("Failed to bind!");
+                    System.exit(0);
+                }
+            });
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
+
+    /**
+     * @param msg 消息
+     * @Description 重发消息
+     * @author zhang bo
+     * @date 18-2-27
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public static void reSend(Vertx vertx, String msg, int port, String address, io.vertx.core.datagram.DatagramSocket socket) {
+        //todo 重发消息
+        AtomicInteger atomicInteger = new AtomicInteger(0);
+        vertx.setPeriodic(1000, rs -> {
+            atomicInteger.getAndIncrement();//原子自增
+            if (atomicInteger.intValue() == 5) {//达到重发次数
+                vertx.cancelTimer(rs);//取消周期定时
+            }
+
+            socket.send(msg, port, address, ars -> {
+                if (ars.failed())
+                    ars.cause().printStackTrace();
+                else
+                    vertx.cancelTimer(rs);//取消周期定时
+            });
+        });
+
+    }
 }

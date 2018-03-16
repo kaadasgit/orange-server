@@ -17,15 +17,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sip-api>1.2.1.4</sip-api>
         <sip-ri-api>1.2.344</sip-ri-api>
-
-
-        <!--ssh配置-->
-        <ssh.userName>zhangbo</ssh.userName>
-        <ssh.pwd>564739784123</ssh.pwd>
-        <ssh.scp.url>114.67.58.242</ssh.scp.url>
-        <ssh.scp.directory>/home/zhangbo/file</ssh.scp.directory>
-        <ssh.exec.command>sh /home/zhangbo/file/run.sh restart
-        </ssh.exec.command>
     </properties>
 
 
@@ -174,7 +165,9 @@
                     <include>**/*.json</include>
                 </includes>
                 <excludes>
+                    <exclude>zkConf.json</exclude>
                     <exclude>conf.json</exclude>
+                    <exclude>log4j2.xml</exclude>
                 </excludes>
             </resource>
             <resource>
@@ -182,6 +175,7 @@
                 <directory>src/main/${package.target}</directory>
                 <includes>
                     <include>*.json</include>
+                    <include>*.xml</include>
                 </includes>
             </resource>
         </resources>

@@ -60,7 +60,7 @@ public class PorcessHandler {
 
     public PorcessHandler(MessageFactory msgFactory, HeaderFactory headerFactory, JsonObject jsonObject
             , AddressFactory addressFactory, Vertx vertx) {
-        this.registerHandler = new RegisterHandler(msgFactory,headerFactory);
+        this.registerHandler = new RegisterHandler(msgFactory, headerFactory);
         this.inviteHandler = new InviteHandler(msgFactory, headerFactory, jsonObject, addressFactory);
         this.responseHandler = new ResponseHandler(msgFactory, headerFactory, addressFactory, jsonObject);
         this.msgFactory = msgFactory;
@@ -106,7 +106,7 @@ public class PorcessHandler {
                     netSocket.close();
                 } else {
                     if (rs.result() instanceof SIPResponse)
-                        responseSwitch((SIPResponse) rs.result(), SipOptions.TCP);//回包
+                        responseSwitch((SIPResponse) rs.result(), SipOptions.TCP, netSocket.remoteAddress());//回包
                     else
                         redirectSwitch((SIPRequest) rs.result(), netSocket, SipOptions.TCP, null);//转发处理
                 }
@@ -144,7 +144,7 @@ public class PorcessHandler {
                 rs.cause().printStackTrace();
             } else {
                 if (rs.result() instanceof SIPResponse)
-                    responseSwitch((SIPResponse) rs.result(), SipOptions.UDP);//回包
+                    responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
                 else
                     redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
             }
@@ -170,7 +170,7 @@ public class PorcessHandler {
                 registerHandler.processRegister(sipMessage, netSocket, sipOptions, socketAddress, vertx);
                 break;
             case Request.INVITE://invite請求
-                inviteHandler.processInvite(sipMessage, sipOptions);
+                inviteHandler.processInvite(sipMessage, sipOptions, socketAddress);
                 break;
             case Request.ACK://ACK
                 this.processAck(sipMessage, sipOptions);
@@ -308,8 +308,8 @@ public class PorcessHandler {
      * @date 18-2-2
      * @version 1.0
      */
-    public void responseSwitch(SIPResponse response, SipOptions sipOptions) {
-        responseHandler.processResponse(response, sipOptions);
+    public void responseSwitch(SIPResponse response, SipOptions sipOptions, SocketAddress socketAddress) {
+        responseHandler.processResponse(response, sipOptions, socketAddress);
     }
 
 
