@@ -40,15 +40,15 @@
 
     mqtt服務器
 
-##reg-addr##
+#reg-addr
 
     事件總線(EventBus)的注冊地址
 
-##rtp-server##
+#rtp-server
 
     rtp(video、audio)relay服務器
 
-##sip-server##
+#sip-server
 
     sip協議信令服務器
 
