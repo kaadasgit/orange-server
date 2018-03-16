@@ -1,7 +1,0 @@
-{
-  "host":"127.0.0.1",
-  "consumer_saveTopic":"cn.orangeiot.topic.saveTopic",
-  "consumer_delTopic":"cn.orangeiot.topic.delTopic",
-  "send_saveTopic":"cn.orangeiot.topic.cache.saveTopic",
-  "send_delTopic":"cn.orangeiot.topic.cache.delTopic"
-}
