@@ -18,13 +18,15 @@ public class RedisClient {
 
     public static io.vertx.redis.RedisClient client;
 
-    /**r
+    /**
+     * r
+     *
      * @Description redisClient配置
      * @author zhang bo
      * @date 17-11-23
      * @version 1.0
      */
-    public void redisConf(Vertx vertx){
+    public void redisConf(Vertx vertx) {
         InputStream redisIn = RedisClient.class.getResourceAsStream("/redis-conf.json");
         String redisConf = "";//jdbc连接配置
         try {
@@ -33,7 +35,8 @@ public class RedisClient {
                 JsonObject json = new JsonObject(redisConf);
 
                 client = io.vertx.redis.RedisClient.create(vertx, new RedisOptions().setHost(json.getString("host"))
-                        .setPort(json.getInteger("port")).setAuth(json.getString("password")));//创建redisclient
+                        .setPort(json.getInteger("port")).setAuth(json.getString("password"))
+                        .setBinary(true));//创建redisclient
             }
         } catch (IOException e) {
             e.printStackTrace();

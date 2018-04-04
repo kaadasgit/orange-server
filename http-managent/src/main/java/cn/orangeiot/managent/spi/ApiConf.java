@@ -11,12 +11,18 @@ public interface ApiConf {
     /**
      * api路径
      */
-    String PRODUCTION_DEVICESN = "/production/deviceSN/:count";//设备SN号生产
+    String PRODUCTION_DEVICESN = "/production/deviceSN/:model/:child/:count";//设备SN号生产
 
-    String PRODUCTION_MODELSN = "/production/modelSN/:count/:factory/:model";//模块SN号生产
+    String PRODUCTION_MODELSN = "/production/modelSN/:model/:child/:count";//模块SN号生产
 
     String UPLOAD_MODEL_MAC = "/upload/model/mac";//模块MAC写入
 
     String REGISTER_USER_BULK = "/user/bulk/register";//用户米米网批量注册
+
+    String SELECT_MODEL = "/ota/select/modelAll";//查詢所有產品型號
+
+    String SELECT_DATE_RANGE = "/ota/select/dateRange";//查詢時間範圍
+
+    String SELECT_NUM_RANGE = "/ota/select/numRange";//查詢编号范围
 
 }

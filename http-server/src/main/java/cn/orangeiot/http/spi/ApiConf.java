@@ -71,5 +71,5 @@ public interface ApiConf {
 
     String UPLOAD_OPEN_LOCK_RECORD = "/openlock/uploadopenlocklist";//上传开门记录
 
-    String MODEL_PWD_BY_MAC = "/model/getpwdBymac";//根据mac获取password1
+    String MODEL_PWD_BY_MAC = "/model/getpwdBySN";//根据sn获取password1
 }

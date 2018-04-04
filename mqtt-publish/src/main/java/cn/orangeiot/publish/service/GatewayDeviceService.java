@@ -28,4 +28,6 @@ public interface GatewayDeviceService extends GatewayAddr,MessageAddr,MemenetAdd
     void delGatewayUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
     void getGatewayUserList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void getDeviceList(JsonObject jsonObject,Handler<AsyncResult<JsonObject>> handler);
 }

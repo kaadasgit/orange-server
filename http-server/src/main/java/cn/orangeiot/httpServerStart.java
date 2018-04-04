@@ -19,9 +19,9 @@ public class httpServerStart {
     private static Logger logger = LogManager.getLogger(httpServerStart.class);
 
     @SuppressWarnings("Duplicates")
-    public static void main(String[] args){
+    public static void main(String[] args) {
         //日志使用log4j2
-        System.setProperty("vertx.logger-delegate-factory-class-name","io.vertx.core.logging.Log4j2LogDelegateFactory");
+        System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.Log4j2LogDelegateFactory");
 
         /**加载log4j2配置*/
         ConfigurationSource source = null;
@@ -35,7 +35,8 @@ public class httpServerStart {
         }
 
         if (null != source) {
-            Vertx.vertx().deployVerticle(HttpServerVerticle.class.getName(), rs -> {
+            Vertx vertx = Vertx.vertx();
+            vertx.deployVerticle(HttpServerVerticle.class.getName(), rs -> {
                 if (rs.failed()) {
                     logger.error("deploy HttpServerVerticle fail");
                     rs.cause().printStackTrace();

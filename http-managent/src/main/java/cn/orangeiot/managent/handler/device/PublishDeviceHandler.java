@@ -60,37 +60,37 @@ public class PublishDeviceHandler implements EventbusAddr {
      */
     public void productionDeviceSN(RoutingContext routingContext) {
         logger.info("==PublishDeviceHandler=productionDeviceSN==params->" + routingContext.getBodyAsString());
-        if (Objects.nonNull(routingContext.request().getParam("count"))) {
-            //根据数量生产deviceSN
-            List<String> list = new ArrayList<>(Integer.parseInt(routingContext.request().getParam("count")));//设备SN集合
-            for (int i = 0; i < Integer.parseInt(routingContext.request().getParam("count")); i++) {
-                list.add(UUIDUtils.getUUID());
-            }
+        if (Objects.nonNull(routingContext.request().getParam("count"))
+                && Objects.nonNull(routingContext.request().getParam("child"))
+                && Objects.nonNull(routingContext.request().getParam("model"))) {
             //数据入库
-            eventBus.send(MemenetAddr.class.getName() + PRODUCTION_DEVICESN, new JsonObject().put("deviceSNList", new JsonArray(list))
-                    , rs -> {
-                        if (rs.failed()) {
-                            rs.cause().printStackTrace();
-                            routingContext.fail(501);
-                        } else {
-                            if (Objects.nonNull(rs.result())) {
-                                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                                ExcelUtil.exportExcelX("注册的SN设备号", new HashMap<String, String>() {{
-                                    put("num", "序号");
-                                    put("devuuid", "设备devuuid号");
-                                }}, new JsonArray(list), null, 0, os);
-                                byte[] content = os.toByteArray();
-                                routingContext.response().setChunked(true).putHeader("Content-type", "application/octet-stream")
-                                        .putHeader("Content-Disposition", " attachment; filename=production_deviceSN.xlsx")
-                                        .write(Buffer.buffer().appendBytes(content)).end();//分块编码
+            eventBus.send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
+                    .put("count", Integer.parseInt(routingContext.request().getParam("count")))
+                    .put("child", routingContext.request().getParam("child"))
+                    .put("model", routingContext.request().getParam("model"))
+                    .put("secret", false), (AsyncResult<Message<JsonArray>> rs) -> {
+                if (rs.failed()) {
+                    rs.cause().printStackTrace();
+                    routingContext.fail(501);
+                } else {
+                    if (Objects.nonNull(rs.result())) {
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        ExcelUtil.exportModelExcel("注册的SN设备号", new HashMap<String, String>() {{
+                            put("num", "序号");
+                            put("SN", "设备devuuid号");
+                        }}, rs.result().body(), null, 0, os);
+                        byte[] content = os.toByteArray();
+                        routingContext.response().setChunked(true).putHeader("Content-type", "application/octet-stream")
+                                .putHeader("Content-Disposition", " attachment; filename=production_deviceSN.xlsx")
+                                .write(Buffer.buffer().appendBytes(content)).end();//分块编码
 
-                            } else {//失败
-                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()
-                                        .setErrorMessage(ErrorType.PRODUCTION_DEVICESN_FAIL.getKey(), ErrorType.PRODUCTION_DEVICESN_FAIL.getValue())).toString());
-                            }
-                        }
+                    } else {//失败
+                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                .setErrorMessage(ErrorType.PRODUCTION_DEVICESN_FAIL.getKey(), ErrorType.PRODUCTION_DEVICESN_FAIL.getValue())).toString());
+                    }
+                }
 
-                    });
+            });
         } else {
             routingContext.fail(401);
         }
@@ -107,36 +107,32 @@ public class PublishDeviceHandler implements EventbusAddr {
         logger.info("==PublishDeviceHandler=productionBLESN==params->" + routingContext.getBodyAsString());
         //校验数据
         if (Objects.nonNull(routingContext.request().getParam("count"))
-                && Objects.nonNull(routingContext.request().getParam("factory"))
+                && Objects.nonNull(routingContext.request().getParam("child"))
                 && Objects.nonNull(routingContext.request().getParam("model"))) {
             //数据入库
-            try {
-                eventBus.send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
-                                .put("count", Integer.parseInt(routingContext.request().getParam("count")))
-                                .put("factory", routingContext.request().getParam("factory"))
-                                .put("model", routingContext.request().getParam("model"))
-                        , (AsyncResult<Message<JsonArray>> as) -> {
-                            if (as.failed()) {
-                                routingContext.fail(501);
-                            } else {
-                                if (Objects.nonNull(as.result().body())) {
-                                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                                    ExcelUtil.exportModelExcel("模块SN设备号", new HashMap<String, String>() {{
-                                        put("num", "序号");
-                                        put("SN", "模块SN号");
-                                        put("password1", "password1");
-                                    }}, as.result().body(), null, 0, os);
-                                    byte[] content = os.toByteArray();
-                                    routingContext.response().setChunked(true).putHeader("Content-type", "application/octet-stream")
-                                            .putHeader("Content-Disposition", " attachment; filename=production_ModelSN.xlsx")
-                                            .write(Buffer.buffer().appendBytes(content)).end();//分块编码
-                                }
+            eventBus.send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
+                            .put("count", Integer.parseInt(routingContext.request().getParam("count")))
+                            .put("child", routingContext.request().getParam("child"))
+                            .put("model", routingContext.request().getParam("model"))
+                            .put("secret", true)
+                    , (AsyncResult<Message<JsonArray>> as) -> {
+                        if (as.failed()) {
+                            routingContext.fail(501);
+                        } else {
+                            if (Objects.nonNull(as.result().body())) {
+                                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                                ExcelUtil.exportModelExcel("模块SN设备号", new HashMap<String, String>() {{
+                                    put("num", "序号");
+                                    put("SN", "模块SN号");
+                                    put("password1", "password1");
+                                }}, as.result().body(), null, 0, os);
+                                byte[] content = os.toByteArray();
+                                routingContext.response().setChunked(true).putHeader("Content-type", "application/octet-stream")
+                                        .putHeader("Content-Disposition", " attachment; filename=production_ModelSN.xlsx")
+                                        .write(Buffer.buffer().appendBytes(content)).end();//分块编码
                             }
-                        });
-            } catch (Exception e) {
-                e.getCause().printStackTrace();
-                routingContext.fail(401);
-            }
+                        }
+                    });
         } else {
             routingContext.fail(401);
         }

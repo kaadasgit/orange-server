@@ -21,7 +21,6 @@ public class PublishHandler {
 
     private static Logger logger = LogManager.getLogger(PublishHandler.class);
 
-
     private JsonObject jsonObject;
 
     private FuncHandler funcHandler;

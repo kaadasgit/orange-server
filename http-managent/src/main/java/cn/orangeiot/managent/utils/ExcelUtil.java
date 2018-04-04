@@ -321,7 +321,7 @@ public class ExcelUtil {
         CellStyle titleStyle = workbook.createCellStyle();
         titleStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
         Font titleFont = workbook.createFont();
-        titleFont.setFontHeightInPoints((short) 20);
+        titleFont.setFontHeightInPoints((short) 30);
         titleFont.setBoldweight((short) 700);
         titleFont.setFontHeight((short) (25 * 20));
         titleStyle.setFont(titleFont);
@@ -382,7 +382,6 @@ public class ExcelUtil {
         for (Object obj : jsonArray) {
             if (rowIndex == 65535 || rowIndex == 0) {
                 if (rowIndex != 0) sheet = workbook.createSheet();//如果数据超过了，则在第二页显示
-
                 SXSSFRow titleRow = sheet.createRow(0);//表头 rowIndex=0
                 titleRow.createCell(0).setCellValue(title);
                 titleRow.getCell(0).setCellStyle(titleStyle);

@@ -69,12 +69,26 @@ public class DeviceHandler implements GatewayAddr {
                                             if (rs.failed()) {
                                                 rs.cause().printStackTrace();
                                                 logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice timeout");
+                                                message.reply(null);
+                                                vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
+                                                        .put("type", 0)
+                                                        .put("userid", ers.result().body().getLong("userid").toString())
+                                                        .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
                                             } else {
                                                 logger.info("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result -> " + rs.result().body());
-                                                if (rs.result().body().getInteger("result") == 0)
+                                                if (rs.result().body().getInteger("result") == 0) {
                                                     vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
                                                             .put("devicesn", message.body().getString("devicesn"))
                                                             .put("domain", rs.result().body().getString("domain")), SendOptions.getInstance());
+                                                    message.reply(new JsonObject());
+                                                } else {
+                                                    logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result ->" + rs.result().body().getInteger("result"));
+                                                    vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
+                                                            .put("type", 0)
+                                                            .put("userid", ers.result().body().getLong("userid").toString())
+                                                            .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
+                                                    message.reply(null);
+                                                }
 
                                             }
                                         });

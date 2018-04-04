@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.prometheus.PromMetrics;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
@@ -7,6 +8,7 @@ import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -271,7 +273,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.handlePublishMessage(publish, null);
                 break;
             case LEAST_ONE:
-//                        session.addMessageToQueue(publish);
                 session.handlePublishMessage(publish, permitted -> {
                     PubAckMessage pubAck = new PubAckMessage();
                     pubAck.setMessageID(publish.getMessageID());
@@ -279,7 +280,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 });
                 break;
             case EXACTLY_ONCE:
-//                        session.addMessageToQueue(publish);
                 session.handlePublishMessage(publish, permitted -> {
                     PubRecMessage pubRec = new PubRecMessage();
                     pubRec.setMessageID(publish.getMessageID());

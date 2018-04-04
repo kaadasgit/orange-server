@@ -1,7 +1,9 @@
 package cn.orangeiot.message.handler;
 
+import cn.orangeiot.message.handler.client.KafkaClient;
 import cn.orangeiot.message.handler.client.MailClient;
 import cn.orangeiot.message.handler.client.SMSClient;
+import cn.orangeiot.message.handler.msg.OffMessageHandler;
 import cn.orangeiot.message.handler.notify.NotifyHandler;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.message.MessageAddr;
@@ -55,6 +57,11 @@ public class RegisterHandler implements EventbusAddr {
             //注册smsclient
             SMSClient smsClient = new SMSClient();
             smsClient.smsConf(vertx);
+            //注册kafkaclient
+            KafkaClient kafkaClient=new KafkaClient();
+            kafkaClient.kafkaProducerConf(vertx);
+            kafkaClient.kafkaConsumerConf(vertx);
+
             //通知相關
             cn.orangeiot.message.handler.msg.MessageHandler msgHandler = new cn.orangeiot.message.handler.msg.MessageHandler(vertx, config);
             vertx.eventBus().consumer(UserAddr.class.getName() + SMS_CODE, msgHandler::SMSCode);
@@ -64,6 +71,11 @@ public class RegisterHandler implements EventbusAddr {
             NotifyHandler notifyHandler = new NotifyHandler(vertx, config);
             vertx.eventBus().consumer(MessageAddr.class.getName() + NOTIFY_GATEWAY_USER_ADMIN, notifyHandler::notifyGatewayAdmin);
             vertx.eventBus().consumer(MessageAddr.class.getName() + REPLY_GATEWAY_USER, notifyHandler::replyGatewayUser);
+
+            //存储消息和处理消息
+            OffMessageHandler offMessageHandler=new OffMessageHandler(vertx,config);
+            vertx.eventBus().consumer(MessageAddr.class.getName() + SAVE_OFFLINE_MSG, offMessageHandler::productMsg);
+
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());

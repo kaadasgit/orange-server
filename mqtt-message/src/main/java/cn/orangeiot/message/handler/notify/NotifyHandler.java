@@ -5,6 +5,7 @@ import cn.orangeiot.message.Model.MqttQos;
 import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -62,6 +63,6 @@ public class NotifyHandler implements MessageAddr {
     public void replyGatewayUser(Message<JsonObject> message) {
         logger.info("==NotifyHandler=replyGatewayUser===params -> " + message.body());
         vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body().put("func", "replyApprovalBindGW"),
-                SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", "app:"+message.body().getString("requestuid")));
+                SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", "app:" + message.body().getString("requestuid")));
     }
 }

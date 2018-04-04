@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -41,12 +42,19 @@ public class GatewayDao {
      */
     public void onbindGatewayByUser(Message<JsonObject> message) {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
-                .put("isAdmin", 1), new JsonObject().put("_id", 1).put("adminuid", 1).put("adminName", 1).put("adminNickname", 1), as -> {
+                .put("isAdmin", 1), new JsonObject().put("_id", 1).put("uid", 1).put("adminuid", 1).put("adminName", 1)
+                .put("adminNickname", 1), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
                 message.reply(null);
             } else {
                 if (Objects.nonNull(as.result())) {//存在管理员
+                    if (Objects.nonNull(as.result().getValue("uid")) && as.result().getString("uid")
+                            .equals(message.body().getString("uid"))) {
+                        message.reply(new JsonObject(), new DeliveryOptions().addHeader("code",
+                                String.valueOf(ErrorType.HAVE_ADMIN_BY_GATEWAY.getKey())).addHeader("msg", ErrorType.HAVE_ADMIN_BY_GATEWAY.getValue()));
+                        return;
+                    }
                     message.reply(new JsonObject(), new DeliveryOptions().addHeader("code",
                             String.valueOf(ErrorType.NOTIFY_ADMIN_BY_GATEWAY.getKey())).addHeader("msg", ErrorType.NOTIFY_ADMIN_BY_GATEWAY.getValue()));
                     RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), userResult -> {
@@ -200,12 +208,20 @@ public class GatewayDao {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1)), rs -> {
+                .put("deviceNickName", 1).put("adminuid", 1)), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
                 message.reply(null);
             } else {
-                message.reply(new JsonArray(rs.result()));
+                List<JsonObject> resultList = rs.result().stream().map(e -> {
+                    if (e.getString("adminuid").equals(message.body().getString("uid")))
+                        e.put("isAdmin", 1);//管理员
+                    else
+                        e.put("isAdmin", 2);//普通用户
+                    e.remove("adminuid");
+                    return e;
+                }).collect(Collectors.toList());
+                message.reply(new JsonArray(resultList));
             }
         });
     }
@@ -258,9 +274,17 @@ public class GatewayDao {
     public void onupdateGWDomain(Message<JsonObject> message) {
         MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devicesn"))
                 , new JsonObject().put("$set", new JsonObject().put("domain", message.body().getString("domain")))
-                , new UpdateOptions().setUpsert(true), rs -> {
+                , new UpdateOptions().setUpsert(false), rs -> {
                     if (rs.failed()) rs.cause().printStackTrace();
                 });
+
+        if (Objects.nonNull(message.body().getValue("type"))) {//綁定網關失敗
+            MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
+                    .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
+                if (rs.failed())
+                    rs.cause().printStackTrace();
+            });
+        }
     }
 
 
@@ -417,19 +441,102 @@ public class GatewayDao {
      * @date 18-1-16
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void onGetGatewayAdminByuid(Message<JsonObject> message) {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                 message.body().getString("devid")).put("isAdmin", 1), new JsonObject().put("uid", 1)
                 .put("_id", 0), rs -> {
-            if(rs.failed()){
+            if (rs.failed()) {
                 rs.cause().printStackTrace();
                 message.reply(null);
-            }else{
-                if(Objects.nonNull(rs.result()))
+            } else {
+                if (Objects.nonNull(rs.result()))
                     message.reply(rs.result());
                 else
                     message.reply(null);
             }
         });
     }
+
+
+    /**
+     * @Description 設備上線
+     * @author zhang bo
+     * @date 18-3-22
+     * @version 1.0
+     */
+    public void deviceOnline(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
+                .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))), new JsonObject().put("_id", 1), as -> {
+            if (as.failed()) {
+                as.cause().printStackTrace();
+            } else {
+                if (Objects.nonNull(as.result()))
+                    MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                            message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
+                                    .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))),
+                            new JsonObject().put("$set", new JsonObject().put("deviceList.$.version"
+                                    , message.body().getJsonObject("eventparams").getString("version")))
+                            , new UpdateOptions().setUpsert(false), rs -> {
+                                if (rs.failed()) {
+                                    rs.cause().printStackTrace();
+                                }
+                            });
+                else
+                    MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                            message.body().getString("clientId").split(":")[1]),
+                            new JsonObject().put("$addToSet", new JsonObject().put("deviceList", new JsonObject()
+                                    .put("devid", message.body().getJsonObject("eventparams").getString("devid"))
+                                    .put("devtype", message.body().getJsonObject("eventparams").getString("devtype"))
+                                    .put("version", message.body().getJsonObject("eventparams").getString("version"))
+                                    .put("status", 1)//上線狀態
+                            )), new UpdateOptions().setUpsert(false), rs -> {
+                                if (rs.failed()) {
+                                    rs.cause().printStackTrace();
+                                }
+                            });
+
+            }
+        });
+    }
+
+
+    /**
+     * @Description 設備下線
+     * @author zhang bo
+     * @date 18-3-22
+     * @version 1.0
+     */
+    public void deviceOffline(Message<JsonObject> message) {
+        MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
+                        .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))),
+                new JsonObject().put("$set", new JsonObject().put("deviceList.$.status"
+                        , 2))//下线狀態
+                ,  new UpdateOptions().setUpsert(false), rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 獲取設備列表
+     * @author zhang bo
+     * @date 18-3-22
+     * @version 1.0
+     */
+    public void getDeviceList(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("devuuid")), new JsonObject().put("deviceList", 1).put("_id", 0), rs -> {
+            if (rs.failed()) {
+                rs.cause().printStackTrace();
+            } else {
+                message.reply(rs.result());
+            }
+        });
+    }
+
 }

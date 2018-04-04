@@ -15,6 +15,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.ext.hawkular.AuthenticationOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
@@ -170,6 +172,15 @@ public class SpiConf {
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+//                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
+//                                .setHost("127.0.0.1")
+//                                .setPort(8080)
+//                                .setTenant("hawkular").setAuthenticationOptions(
+//                                        new AuthenticationOptions()
+//                                                .setEnabled(true)
+//                                                .setId("test")
+//                                                .setSecret("123456")
+//                                ));
 //                options.setClusterHost(configJson.getString("host"));//本机地址
 
                 //集群

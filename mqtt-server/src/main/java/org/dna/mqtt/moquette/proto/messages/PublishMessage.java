@@ -15,17 +15,17 @@
  */
 package org.dna.mqtt.moquette.proto.messages;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
- *
  * @author andrea
  */
-public class PublishMessage extends MessageIDMessage {
+public class PublishMessage extends MessageIDMessage implements Serializable {
 
     private String m_topicName;
-//    private Integer m_messageID; //could be null if Qos is == 0
+    //    private Integer m_messageID; //could be null if Qos is == 0
     private ByteBuffer m_payload;
 
     /*public Integer getMessageID() {
@@ -35,7 +35,7 @@ public class PublishMessage extends MessageIDMessage {
     public void setMessageID(Integer messageID) {
         this.m_messageID = messageID;
     }*/
-    
+
     public PublishMessage() {
         m_messageType = AbstractMessage.PUBLISH;
     }
@@ -51,12 +51,13 @@ public class PublishMessage extends MessageIDMessage {
     public ByteBuffer getPayload() {
         return m_payload;
     }
+
     public String getPayloadAsString() {
         try {
             String ret = new String(m_payload.array(), "UTF-8");
 
             return ret;
-        } catch(UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             return new String(m_payload.array());
         }
     }
@@ -72,6 +73,6 @@ public class PublishMessage extends MessageIDMessage {
 
     @Override
     public String toString() {
-        return "PUBLISH: "+getMessageID() +" topic["+getTopicName()+"] payload length["+getPayload().array().length+"] qos["+getQos()+"] retain["+isRetainFlag()+"] dup["+isDupFlag()+"]";
+        return "PUBLISH: " + getMessageID() + " topic[" + getTopicName() + "] payload length[" + getPayload().array().length + "] qos[" + getQos() + "] retain[" + isRetainFlag() + "] dup[" + isDupFlag() + "]";
     }
 }

@@ -27,4 +27,11 @@ public interface GatewayAddr {
     String DEL_GW_USER="delGWUser";//管理员删除用户
 
     String GET_GW_USER_LIST="getGWUserList";//获取网关普通用户
+
+    String DEVICE_ONLINE="deviceOnline";//設備上線
+
+    String DEVICE_OFFLINE="deviceOffline";//設備上線
+
+    String GET_DEVICE_List="getDeviceList";//獲取設備列表
+
 }

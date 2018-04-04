@@ -7,9 +7,10 @@
         <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
         <!--</Console>-->
         <!--按天分日志文件-->
-        <RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"
-                     filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
+        <RollingFile name="serverLog" fileName="/home/app/logs/server.log"
+                     filePattern="/home/app/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
+            <PatternLayout
+                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:10.29.67.209:12370/http_server] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
             </Policies>
@@ -23,8 +24,8 @@
     </Appenders>
     <Loggers>
         <!--异步写入log-->
-        <AsyncLogger name="async">
+        <Root level="info">
             <AppenderRef ref="serverLog"/>
-        </AsyncLogger>
+        </Root>
     </Loggers>
 </Configuration>

@@ -13,7 +13,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "host": "192.168.6.87:8090",
+  "host": "192.168.1.100:8090",
   "basePath": "/",
   "tags": [
     {
@@ -73,8 +73,8 @@
       }
     },
     {
-      "name": "mac",
-      "description": "mac地址相关",
+      "name": "password",
+      "description": "password1地址相关",
       "externalDocs": {
         "description": "Find out more about our store",
         "url": "http://swagger.io"
@@ -1265,14 +1265,14 @@
         }
       }
     },
-    "/model/getpwdBymac": {
+    "/model/getpwdBySN": {
       "post": {
         "tags": [
-          "mac"
+          "password"
         ],
-        "summary": "根据mac地址根据password1",
+        "summary": "根据SN獲取password1",
         "description": "",
-        "operationId": "getpwdBymac",
+        "operationId": "getpwdBySN",
         "consumes": [
           "application/json"
         ],
@@ -1292,7 +1292,7 @@
             "description": "List of user object",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/getpwdBymac"
+              "$ref": "#/definitions/getpwdBySN"
             }
           }
         ],
@@ -1557,6 +1557,14 @@
         "user_id": {
           "type": "string",
           "description": "用户登录返回的uid"
+        },
+        "password1": {
+          "type": "string",
+          "description": "服務器密鑰"
+        },
+        "password2": {
+          "type": "string",
+          "description": "設備密鑰"
         }
       }
     },
@@ -1983,15 +1991,15 @@
         }
       }
     },
-    "getpwdBymac": {
+    "getpwdBySN": {
       "type": "object",
       "required": [
-        "mac"
+        "SN"
       ],
       "properties": {
-        "mac": {
+        "SN": {
           "type": "string",
-          "description": "模块mac地址"
+          "description": "模块SN地址"
         }
       }
     }

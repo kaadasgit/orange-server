@@ -49,9 +49,13 @@ public enum  ErrorType {
     UPDATE_NICKNAME_FAIL(601,"修改昵称失敗"),
     PRODUCTION_DEVICESN_FAIL(991,"生产失败"),
     NOTIFY_ADMIN_BY_GATEWAY(812,"已经通知管理员确认"),
+    HAVE_ADMIN_BY_GATEWAY(813,"已经绑定了網關"),
     BIND_GATEWAY_FAIL(871,"绑定网关失败"),
+    MIMI_BIND_GATEWAY_FAIL(946,"mimi绑定网关失败"),
+    APPROVATE_MIMI_BIND_GATEWAY_FAIL(947,"審批mimi绑定网关失败"),
     APPROVAL_FAIL(816,"审批失败"),
     GET_GATEWAY_BIND_FAIL(819,"获取列表失败"),
+    GET_GATEWAY_DEVICE_FAIL(820,"获取网关设备列表失败"),
     DATA_MAP_FAIL(436,"数据不是映射关系"),
     SELECT_DATA_NULL(419,"没有数据，参数不匹配"),
     REGISTER_USER_BULK_FAIL(567,"批量注册用户失败");

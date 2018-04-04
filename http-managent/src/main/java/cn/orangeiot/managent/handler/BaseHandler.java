@@ -105,7 +105,7 @@ public class BaseHandler {
      * 全局异常和超时处理
      */
     @SuppressWarnings("Duplicates")
-    public void ExceptionAndTimeout(Router router) {
+    public void exceptionAndTimeout(Router router) {
         /** 全局异常处理*/
         router.route("/*").failureHandler(failureRoutingContext -> {
             int statusCode = failureRoutingContext.statusCode();//获取错误状态码

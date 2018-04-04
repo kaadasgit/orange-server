@@ -183,7 +183,8 @@ public class BaseHandler implements UserAddr {
      */
     public void globalIntercept(Router router) {
         router.post("/*").handler(routingContext -> {
-            logger.info("/*===globalIntercept params -> " + routingContext.getBodyAsString());
+            logger.info("/*===globalIntercept params -> {} , remoteHostname -> {}", routingContext.getBodyAsString()
+                    , routingContext.request().remoteAddress());
 //            String params = EscapeUtils.escapeHtml(routingContext.getBodyAsString());//对特殊字符转义
             String params = routingContext.getBodyAsString().replace("\\s", "").replace("\n", "");
             if (this.paramsIsJsonObject(routingContext, params)) {

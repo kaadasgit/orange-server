@@ -99,9 +99,9 @@ public class InviteHandler implements UserAddr {
 
             CallID callID = (CallID) request.getHeader(CallID.NAME);
             //todo sdp解析
-            String contents = request.getMultipartMimeContent().getContents().next().getContent().toString();
-            SDPAnnounceParser parser = new SDPAnnounceParser(contents);
-            SessionDescriptionImpl parsedDescription = parser.parse();
+//            String contents = request.getMultipartMimeContent().getContents().next().getContent().toString();
+//            SDPAnnounceParser parser = new SDPAnnounceParser(contents);
+//            SessionDescriptionImpl parsedDescription = parser.parse();
 //            if (!parsedDescription.getConnection().getAddress().equals(sipURI.getHost())) {//relay
 //            final String ipAddress = parsedDescription.getConnection().getAddress();
 //            parsedDescription.getMediaDescriptions(false)

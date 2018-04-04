@@ -4,6 +4,7 @@ import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.managent.handler.BaseHandler;
 import cn.orangeiot.managent.handler.device.PublishDeviceHandler;
 import cn.orangeiot.managent.handler.memenet.MemeNetHandler;
+import cn.orangeiot.managent.handler.ota.OTAHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -12,11 +13,16 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.ext.hawkular.AuthenticationOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.MDC;
+import org.apache.log4j.NDC;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +56,6 @@ public class SpiConf {
             vertx = res.result();
             router = Router.router(vertx);
 
-
             /**
              * 通用配置
              */
@@ -59,15 +64,22 @@ public class SpiConf {
             baseHandler.bodyOrUpload(router);
             baseHandler.globalIntercept(router);
             baseHandler.produces(router);
+            baseHandler.exceptionAndTimeout(router);
 
 
             PublishDeviceHandler publishDeviceHandler = new PublishDeviceHandler(vertx.eventBus(), configJson);
             router.get(ApiConf.PRODUCTION_DEVICESN).blockingHandler(publishDeviceHandler::productionDeviceSN);
             router.get(ApiConf.PRODUCTION_MODELSN).blockingHandler(publishDeviceHandler::productionBLESN);
-            router.post(ApiConf.UPLOAD_MODEL_MAC).blockingHandler(publishDeviceHandler::uploadMacAddr);
+            router.post(ApiConf.UPLOAD_MODEL_MAC).handler(publishDeviceHandler::uploadMacAddr);
 
             MemeNetHandler memeNetHandler = new MemeNetHandler(vertx.eventBus(), configJson);
             router.get(ApiConf.REGISTER_USER_BULK).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).blockingHandler(memeNetHandler::onRegisterUserBulk);
+
+
+            OTAHandler otaHandler = new OTAHandler(vertx, configJson);
+            router.post(ApiConf.SELECT_MODEL).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectModelAll);
+            router.post(ApiConf.SELECT_DATE_RANGE).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectDateRange);
+            router.post(ApiConf.SELECT_NUM_RANGE).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectNumRange);
 
             createHttpServerManagent();//创建httpServer后台管理
         } else {
@@ -97,6 +109,7 @@ public class SpiConf {
                     .requestHandler(router::accept).listen(vertxConfig.getInteger("http-port",
                     configJson.getInteger("port")),
                     vertxConfig.getString("host-name", configJson.getString("host")));
+            ThreadContext.put("ip", configJson.getString("host"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,7 +137,16 @@ public class SpiConf {
 
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
-                VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                VertxOptions options = new VertxOptions().setClusterManager(mgr)
+                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
+                                .setHost("127.0.0.1")
+                                .setPort(8080)
+                                .setTenant("hawkular").setAuthenticationOptions(
+                                        new AuthenticationOptions()
+                                                .setEnabled(true)
+                                                .setId("test")
+                                                .setSecret("123456")
+                                ));
 //                options.setClusterHost(configJson.getString("host"));//本机地址
 
                 //集群

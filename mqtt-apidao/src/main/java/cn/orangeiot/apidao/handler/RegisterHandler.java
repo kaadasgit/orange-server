@@ -8,6 +8,7 @@ import cn.orangeiot.apidao.handler.dao.file.FileDao;
 import cn.orangeiot.apidao.handler.dao.gateway.GatewayDao;
 import cn.orangeiot.apidao.handler.dao.job.JobDao;
 import cn.orangeiot.apidao.handler.dao.message.MessageDao;
+import cn.orangeiot.apidao.handler.dao.ota.OtaDao;
 import cn.orangeiot.apidao.handler.dao.register.RegisterDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
@@ -19,13 +20,14 @@ import cn.orangeiot.reg.file.FileAddr;
 import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
+import cn.orangeiot.reg.ota.OtaAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.jwt.JWTAuth;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author zhang bo
@@ -76,7 +78,7 @@ public class RegisterHandler implements EventbusAddr {
 
             //离线消息储存
             MessageDao messageHandler = new MessageDao();
-            vertx.eventBus().consumer(config.getString("consumer_saveOfflineMessage"), messageHandler::onSaveOfflineMsg);
+//            vertx.eventBus().consumer(MessageAddr.class.getName()+SAVE_OFFLINE_MSG, messageHandler::onSaveOfflineMsg);
             vertx.eventBus().consumer(MessageAddr.class.getName() + SAVE_CODE, messageHandler::onSaveVerityCode);
             vertx.eventBus().consumer(MessageAddr.class.getName() + GET_CODE_COUNT, messageHandler::onGetCodeCount);
 
@@ -148,6 +150,9 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(GatewayAddr.class.getName() + DEL_GW_USER, gatewayDao::onDelGatewayUser);
             vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_USER_LIST, gatewayDao::onGetGatewayUserList);
             vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
+            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_ONLINE, gatewayDao::deviceOnline);
+            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_OFFLINE, gatewayDao::deviceOffline);
+            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_DEVICE_List, gatewayDao::getDeviceList);
 
 
             //stream 相關
@@ -157,6 +162,13 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
             vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);
             vertx.eventBus().consumer(UserAddr.class.getName() + GET_CALL_ID, registerDao::getCallIdAddr);
+
+
+            //ota 升級相關
+            OtaDao otaDao=new OtaDao();
+            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_MODEL, otaDao::selectModelType);
+            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_DATE_RANGE, otaDao::selectDateRange);
+            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_NUM_RANGE, otaDao::selectNumRange);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());

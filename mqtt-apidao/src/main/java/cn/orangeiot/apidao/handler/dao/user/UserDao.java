@@ -28,6 +28,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -75,7 +77,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                     } else {//网关
                         //查找DB
                         MongoClient.client.findOne("kdsUser", new JsonObject().put("userGwAccount", message.body().getString("username")), new JsonObject()
-                                .put("userPwd", ""), res -> {
+                                .put("userPwd", 1), res -> {
                             if (res.failed()) {
                                 res.cause().printStackTrace();
                                 message.reply(false);
@@ -122,7 +124,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
 //                });
 //            }
 //        });
-//    }
+//    }Rge
 
 
     /**
@@ -168,9 +170,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             } else {
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
-                        encyPwd(res.result().put("username", message.body().getString("tel")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
+                        encyPwd(res.result().put("username", message.body().getString("tel"))
+                                .put("loginIP", message.body().getString("loginIP")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
                     } else {//sha1验证
-                        encyPwd(res.result().put("username", message.body().getString("tel")), message, SHA1.encode(message.body().getString("password")));
+                        encyPwd(res.result().put("username", message.body().getString("tel"))
+                                .put("loginIP", message.body().getString("loginIP")), message, SHA1.encode(message.body().getString("password")));
                     }
                 } else {//登陆失败
                     message.reply(null);
@@ -197,9 +201,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             } else {
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
-                        encyPwd(res.result().put("username", message.body().getString("mail")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
+                        encyPwd(res.result().put("username", message.body().getString("mail"))
+                                .put("loginIP", message.body().getString("loginIP")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
                     } else {//sha1验证
-                        encyPwd(res.result().put("username", message.body().getString("mail")), message, SHA1.encode(message.body().getString("password")));
+                        encyPwd(res.result().put("username", message.body().getString("mail"))
+                                .put("loginIP", message.body().getString("loginIP")), message, SHA1.encode(message.body().getString("password")));
                     }
                 } else {//登陆失败
                     message.reply(null);
@@ -304,6 +310,16 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                     });
             message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
                     .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
+
+            //更新登錄記錄
+            String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            MongoClient.client.findOneAndUpdateWithOptions("kdsUserLog", new JsonObject().put("userName"
+                    , jsonObject.getString("username")), new JsonObject().put("$set", new JsonObject().put("userName"
+                    , jsonObject.getString("username")).put("loginTime", time).put("loginIp", jsonObject.getString("loginIP")))
+                    , new FindOptions()
+                    , new UpdateOptions().setUpsert(true), logtime -> {
+                        if (logtime.failed()) logtime.cause().printStackTrace();
+                    });
             if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
                 onSynchUserInfo(jsonObject);
             }

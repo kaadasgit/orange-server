@@ -22,9 +22,22 @@ public class SNEntityModel {
 
     private String yearCode;//年代码
 
+    private String childCode;//子代码
+
+
+    public String getChildCode() {
+        return this.childCode;
+    }
+
+    public SNEntityModel setChildCode(String childCode) {
+        this.childCode = childCode;
+        return this;
+    }
+
     public int getProductNum() {
         return this.productNum;
     }
+
 
     public SNEntityModel setProductNum(int productNum) {
         this.productNum = productNum;

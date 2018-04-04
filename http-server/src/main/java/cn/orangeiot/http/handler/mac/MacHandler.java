@@ -44,7 +44,7 @@ public class MacHandler implements AdminlockAddr {
     public void getMacAddr(RoutingContext routingContext) {
         logger.info("==LockHandler=getMacAddr==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mac", DataType.STRING), asyncResult -> {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("SN", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {

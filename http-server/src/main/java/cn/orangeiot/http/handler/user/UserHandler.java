@@ -57,15 +57,20 @@ public class UserHandler implements EventbusAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result(), SendOptions.getInstance()
+                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result()
+                                .put("loginIP", routingContext.request().remoteAddress().toString()), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
+                                    logger.info("==UserHandler=getUserByTel==login success==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                            routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
+                                    logger.info("==UserHandler=getUserByTel==login fail==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                            routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 }
@@ -93,15 +98,20 @@ public class UserHandler implements EventbusAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result(), SendOptions.getInstance()
+                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result()
+                                .put("loginIP", routingContext.request().remoteAddress().toString()), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
+                                    logger.info("==UserHandler=getUserByEmail==login success==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                            routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
+                                    logger.info("==UserHandler=getUserByEmail==login fail==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                            routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 }

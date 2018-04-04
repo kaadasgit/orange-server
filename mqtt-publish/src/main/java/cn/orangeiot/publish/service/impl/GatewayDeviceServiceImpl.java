@@ -1,7 +1,6 @@
 package cn.orangeiot.publish.service.impl;
 
 import cn.orangeiot.common.genera.ErrorType;
-import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
@@ -16,12 +15,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import sun.misc.resources.Messages_es;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
@@ -66,21 +63,30 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                 if (!rs.result().headers().isEmpty()) {//通知管理员
                                     result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg")
                                             , jsonObject.getString("func"));
-
                                     //发送通知给gateway管理员
-                                    vertx.eventBus().send(MessageAddr.class.getName() + NOTIFY_GATEWAY_USER_ADMIN,
-                                            new JsonObject().put("devuuid", as.result().getString("devuuid"))
-                                                    .put("uid", as.result().getString("uid"))
-                                                    .put("func", jsonObject.getString("func")), SendOptions.getInstance());
+                                    if (Integer.parseInt(rs.result().headers().get("code")) != ErrorType.HAVE_ADMIN_BY_GATEWAY.getKey())
+                                        vertx.eventBus().send(MessageAddr.class.getName() + NOTIFY_GATEWAY_USER_ADMIN,
+                                                new JsonObject().put("devuuid", as.result().getString("devuuid"))
+                                                        .put("uid", as.result().getString("uid"))
+                                                        .put("func", jsonObject.getString("func")), SendOptions.getInstance());
+                                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
                                 } else {
-                                    result.setData(rs.result().body()).setFunc(jsonObject.getString("func"));
-
                                     //同步绑定关系到第三方
                                     vertx.eventBus().send(MemenetAddr.class.getName() + BIND_DEVICE_USER,
                                             new JsonObject().put("uid", as.result().getString("uid"))
-                                                    .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance());
+                                                    .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
+                                            , mimiResult -> {
+                                                if (!Objects.nonNull(mimiResult.result().body())) {
+                                                    result.setErrorMessage(ErrorType.MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.MIMI_BIND_GATEWAY_FAIL.getValue()
+                                                            , jsonObject.getString("func"));
+                                                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+                                                } else {
+                                                    result.setData(rs.result().body()).setFunc(jsonObject.getString("func"));
+                                                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+                                                }
+                                            });
                                 }
-                                handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+
                             } else {
                                 result.setErrorMessage(ErrorType.BIND_GATEWAY_FAIL.getKey(), ErrorType.BIND_GATEWAY_FAIL.getValue()
                                         , jsonObject.getString("func"));
@@ -98,6 +104,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
      * @date 18-1-8
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public void approvalBindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
@@ -109,22 +116,40 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
             } else {
                 vertx.eventBus().send(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, as.result(), SendOptions.getInstance(), rs -> {
                     if (Objects.nonNull(rs.result().body())) {
-                        //发送通知给gateway申请人
-                        vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
-                                new JsonObject().put("devuuid", as.result().getString("devuuid"))
-                                        .put("requestuid", as.result().getString("requestuid"))
-                                        .put("uid", as.result().getString("uid"))
-                                        .put("func", jsonObject.getString("func"))
-                                        .put("type", as.result().getInteger("type")), SendOptions.getInstance());
-
-                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
-
-                        if (as.result().getInteger("type") == 2)
+                        if (as.result().getInteger("type") == 2) {
                             //同步绑定关系到第三方
                             vertx.eventBus().send(MemenetAddr.class.getName() + BIND_DEVICE_USER,
                                     new JsonObject().put("uid", as.result().getString("uid"))
-                                            .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance());
+                                            .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
+                                    , mimiResult -> {
+                                        if (!Objects.nonNull(mimiResult.result().body())) {
+                                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                    new ResultInfo<>().setErrorMessage(ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getValue()
+                                                            , jsonObject.getString("func")))));
+                                        } else {
+                                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                    new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
+                                            //发送通知给gateway申请人
+                                            vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
+                                                    new JsonObject().put("devuuid", as.result().getString("devuuid"))
+                                                            .put("requestuid", as.result().getString("requestuid"))
+                                                            .put("uid", as.result().getString("uid"))
+                                                            .put("func", jsonObject.getString("func"))
+                                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance());
+                                        }
+                                    });
+                        } else {
+                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                    new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
+                            //发送通知给gateway申请人
+                            vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
+                                    new JsonObject().put("devuuid", as.result().getString("devuuid"))
+                                            .put("requestuid", as.result().getString("requestuid"))
+                                            .put("uid", as.result().getString("uid"))
+                                            .put("func", jsonObject.getString("func"))
+                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance());
+
+                        }
                     } else {
                         handler.handle(Future.succeededFuture(JsonObject.mapFrom(
                                 new ResultInfo<>().setErrorMessage(ErrorType.APPROVAL_FAIL.getKey(), ErrorType.APPROVAL_FAIL.getValue()
@@ -247,7 +272,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
     public void delGatewayUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("uid", DataType.STRING)
-                .put("devuuid", DataType.STRING).put("_id",DataType.STRING), as -> {
+                .put("devuuid", DataType.STRING).put("_id", DataType.STRING), as -> {
             if (as.failed()) {
                 handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
                         .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
@@ -304,5 +329,35 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                         });
             }
         });
+    }
+
+
+    /**
+     * @Description 獲取網關設備列表
+     * @author zhang bo
+     * @date 18-3-22
+     * @version 1.0
+     */
+    public void getDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+        //数据校验
+        VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING), as -> {
+            if (as.failed()) {
+                handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
+                        .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
+            } else {
+                vertx.eventBus().send(GatewayAddr.class.getName() + GET_DEVICE_List, jsonObject, SendOptions.getInstance(), rs -> {
+                    if (Objects.nonNull(rs.result())) {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setData(rs.result().body()).setFunc(jsonObject.getString("func"))
+                        )));
+                    } else {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setErrorMessage(ErrorType.GET_GATEWAY_DEVICE_FAIL.getKey(), ErrorType.GET_GATEWAY_DEVICE_FAIL.getValue()
+                                        , jsonObject.getString("func")))));
+                    }
+                });
+            }
+        });
+
     }
 }

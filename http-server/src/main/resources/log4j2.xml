@@ -8,24 +8,33 @@
         </Console>
         <!--按天分日志文件-->
         <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
-                     <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-            <!--<Policies>-->
-                <!--<TimeBasedTriggeringPolicy modulate="true" interval="1"/>-->
-            <!--</Policies>-->
+        <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">-->
+        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
+        <!--<Policies>-->
+        <!--<TimeBasedTriggeringPolicy modulate="true" interval="1"/>-->
+        <!--</Policies>-->
         <!--</RollingFile>-->
         <!--按大小日志文件-->
         <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
-                     <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-            <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
+        <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">-->
+        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
+        <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
         <!--</RollingFile>-->
+
+        <!--写入kafka   topic订阅的主题-->
+        <!--<Kafka name="KafkaAppender" topic="my-log">-->
+            <!--<PatternLayout-->
+                    <!--pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:127.0.0.1:8090/ebcuiy] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>&lt;!&ndash;显示信息格式&ndash;&gt;-->
+            <!--<Property name="bootstrap.servers">114.67.58.242:9092</Property>&lt;!&ndash;kafka地址&ndash;&gt;-->
+            <!--<Property name="timeout.ms">10000</Property>&lt;!&ndash;写入超时时间&ndash;&gt;-->
+        <!--</Kafka>-->
+
     </Appenders>
     <Loggers>
         <!--配置日志的根节点-->
-        <Root level="all">
+        <Root level="info">
             <AppenderRef ref="Console"/>
-            <!--<AppenderRef ref="serverLog"/>-->
+            <!--<AppenderRef ref="KafkaAppender"/>-->
         </Root>
     </Loggers>
 </Configuration>

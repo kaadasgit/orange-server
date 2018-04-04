@@ -34,7 +34,7 @@ public class DeviceDao {
 
 
     /**
-     * @Description 网关设备SN号生产
+     * @Description 设备SN号生产
      * @author zhang bo
      * @date 18-1-3
      * @version 1.0
@@ -93,9 +93,9 @@ public class DeviceDao {
      */
     public void productionModelSN(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsProductInfoList", new JsonObject().put("modelCode",
-                message.body().getString("model")).put("factoryCode", message.body().getString("factory")),
+                message.body().getString("model")).put("childCode", message.body().getString("child")),
                 new FindOptions().setFields(new JsonObject().put("time", 1).put("yearCode", 1)
-                        .put("weekCode", 1).put("count", 1).put("batch", 1).put("factoryCode", 1)
+                        .put("weekCode", 1).put("count", 1).put("batch", 1).put("childCode", 1)
                         .put("modelCode", 1)).setSort(new JsonObject().put("time", -1)).setLimit(1), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
@@ -111,22 +111,22 @@ public class DeviceDao {
 
                             if (rs.result().get(0).getString("yearCode").equals(time) &&
                                     rs.result().get(0).getString("weekCode").equals(week)) //已经存在批次
-                                map = SNProductUtils.snProduct(new SNEntityModel().setProductNum(message.body().getInteger("count"))
+                                map = SNProductUtils.snDeviceInSN(new SNEntityModel().setProductNum(message.body().getInteger("count"))
                                         .setBatch(rs.result().get(0).getInteger("batch"))
                                         .setStartCount(rs.result().get(0).getInteger("count"))
-                                        .setModel(message.body().getString("model")).setFactory(message.body().getString("factory"))
+                                        .setModel(message.body().getString("model")).setChildCode(message.body().getString("child"))
                                         .setWeekCode(week).setYearCode(time));
                             else
-                                map = SNProductUtils.snProduct(new SNEntityModel().setProductNum(message.body().getInteger("count"))
+                                map = SNProductUtils.snDeviceInSN(new SNEntityModel().setProductNum(message.body().getInteger("count"))
                                         .setBatch(1)
                                         .setStartCount(0)
-                                        .setModel(message.body().getString("model")).setFactory(message.body().getString("factory"))
+                                        .setModel(message.body().getString("model")).setChildCode(message.body().getString("child"))
                                         .setWeekCode(week).setYearCode(time));
                         } else {
-                            map = SNProductUtils.snProduct(new SNEntityModel().setProductNum(message.body().getInteger("count"))
+                            map = SNProductUtils.snDeviceInSN(new SNEntityModel().setProductNum(message.body().getInteger("count"))
                                     .setBatch(1)
                                     .setStartCount(0)
-                                    .setModel(message.body().getString("model")).setFactory(message.body().getString("factory"))
+                                    .setModel(message.body().getString("model")).setChildCode(message.body().getString("child"))
                                     .setWeekCode(week).setYearCode(time));
                         }
 
@@ -140,14 +140,30 @@ public class DeviceDao {
                             JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.INSERT).put("document",
                                     new JsonObject().put("SN", e).put("count", finalMap.get("rsCount")).put("yearCode", time
                                     ).put("weekCode", week).put("modelCode", message.body().getString("model"))
-                                            .put("factoryCode", message.body().getString("factory")).put("batch", finalMap.get("batchs"))
-                                            .put("time", insert_time).put("password1", password1)).put("upsert", false).put("multi", false);
+                                            .put("childCode", message.body().getString("child")).put("batch", finalMap.get("batchs"))
+                                            .put("time", insert_time)).put("upsert", false).put("multi", false);
+                            if (message.body().getBoolean("secret")) {
+                                params.getJsonObject("document").put("password1", password1);
+                                jsonArray.add(new JsonObject().put("SN", e).put("password1", password1));
+                            } else {
+                                jsonArray.add(new JsonObject().put("SN", e));
+                            }
                             bulkOperations.add(new BulkOperation(params));
-                            jsonArray.add(new JsonObject().put("SN", e).put("password1", password1));
+
                         });
                         MongoClient.client.bulkWrite("kdsProductInfoList", bulkOperations, ars -> {
                             if (ars.failed()) ars.cause().printStackTrace();
                         });
+
+                        //插入產品信息
+                        MongoClient.client.insert("kdsModelInfo",
+                                new JsonObject().put("yearCode", time)
+                                        .put("weekCode", week).put("modelCode", message.body().getString("model"))
+                                        .put("childCode", message.body().getString("child"))
+                                        .put("count", message.body().getInteger("count"))
+                                        .put("time", insert_time), ars -> {
+                                    if (ars.failed()) ars.cause().printStackTrace();
+                                });//產品相關
                         message.reply(jsonArray);
                     }
                 });
@@ -191,14 +207,14 @@ public class DeviceDao {
 
 
     /**
-     * @Description 根据mac获取模块的password1
+     * @Description 根据SN获取模块的password1
      * @author zhang bo
      * @date 18-1-26
      * @version 1.0
      */
     public void getPwdByMac(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsProductInfoList", new JsonObject().put("mac",
-                message.body().getString("mac")),
+        MongoClient.client.findOne("kdsProductInfoList", new JsonObject().put("SN",
+                message.body().getString("SN")),
                 new JsonObject().put("_id", 0).put("password1", 1), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
