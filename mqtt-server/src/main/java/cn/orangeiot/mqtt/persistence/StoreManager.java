@@ -2,6 +2,7 @@ package cn.orangeiot.mqtt.persistence;
 
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
+import cn.orangeiot.reg.storage.StorageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -12,13 +13,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 
+import javax.mail.Store;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by giova_000 on 03/06/2015.
  */
-public class StoreManager {
+public class StoreManager implements StorageAddr {
 
     private Vertx vertx;
     private MQTTEncoder encoder;
@@ -48,12 +50,12 @@ public class StoreManager {
             e.printStackTrace();
         }
     }
+
     public void deleteRetainMessage(String tenant, String topic) {
         try {
             JsonObject request = new JsonObject()
                     .put("topic", topic)
-                    .put("tenant", tenant)
-                    ;
+                    .put("tenant", tenant);
             vertx.eventBus().publish(
                     StoreVerticle.ADDRESS,
                     request,
@@ -69,8 +71,7 @@ public class StoreManager {
 
         JsonObject request = new JsonObject()
                 .put("topicFilter", topicFilter)
-                .put("tenant", tenant)
-                ;
+                .put("tenant", tenant);
         vertx.eventBus().send(
                 StoreVerticle.ADDRESS,
                 request,
@@ -82,7 +83,7 @@ public class StoreManager {
                         JsonArray results = response.getJsonArray("results");
                         List<JsonObject> retained = (List<JsonObject>) results.getList();
                         int size = results.size();
-                        for(int i=0; i<size; i++) {
+                        for (int i = 0; i < size; i++) {
                             try {
                                 JsonObject item = results.getJsonObject(i);
 //                                String topic = item.getString("topic");

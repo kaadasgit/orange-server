@@ -26,6 +26,8 @@ public interface AdminlockAddr {
 
     String GET_DEV_LIST = "getAdminDevlist";//获取设备列表
 
+    String LOCK_AUTH = "lockAuth";//開鎖講權
+
     String GET_DEV_USER_LIST = "getNormalDevlist";//设备下的普通用户列表
 
     String EDIT_ADMIN_DEV = "editadmindev";//管理员修改锁的位置信息
@@ -43,6 +45,10 @@ public interface AdminlockAddr {
     String MODEL_PRODUCT = "modelProduct";//模块生产
 
     String MODEL_MAC_IN = "modelMacIn";//mac地址写入
+
+    String MODEL_MANY_MAC_IN = "modelManyMacIn";//mac地址多写入
+
+    String GET_WRITE_MAC_RESULT = "getWriteMacResult";//获取mac写入结果
 
     String GET_MODEL_PASSWORD = "getPwdByMac";//根据mac获取模块的password1
 }

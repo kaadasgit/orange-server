@@ -17,4 +17,9 @@ public interface OtaAddr {
     String SUBMIT_OTA_UPGRADE = "submitOTAUpgrade";//提交升级的范围
 
     String OTA_UPGRADE_PROCESS = "otaUpgradeProcess";//ota升級處理
+
+    String OTA_SELECT_DATA = "otaDeviceData";//ota查詢數據
+
+    String OTA_APPROVATE_RECORD = "otaApprovateRecord";//ota升級審批記錄
+
 }

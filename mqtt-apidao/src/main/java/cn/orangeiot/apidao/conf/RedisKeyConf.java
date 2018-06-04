@@ -24,4 +24,6 @@ public class RedisKeyConf {
     public final static String CALLIDADDR = "addr:callIdAddr";//保存用户注册信息
 
     public final static String SAVE_PUBLISH_MSG = "msg:publish";//保存用户注册信息
+
+    public final static String MSG_MODEL_CONF = "msg:conf:";//保存用户注册信息
 }

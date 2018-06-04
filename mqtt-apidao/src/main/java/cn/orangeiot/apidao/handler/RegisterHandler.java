@@ -2,6 +2,7 @@ package cn.orangeiot.apidao.handler;
 
 import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
+import cn.orangeiot.apidao.client.StorageClient;
 import cn.orangeiot.apidao.handler.dao.admindev.AdminDevDao;
 import cn.orangeiot.apidao.handler.dao.device.DeviceDao;
 import cn.orangeiot.apidao.handler.dao.file.FileDao;
@@ -10,6 +11,7 @@ import cn.orangeiot.apidao.handler.dao.job.JobDao;
 import cn.orangeiot.apidao.handler.dao.message.MessageDao;
 import cn.orangeiot.apidao.handler.dao.ota.OtaDao;
 import cn.orangeiot.apidao.handler.dao.register.RegisterDao;
+import cn.orangeiot.apidao.handler.dao.storage.StorageDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
 import cn.orangeiot.apidao.jwt.JwtFactory;
@@ -21,6 +23,7 @@ import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.ota.OtaAddr;
+import cn.orangeiot.reg.storage.StorageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
@@ -28,6 +31,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -55,9 +60,8 @@ public class RegisterHandler implements EventbusAddr {
      * @version 1.0
      */
     public void consumer(AsyncResult<Vertx> res) {
-        if (res.succeeded()) {
+        if (res.succeeded() && Objects.nonNull(System.getProperty("STORAGEPATH"))) {
             Vertx vertx = res.result();
-
 
             //注册mongoclient
             MongoClient mongoClient = new MongoClient();
@@ -66,6 +70,10 @@ public class RegisterHandler implements EventbusAddr {
             //注册redisclient
             RedisClient redisClient = new RedisClient();
             redisClient.redisConf(vertx);
+
+            //注冊storage
+            StorageClient storageClient = new StorageClient();
+            storageClient.loadConf(System.getProperty("STORAGEPATH"));
 
             //jwt配置
             JwtFactory jwtFactory = new JwtFactory();
@@ -99,6 +107,9 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(UserAddr.class.getName() + USER_LOGOUT, userDao::logOut);
             vertx.eventBus().consumer(UserAddr.class.getName() + MEME_USER, userDao::meMeUser);
             vertx.eventBus().consumer(UserAddr.class.getName() + MEME_REGISTER_USER_BULK, userDao::meMeUserBulk);
+            vertx.eventBus().consumer(UserAddr.class.getName() + GET_GW_ADMIN, userDao::selectGWAdmin);
+            vertx.eventBus().consumer(UserAddr.class.getName() + UPLOAD_JPUSHID, userDao::uploadPushId);
+            vertx.eventBus().consumer(MessageAddr.class.getName() + GET_PUSHID, userDao::getPushId);
 
             //文件处理
             FileDao fileDao = new FileDao();
@@ -110,7 +121,7 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(config.getString("consumer_verifyCodeCron"), jobDao::onMsgVerifyCodeCount);
 
             //锁相关处理
-            AdminDevDao adminDevDao = new AdminDevDao();
+            AdminDevDao adminDevDao = new AdminDevDao(vertx);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + CREATE_ADMIN_DEV, adminDevDao::createAdminDev);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_EVEND_DEV, adminDevDao::deletevendorDev);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_ADMIN_DEV, adminDevDao::deleteAdminDev);
@@ -119,6 +130,7 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_OPEN_LOCK_RECORD, adminDevDao::downloadOpenLocklist);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_USER_PREMISSON, adminDevDao::updateNormalDevlock);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + REQUEST_USER_OPEN_LOCK, adminDevDao::adminOpenLock);
+            vertx.eventBus().consumer(AdminlockAddr.class.getName() + LOCK_AUTH, adminDevDao::openLockAuth);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_LIST, adminDevDao::getAdminDevlist);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_USER_LIST, adminDevDao::getNormalDevlist);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + EDIT_ADMIN_DEV, adminDevDao::editAdminDev);
@@ -134,7 +146,8 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_PRODUCT, deviceDao::productionModelSN);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MAC_IN, deviceDao::modelMacIn);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_MODEL_PASSWORD, deviceDao::getPwdByMac);
-
+            vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, deviceDao::modelManyMacIn);
+            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, deviceDao::getWriteMacResult);
 
             //网关相关
             GatewayDao gatewayDao = new GatewayDao();
@@ -165,13 +178,25 @@ public class RegisterHandler implements EventbusAddr {
 
 
             //ota 升級相關
-            OtaDao otaDao=new OtaDao();
+            OtaDao otaDao = new OtaDao();
             vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_MODEL, otaDao::selectModelType);
             vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_DATE_RANGE, otaDao::selectDateRange);
             vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_NUM_RANGE, otaDao::selectNumRange);
+            vertx.eventBus().consumer(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, otaDao::submitOTAUpgrade);
+            vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_SELECT_DATA, otaDao::getUpgradeDevice);
+            vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_APPROVATE_RECORD, otaDao::otaApprovateRecord);
+
+            //storage
+            StorageDao storageDao = new StorageDao(vertx);
+            vertx.eventBus().consumer(StorageAddr.class.getName() + PUT_STORAGE_DATA, storageDao::putStorageData);
+            vertx.eventBus().consumer(StorageAddr.class.getName() + DEL_STORAGE_DATA, storageDao::delStorageData);
+            vertx.eventBus().consumer(StorageAddr.class.getName() + GET_STORAGE_DATA, storageDao::getStorageData);
+            vertx.eventBus().consumer(StorageAddr.class.getName() + DELALL_STORAGE_DATA, storageDao::delAllStorageData);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
+            logger.fatal("-DSTORAGEPATH  IS NULL");
+            System.exit(1);
         }
     }
 

@@ -22,6 +22,15 @@ public interface MessageAddr {
 
     String SEND_USER_REPLAY = "/clientId/rpc/reply";//回复app
 
+    String SEND_GATEWAY_REPLAY = "/orangeiot/gwId/call";//回复网关
+
     String SAVE_OFFLINE_MSG = "saveOfflineMessage";//存储离线消息
 
+    String SEND_UPGRADE_MSG = "sendUpgradeMsg";//發送升級消息
+
+    String SEND_STORAGE_MSG = "sendStorageMsg";//發送存儲消息
+
+    String SEND_APPLICATION_NOTIFY = "sendAppNotify";//發送應用通知
+
+    String GET_PUSHID = "getPushId";//获取应用id
 }

@@ -1,4 +1,4 @@
 {
-  "connection_string": "mongodb://10.29.250.107:27017/orangeiot",
+  "connection_string": "mongodb://10.29.250.107:27017/orangeDB",
   "useObjectId": true
 }

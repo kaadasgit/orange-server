@@ -13,7 +13,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "host": "192.168.1.100:8090",
+  "host": "192.168.1.105:8090",
   "basePath": "/",
   "tags": [
     {
@@ -75,6 +75,14 @@
     {
       "name": "password",
       "description": "password1地址相关",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "notify",
+      "description": "notify相关",
       "externalDocs": {
         "description": "Find out more about our store",
         "url": "http://swagger.io"
@@ -737,7 +745,7 @@
         "tags": [
           "adminlock"
         ],
-        "summary": "用户申请开锁",
+        "summary": "App用户开锁成功上报",
         "description": "",
         "operationId": "adminOpenLock",
         "consumes": [
@@ -760,6 +768,47 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/adminOpenLock"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/open/openLockAuth": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "用户开锁鉴权",
+        "description": "",
+        "operationId": "openLockAuth",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/openLockAuth"
             }
           }
         ],
@@ -1293,6 +1342,88 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/getpwdBySN"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/user/upload/pushId": {
+      "post": {
+        "tags": [
+          "notify"
+        ],
+        "summary": "上傳pushId",
+        "description": "",
+        "operationId": "pushId",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pushId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/notify/app": {
+      "post": {
+        "tags": [
+          "notify"
+        ],
+        "summary": "測試推送用戶",
+        "description": "",
+        "operationId": "app",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/app"
             }
           }
         ],
@@ -2000,6 +2131,73 @@
         "SN": {
           "type": "string",
           "description": "模块SN地址"
+        }
+      }
+    },
+    "pushId": {
+      "type": "object",
+      "required": [
+        "uid",
+        "JPushId",
+        "type"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用戶登錄返回的uid"
+        },
+        "JPushId": {
+          "type": "string",
+          "description": "設備唯一標識"
+        },
+        "type": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1 //ios  2 //android"
+        }
+      }
+    },
+    "app": {
+      "type": "object",
+      "required": [
+        "uid",
+        "content"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用戶登錄返回的uid"
+        },
+        "content": {
+          "type": "string",
+          "description": "推送內容"
+        }
+      }
+    },
+    "openLockAuth": {
+      "type": "object",
+      "required": [
+        "devname",
+        "is_admin",
+        "open_type",
+        "user_id"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "is_admin": {
+          "type": "string",
+          "description": "是否是管理员"
+        },
+        "open_type": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户登录返回的uid"
         }
       }
     }

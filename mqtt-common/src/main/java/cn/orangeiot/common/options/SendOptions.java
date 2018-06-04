@@ -11,9 +11,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
  */
 public class SendOptions {
 
-    private static final DeliveryOptions single = new DeliveryOptions().setSendTimeout(2000);//单位毫秒
-
     public static DeliveryOptions getInstance() {
-        return single;
+        return new DeliveryOptions().setSendTimeout(1800);//单位毫秒
     }
 }

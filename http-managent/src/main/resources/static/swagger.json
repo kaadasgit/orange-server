@@ -1,0 +1,400 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters.",
+    "version": "1.0.0",
+    "title": "Swagger Petstore",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "email": "apiteam@swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "192.168.1.105:17000",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "ota",
+      "description": "ota升級相關",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    },
+    {
+      "name": "file",
+      "description": "上传文件",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/ota/select/modelAll": {
+      "post": {
+        "tags": [
+          "ota"
+        ],
+        "summary": "查詢所有產品",
+        "description": "List of user object",
+        "operationId": "modelAll",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/ota/select/dateRange": {
+      "post": {
+        "tags": [
+          "ota"
+        ],
+        "summary": "查詢编号范围",
+        "description": "List of user object",
+        "operationId": "dateRange",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/dateRange"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/ota/select/numRange": {
+      "post": {
+        "tags": [
+          "ota"
+        ],
+        "summary": "查詢時間範圍",
+        "description": "List of user object",
+        "operationId": "numRange",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/numRange"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/ota/submit": {
+      "post": {
+        "tags": [
+          "ota"
+        ],
+        "summary": "提交升级的设备",
+        "description": "List of user object",
+        "operationId": "submit",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/submit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/file/uploadMac": {
+      "post": {
+        "tags": [
+          "file"
+        ],
+        "summary": "上传mac文件",
+        "description": "List of user object",
+        "operationId": "uploadMac",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "file to upload",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/file/getMacResult": {
+      "post": {
+        "tags": [
+          "file"
+        ],
+        "summary": "上传mac文件的结果",
+        "description": "List of user object",
+        "operationId": "getMacResult",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getMacResult"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "dateRange": {
+      "type": "object",
+      "required": [
+        "modelCode",
+        "childCode"
+      ],
+      "properties": {
+        "modelCode": {
+          "type": "string",
+          "description": "產品類型"
+        },
+        "childCode": {
+          "type": "string",
+          "description": "產品子代嗎"
+        }
+      }
+    },
+    "getMacResult": {
+      "type": "object",
+      "required": [
+        "modelCode",
+        "childCode",
+        "weekCode",
+        "yearCode"
+      ],
+      "properties": {
+        "modelCode": {
+          "type": "string",
+          "description": "產品類型"
+        },
+        "childCode": {
+          "type": "string",
+          "description": "產品子代嗎"
+        },
+        "weekCode": {
+          "type": "string",
+          "description": "周代码"
+        },
+        "yearCode": {
+          "type": "string",
+          "description": "年代码"
+        }
+      }
+    },
+    "numRange": {
+      "type": "object",
+      "required": [
+        "modelCode",
+        "childCode",
+        "weekCode",
+        "yearCode"
+      ],
+      "properties": {
+        "modelCode": {
+          "type": "string",
+          "description": "產品類型"
+        },
+        "childCode": {
+          "type": "string",
+          "description": "產品子代嗎"
+        },
+        "weekCode": {
+          "type": "string",
+          "description": "周代码"
+        },
+        "yearCode": {
+          "type": "string",
+          "description": "年代码"
+        }
+      }
+    },
+    "submit": {
+      "type": "object",
+      "required": [
+        "modelCode",
+        "childCode",
+        "weekCode",
+        "yearCode",
+        "type",
+        "range",
+        "filePathUrl",
+        "modelType",
+        "SW",
+        "fileMd5",
+        "fileLen"
+      ],
+      "properties": {
+        "modelCode": {
+          "type": "string",
+          "description": "產品類型"
+        },
+        "childCode": {
+          "type": "string",
+          "description": "產品子代嗎"
+        },
+        "weekCode": {
+          "type": "string",
+          "description": "周代码"
+        },
+        "yearCode": {
+          "type": "string",
+          "description": "年代码"
+        },
+        "type": {
+          "type": "integer",
+          "description": "类型   0:强制升级 1用户确认升级"
+        },
+        "range": {
+          "type": "string",
+          "description": "范围   试例 \"1-100\" or \"1,30,70\""
+        },
+        "filePathUrl": {
+          "type": "string",
+          "description": "文件路径"
+        },
+        "modelType": {
+          "type": "integer",
+          "description": "产品类型 1 网关  2 挂载设备"
+        },
+        "SW": {
+          "type": "string",
+          "description": "版本"
+        },
+        "fileMd5": {
+          "type": "string",
+          "description": "文件md5值"
+        },
+        "fileLen": {
+          "type": "integer",
+          "description": "文件长度"
+        }
+      }
+    },
+    "ApiResponse": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "msg"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "状态码，全局 成功200"
+        },
+        "data": {
+          "type": "object",
+          "description": "返回的数据对象"
+        },
+        "msg": {
+          "type": "string",
+          "description": "code码相应状态消息"
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about Swagger",
+    "url": "http://swagger.io"
+  }
+}

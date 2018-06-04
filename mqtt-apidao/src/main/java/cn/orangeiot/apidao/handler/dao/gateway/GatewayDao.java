@@ -66,7 +66,8 @@ public class GatewayDao {
                             if (Objects.nonNull(userResult.result())) {
                                 JsonObject jsonObject = new JsonObject(userResult.result());
                                 MongoClient.client.findOne("kdsApprovalList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
-                                        .put("uid", message.body().getString("uid")), new JsonObject().put("_id", 1), approvalResult -> {
+                                        .put("uid", message.body().getString("uid")).put("type", 1)
+                                        .put("status", 1), new JsonObject().put("_id", 1), approvalResult -> {
                                     if (approvalResult.failed()) {
                                         approvalResult.cause().printStackTrace();
                                     } else {
@@ -79,7 +80,7 @@ public class GatewayDao {
                                                     .put("userNickname", jsonObject.getString("username")).put("approvaluid", as.result().getString("adminuid"))
                                                     .put("approvalName", as.result().getString("adminName")).put("approvalNickname", as.result().getString("adminNickname"))
                                                     .put("requestTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                                    .put("type", 1).put("approvalTime", time), rs -> {
+                                                    .put("type", 1).put("approvalTime", time).put("status", 1), rs -> {//status 1 有效
                                                 if (rs.failed()) rs.cause().printStackTrace();
                                             });
                                         }
@@ -235,7 +236,7 @@ public class GatewayDao {
      */
     public void onApprovalList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsApprovalList", new JsonObject().put("approvaluid",
-                message.body().getString("uid")).put("type", 1), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
+                message.body().getString("uid")).put("type", 1).put("status", 1), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
                 .put("deviceNickName", 1).put("username", 1).put("userNickname", 1)
                 .put("uid", 1).put("requestTime", 1)), rs -> {
             if (rs.failed()) {
@@ -338,6 +339,15 @@ public class GatewayDao {
                                 } else {
                                     message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "true"));
                                 }
+                            });
+                    //未审批的列表失效
+                    MongoClient.client.updateCollectionWithOptions("kdsApprovalList", new JsonObject().put("deviceSN"
+                            , message.body().getString("devuuid")).put("type", 1)
+                            , new JsonObject().put("$set", new JsonObject().put("status", 2)//status 改为失效状态
+                                    .put("failureTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))
+                            , new UpdateOptions().setMulti(true).setUpsert(true), as -> {
+                                if (as.failed())
+                                    as.cause().printStackTrace();
                             });
                 }
             });
@@ -444,7 +454,7 @@ public class GatewayDao {
     @SuppressWarnings("Duplicates")
     public void onGetGatewayAdminByuid(Message<JsonObject> message) {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
-                message.body().getString("devid")).put("isAdmin", 1), new JsonObject().put("uid", 1)
+                message.body().getString("gwId")).put("isAdmin", 1), new JsonObject().put("uid", 1)
                 .put("_id", 0), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
@@ -514,7 +524,7 @@ public class GatewayDao {
                         .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.status"
                         , 2))//下线狀態
-                ,  new UpdateOptions().setUpsert(false), rs -> {
+                , new UpdateOptions().setUpsert(false), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
                     }

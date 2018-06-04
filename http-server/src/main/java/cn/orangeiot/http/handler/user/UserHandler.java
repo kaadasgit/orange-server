@@ -8,6 +8,7 @@ import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
+import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -137,8 +138,7 @@ public class UserHandler implements EventbusAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
-                if (!asyncResult.result().getString("name").matches(regex))//检验是否是合法的邮箱地址
+                if (StringUtils.isNumeric(asyncResult.result().getString("name")))//检验是否是合法的邮箱地址
                     register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_TEL, routingContext);
                 else
                     routingContext.fail(401);
@@ -166,7 +166,6 @@ public class UserHandler implements EventbusAddr {
                     register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_MAIL, routingContext);
                 else
                     routingContext.fail(401);
-
             }
         });
 
@@ -417,6 +416,57 @@ public class UserHandler implements EventbusAddr {
                         }
                     });
         }
+    }
+
+
+    /**
+     * @Description 上報jpushId
+     * @author zhang bo
+     * @date 18-5-22
+     * @version 1.0
+     */
+    public void uploadJPushId(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("JPushId", DataType.STRING).put("type", DataType.INTEGER), asyncResult -> {//type 1 ios 2 android
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(UserAddr.class.getName() + UPLOAD_JPUSHID, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(
+                                            new Result<String>().setErrorMessage(ErrorType.UPLOAD_PUSHID_FAIL.getKey(), ErrorType.UPLOAD_PUSHID_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 推送消息
+     * @author zhang bo
+     * @date 18-5-22
+     * @version 1.0
+     */
+    public void sendPushNotify(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("content", DataType.STRING), asyncResult -> {//type 1 ios 2 android
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                eventBus.send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, asyncResult.result());
+            }
+        });
     }
 
 }

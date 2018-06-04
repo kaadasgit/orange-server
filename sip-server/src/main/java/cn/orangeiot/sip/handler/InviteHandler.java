@@ -34,7 +34,9 @@ import javax.sip.header.HeaderFactory;
 import javax.sip.header.MediaType;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Response;
+import java.text.ParseException;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author zhang bo
@@ -74,6 +76,7 @@ public class InviteHandler implements UserAddr {
         //todo 查询是否存在相关账户信息
         To to = (To) request.getHeader(To.NAME);
         Via via = (Via) request.getHeader(Via.NAME);
+
 //        if (!Objects.nonNull(pool.get(to.getAddress().getURI().toString()))) {
 //            //回复604 用户不存在
 //            try {
@@ -133,16 +136,35 @@ public class InviteHandler implements UserAddr {
 //            Via via = (Via) headerFactory.createViaHeader(jsonObject.getString("host"), jsonObject.getInteger("port")
 //                    , sipOptions.toString(), callerVia.getBranch());
 
-            // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
-            request.removeHeader(Via.NAME);
-            request.addHeader(via);
-
             // 更新contact的地址
             ContactHeader contactHeaders = headerFactory.createContactHeader();
             Address address = addressFactory.createAddress("sip:sipServer@" + jsonObject.getString("host") + ":" + jsonObject.getInteger("port"));
             contactHeaders.setAddress(address);
             contactHeaders.setExpires(3600);
             request.setHeader(contactHeaders);
+
+
+            // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+            if(request.getViaHeaders().size()>1) {
+                ViaList viaList=request.getViaHeaders();
+                // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+//                request.removeHeader(Via.NAME);
+                request.getViaHeaders().forEach(e -> {
+                    if (Objects.nonNull(e.getRPort())) {
+                        try {
+                            e.setReceived(jsonObject.getString("host"));
+                            e.setParameter(Via.RPORT, String.valueOf(jsonObject.getInteger("port")));
+                        } catch (ParseException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                });
+            }else{
+                // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+                request.removeHeader(Via.NAME);
+                request.addHeader(via);
+            }
+
 
 
             ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), request.toString(), sipOptions);

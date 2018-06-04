@@ -1,5 +1,6 @@
 package cn.orangeiot.http.verify;
 
+import cn.orangeiot.http.spi.SpiConf;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -45,18 +46,21 @@ public class VerifyParamsUtil {
                         break;
                     }
                 } catch (Exception e) {
-                    logger.info("VerifyParamsUtil==verifyParams==params cast type is Fail");
+                    logger.warn("VerifyParamsUtil==verifyParams==params cast type is Fail");
                     handler.handle(Future.failedFuture(e));
                 }
             }
             if (isFlag) {
+                if (Objects.nonNull(SpiConf.getConfigJson().getValue("versionType")))
+                    jsonObject.put("versionType"
+                            , SpiConf.getConfigJson().getString("versionType"));//加入类型参数
                 handler.handle(Future.succeededFuture(jsonObject));
             } else {
-                logger.info("VerifyParamsUtil==verifyParams==params type is Fail");
+                logger.warn("VerifyParamsUtil==verifyParams==params type is Fail");
                 handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params type is Fail"));
             }
         } else {
-            logger.info("VerifyParamsUtil==verifyParams==params is null");
+            logger.warn("VerifyParamsUtil==verifyParams==params is null");
             handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params is null"));
         }
     }

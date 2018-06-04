@@ -6,13 +6,13 @@ import cn.orangeiot.common.model.SNEntityModel;
 import cn.orangeiot.common.utils.KdsCreateRandom;
 import cn.orangeiot.common.utils.SHA1;
 import cn.orangeiot.common.utils.SNProductUtils;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.BulkOperation;
-import io.vertx.ext.mongo.FindOptions;
-import io.vertx.ext.mongo.UpdateOptions;
+import io.vertx.ext.mongo.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author zhang bo
@@ -39,6 +41,8 @@ public class DeviceDao {
      * @date 18-1-3
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
+    @Deprecated
     public void productionDeviceSN(Message<JsonObject> message) {
         JsonObject jsonObject = message.body();
         List<BulkOperation> bulkOperations = new ArrayList<>();
@@ -91,6 +95,7 @@ public class DeviceDao {
      * @date 18-1-24
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void productionModelSN(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsProductInfoList", new JsonObject().put("modelCode",
                 message.body().getString("model")).put("childCode", message.body().getString("child")),
@@ -132,6 +137,7 @@ public class DeviceDao {
 
                         //TODO 插入数据
                         List<BulkOperation> bulkOperations = new ArrayList<>();
+                        List<BulkOperation> GWbulkOperations = new ArrayList<>();
                         String insert_time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                         Map<String, Object> finalMap = map;
                         JsonArray jsonArray = new JsonArray();//返回数据
@@ -141,16 +147,41 @@ public class DeviceDao {
                                     new JsonObject().put("SN", e).put("count", finalMap.get("rsCount")).put("yearCode", time
                                     ).put("weekCode", week).put("modelCode", message.body().getString("model"))
                                             .put("childCode", message.body().getString("child")).put("batch", finalMap.get("batchs"))
-                                            .put("time", insert_time)).put("upsert", false).put("multi", false);
-                            if (message.body().getBoolean("secret")) {
+                                            .put("time", insert_time)
+                                            .put("position", SNProductUtils.getPosition(e))).put("upsert", false).put("multi", false);
+
+
+                            if (message.body().getBoolean("secret")) {//模塊
                                 params.getJsonObject("document").put("password1", password1);
                                 jsonArray.add(new JsonObject().put("SN", e).put("password1", password1));
-                            } else {
+                            } else {//網關
+                                JsonObject Users = new JsonObject().put("type", BulkOperation.BulkOperationType.INSERT)
+                                        .put("document", new JsonObject().put("userGwAccount", e)
+                                                .put("userPwd", SHA1.encode(e)))
+                                        .put("upsert", false).put("multi", false);//網關連接賬戶
+                                GWbulkOperations.add(new BulkOperation(Users));
                                 jsonArray.add(new JsonObject().put("SN", e));
                             }
                             bulkOperations.add(new BulkOperation(params));
-
                         });
+
+                        //網關連接賬戶導入
+                        if (GWbulkOperations.size() > 0) {
+                            MongoClient.client.bulkWrite("kdsUser", GWbulkOperations, urs -> {//导入账户列表
+                                if (urs.failed()) {
+                                    urs.cause().printStackTrace();
+                                    message.reply(null);
+                                } else {
+                                    if (urs.result().getInsertedCount() != 0) {
+                                        message.reply(new JsonObject());
+                                    } else {
+                                        message.reply(null);
+                                    }
+                                }
+                            });
+                        }
+
+                        //產品生产信息
                         MongoClient.client.bulkWrite("kdsProductInfoList", bulkOperations, ars -> {
                             if (ars.failed()) ars.cause().printStackTrace();
                         });
@@ -200,6 +231,91 @@ public class DeviceDao {
                         } else {
                             message.reply(null, new DeliveryOptions().addHeader("code", String.valueOf(ErrorType.DATA_MAP_FAIL.getKey()))
                                     .addHeader("msg", ErrorType.DATA_MAP_FAIL.getValue()));
+                        }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 模块mac地址多写入
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void modelManyMacIn(Message<JsonArray> message) {
+        final int BOUNART_NUM = 1000;//阀值
+        int num = message.body().size();
+        int batch = num % BOUNART_NUM == 0 ? num / BOUNART_NUM : num / BOUNART_NUM + 1;//次数
+
+        final List<BulkOperation>[] bulkOperationList = new LinkedList[batch];
+
+        for (int i = 0; i < batch; i++) {
+            bulkOperationList[i] = new LinkedList<>();
+        }
+        AtomicInteger atomicInteger = new AtomicInteger(1);
+        AtomicInteger count = new AtomicInteger(0);
+        message.body().stream().forEach(e -> {
+            JsonObject datas = new JsonObject(e.toString());
+            JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                    .put("filter", new JsonObject().put("SN", datas.getString("SN")).put("password1", datas.getString("Password1")))
+                    .put("document", new JsonObject().put("$set", new JsonObject().put("mac", datas.getString("MAC"))))
+                    .put("upsert", false).put("multi", false);
+
+            bulkOperationList[count.get()].add(new BulkOperation(params));
+
+            if (atomicInteger.get() != 0 && atomicInteger.get() % BOUNART_NUM == 0) {//阀值批次
+                uploadMac(bulkOperationList[count.get()]);
+                count.incrementAndGet();
+            } else if (atomicInteger.get() == num) {//最后一次
+                uploadMac(bulkOperationList[count.get()]);
+                count.incrementAndGet();
+            } else if (num < BOUNART_NUM && atomicInteger.get() == num) {//小于阀值
+                uploadMac(bulkOperationList[count.get()]);
+                count.incrementAndGet();
+            }
+            atomicInteger.incrementAndGet();
+        });
+    }
+
+    /**
+     * @Description 上传mac
+     * @author zhang bo
+     * @date 18-4-26
+     * @version 1.0
+     */
+    public void uploadMac(List<BulkOperation> bulkOperationList) {
+        MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
+                , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
+                    if (ars.failed()) {
+                        ars.cause().printStackTrace();
+                    } else {
+                        logger.info("=========mongoBulk============" + JsonObject.mapFrom(ars.result()).toString());
+                    }
+                });
+    }
+
+    /**
+     * @Description 获取mac写入结果
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getWriteMacResult(Message<JsonObject> message) {
+        MongoClient.client.findWithOptions("kdsProductInfoList", new JsonObject()
+                        .put("modelCode", message.body().getString("modelCode")).put("childCode", message.body().getString("childCode"))
+                        .put("yearCode", message.body().getString("yearCode")).put("weekCode", message.body().getString("weekCode"))
+                        .put("mac", new JsonObject().put("$exists", false))
+                , new FindOptions().setFields(new JsonObject().put("_id", 0).put("SN", 1)), rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                    } else {
+                        if (rs.result().size() > 0) {
+                            message.reply(new JsonArray(rs.result()));
+                        } else {
+                            message.reply(null);
                         }
                     }
                 });

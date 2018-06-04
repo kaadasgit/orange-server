@@ -26,6 +26,7 @@ import org.apache.logging.log4j.ThreadContext;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -67,10 +68,13 @@ public class SpiConf {
             baseHandler.exceptionAndTimeout(router);
 
 
-            PublishDeviceHandler publishDeviceHandler = new PublishDeviceHandler(vertx.eventBus(), configJson);
+            PublishDeviceHandler publishDeviceHandler = new PublishDeviceHandler(vertx, configJson);
             router.get(ApiConf.PRODUCTION_DEVICESN).blockingHandler(publishDeviceHandler::productionDeviceSN);
             router.get(ApiConf.PRODUCTION_MODELSN).blockingHandler(publishDeviceHandler::productionBLESN);
             router.post(ApiConf.UPLOAD_MODEL_MAC).handler(publishDeviceHandler::uploadMacAddr);
+            router.post(ApiConf.UPLOAD_FILE_MAC).blockingHandler(publishDeviceHandler::uploadMacFile);
+            router.post(ApiConf.UPLOAD_FILE_MAC_RESULT).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue())
+                    .handler(publishDeviceHandler::getWriteMacResult);
 
             MemeNetHandler memeNetHandler = new MemeNetHandler(vertx.eventBus(), configJson);
             router.get(ApiConf.REGISTER_USER_BULK).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).blockingHandler(memeNetHandler::onRegisterUserBulk);
@@ -80,6 +84,7 @@ public class SpiConf {
             router.post(ApiConf.SELECT_MODEL).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectModelAll);
             router.post(ApiConf.SELECT_DATE_RANGE).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectDateRange);
             router.post(ApiConf.SELECT_NUM_RANGE).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::selectNumRange);
+            router.post(ApiConf.SUBMIT_UPGRADE_DATA).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::submitOTAUpgrade);
 
             createHttpServerManagent();//创建httpServer后台管理
         } else {
@@ -106,9 +111,8 @@ public class SpiConf {
                     new HttpServerOptions().setCompressionSupported(true).setSsl(true)
                             .setKeyStoreOptions(new JksOptions().setValue(buffer)
                                     .setPassword(configJson.getString("pwd"))))
-                    .requestHandler(router::accept).listen(vertxConfig.getInteger("http-port",
-                    configJson.getInteger("port")),
-                    vertxConfig.getString("host-name", configJson.getString("host")));
+                    .requestHandler(router::accept).listen(
+                    configJson.getInteger("port"), configJson.getString("host"));
             ThreadContext.put("ip", configJson.getString("host"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -137,17 +141,19 @@ public class SpiConf {
 
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
-                VertxOptions options = new VertxOptions().setClusterManager(mgr)
-                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
-                                .setHost("127.0.0.1")
-                                .setPort(8080)
-                                .setTenant("hawkular").setAuthenticationOptions(
-                                        new AuthenticationOptions()
-                                                .setEnabled(true)
-                                                .setId("test")
-                                                .setSecret("123456")
-                                ));
-//                options.setClusterHost(configJson.getString("host"));//本机地址
+                VertxOptions options = new VertxOptions().setClusterManager(mgr);
+//                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
+//                                .setHost("127.0.0.1")
+//                                .setPort(8080)
+//                                .setTenant("hawkular").setAuthenticationOptions(
+//                                        new AuthenticationOptions()
+//                                                .setEnabled(true)
+//                                                .setId("test")
+//                                                .setSecret("123456")
+//                                ));
+
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
                 Vertx.clusteredVertx(options, this::uploadApi);

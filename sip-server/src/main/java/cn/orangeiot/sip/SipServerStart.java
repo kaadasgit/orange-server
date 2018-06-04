@@ -34,7 +34,6 @@ public class SipServerStart {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         if (null != source) {
             Vertx.vertx().deployVerticle(SipVerticle.class.getName(), rs -> {
                 if (rs.failed()) {

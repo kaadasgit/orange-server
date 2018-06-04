@@ -11,7 +11,9 @@ import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.file.AsyncFile;
@@ -21,12 +23,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.omg.CORBA.INTERNAL;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import scala.util.parsing.json.JSONArray;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -43,12 +47,12 @@ public class PublishDeviceHandler implements EventbusAddr {
     private static Logger logger = LogManager.getLogger(PublishDeviceHandler.class);
 
 
-    private EventBus eventBus;
+    private Vertx vertx;
 
     private JsonObject config;
 
-    public PublishDeviceHandler(EventBus eventBus, JsonObject config) {
-        this.eventBus = eventBus;
+    public PublishDeviceHandler(Vertx vertx, JsonObject config) {
+        this.vertx = vertx;
         this.config = config;
     }
 
@@ -64,7 +68,7 @@ public class PublishDeviceHandler implements EventbusAddr {
                 && Objects.nonNull(routingContext.request().getParam("child"))
                 && Objects.nonNull(routingContext.request().getParam("model"))) {
             //数据入库
-            eventBus.send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
+            vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
                     .put("count", Integer.parseInt(routingContext.request().getParam("count")))
                     .put("child", routingContext.request().getParam("child"))
                     .put("model", routingContext.request().getParam("model"))
@@ -110,7 +114,7 @@ public class PublishDeviceHandler implements EventbusAddr {
                 && Objects.nonNull(routingContext.request().getParam("child"))
                 && Objects.nonNull(routingContext.request().getParam("model"))) {
             //数据入库
-            eventBus.send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
+            vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_PRODUCT, new JsonObject()
                             .put("count", Integer.parseInt(routingContext.request().getParam("count")))
                             .put("child", routingContext.request().getParam("child"))
                             .put("model", routingContext.request().getParam("model"))
@@ -121,9 +125,9 @@ public class PublishDeviceHandler implements EventbusAddr {
                         } else {
                             if (Objects.nonNull(as.result().body())) {
                                 ByteArrayOutputStream os = new ByteArrayOutputStream();
-                                ExcelUtil.exportModelExcel("模块SN设备号", new HashMap<String, String>() {{
+                                ExcelUtil.exportModelExcel("模块PN设备号", new HashMap<String, String>() {{
                                     put("num", "序号");
-                                    put("SN", "模块SN号");
+                                    put("SN", "模块PN号");
                                     put("password1", "password1");
                                 }}, as.result().body(), null, 0, os);
                                 byte[] content = os.toByteArray();
@@ -154,9 +158,9 @@ public class PublishDeviceHandler implements EventbusAddr {
             if (rs.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(AdminlockAddr.class.getName() + MODEL_MAC_IN, rs.result()
+                vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_MAC_IN, rs.result()
                         , SendOptions.getInstance(), as -> {
-                            if (rs.failed()) {
+                            if (as.failed()) {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(as.result())) {
@@ -170,6 +174,64 @@ public class PublishDeviceHandler implements EventbusAddr {
                                 }
                             }
                         });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 上传文件映射mac地址
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void uploadMacFile(RoutingContext routingContext) {
+        for (FileUpload f : routingContext.fileUploads()) {
+            Buffer fileByteBuffer = vertx.fileSystem().readFileBlocking(f.uploadedFileName());
+
+            try {
+                //解析数据集
+                JsonArray jsonArray = ExcelUtil.readExcelContent(new ByteArrayInputStream(fileByteBuffer.getBytes()));
+
+                vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, jsonArray);
+                routingContext.response().end(JsonObject.mapFrom(
+                        new Result<>()).toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    /**
+     * @Description 获取mac写入结果
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getWriteMacResult(RoutingContext routingContext) {
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("modelCode", DataType.STRING)
+                .put("childCode", DataType.STRING).put("yearCode", DataType.STRING).put("weekCode", DataType.STRING), rs -> {
+            if (rs.failed()) {
+                routingContext.fail(401);
+            } else {
+                vertx.eventBus().send(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, rs.result(), as -> {
+                    if (as.failed()) {
+                        routingContext.fail(501);
+                    } else {
+                        if (Objects.nonNull(as.result().body())) {
+                            routingContext.response().end(JsonObject.mapFrom(
+                                    new Result<>().setErrorMessage(ErrorType.UOLOAD_VERIFY_DATA_MAC_FIAL.getKey()
+                                            , ErrorType.UOLOAD_VERIFY_DATA_MAC_FIAL.getValue())
+                                            .setData(as.result().body())).toString());
+                        } else {
+                            routingContext.response().end(JsonObject.mapFrom(
+                                    new Result<>()).toString());
+                        }
+                    }
+                });
             }
         });
     }

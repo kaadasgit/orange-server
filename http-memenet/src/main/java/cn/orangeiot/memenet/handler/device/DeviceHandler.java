@@ -121,7 +121,6 @@ public class DeviceHandler implements GatewayAddr {
                     } else {
                         if (Objects.nonNull(drs.result())) {
                             drs.result().body().forEach(e -> {
-                                //注册用户请求
                                 HttpClient.client.post("/v1/accsvr/unbinddevice")
                                         .addQueryParam("partid", conf.getString("partid"))
                                         .addQueryParam("appid", conf.getString("appId"))

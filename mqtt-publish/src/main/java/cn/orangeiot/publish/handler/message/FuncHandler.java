@@ -1,9 +1,12 @@
 package cn.orangeiot.publish.handler.message;
 
 import cn.orangeiot.publish.service.AdminLockService;
+import cn.orangeiot.publish.service.ApprovateService;
 import cn.orangeiot.publish.service.GatewayDeviceService;
 import cn.orangeiot.publish.service.impl.AdminLockServiceImpl;
+import cn.orangeiot.publish.service.impl.ApprovateServiceImpl;
 import cn.orangeiot.publish.service.impl.GatewayDeviceServiceImpl;
+import cn.orangeiot.publish.service.impl.UserServiceImpl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -32,11 +35,17 @@ public class FuncHandler {
 
     private GatewayDeviceService gatewaydeviceService;
 
+    private ApprovateService approvateService;
+
+    private UserServiceImpl userService;
+
     public FuncHandler(Vertx vertx, JsonObject jsonObject) {
         this.vertx = vertx;
         this.jsonObject = jsonObject;
         adminlockService = new AdminLockServiceImpl(vertx, jsonObject);
         gatewaydeviceService = new GatewayDeviceServiceImpl(vertx, jsonObject);
+        approvateService = new ApprovateServiceImpl(vertx, jsonObject);
+        userService = new UserServiceImpl(vertx, jsonObject);
     }
 
 
@@ -128,12 +137,12 @@ public class FuncHandler {
 //                });
 //                break;
             case "bindGatewayByUser"://用户绑定网关
-                gatewaydeviceService.bindGatewayByUser(message.body(), rs -> {
+                gatewaydeviceService.bindGatewayByUser(message.body(), message.headers().get("qos"), rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
             case "approvalBindGateway"://审批普通用户绑定网关
-                gatewaydeviceService.approvalBindGateway(message.body(), rs -> {
+                gatewaydeviceService.approvalBindGateway(message.body(), message.headers().get("qos"), rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
@@ -167,6 +176,11 @@ public class FuncHandler {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
+            case "otaApprovateResult"://获取网关下的設備列表
+                approvateService.approvateOTA(message.body(), rs -> {
+                    handler.handle(rs);
+                });
+                break;
             default:
                 handler.handle(Future.failedFuture("func resources not find "));
                 break;
@@ -174,4 +188,20 @@ public class FuncHandler {
     }
 
 
+    /**
+     * rpc义务处理
+     *
+     * @param message
+     */
+    public void onRpcMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
+        switch (message.body().getString("func")) {
+            case "selectGWAdmin"://获取网关下的設備列表
+                userService.selectGWAdmin(message.body());
+                handler.handle(Future.failedFuture("selectGWAdmin process successs"));
+                break;
+            default:
+                handler.handle(Future.succeededFuture());
+                break;
+        }
+    }
 }

@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -22,7 +23,7 @@ import java.io.InputStream;
  * @date 2017-11-23
  */
 @SuppressWarnings("Duplicates")
-public class publishVerticle extends AbstractVerticle{
+public class publishVerticle extends AbstractVerticle {
 
 
     private static Logger logger = LogManager.getLogger(publishVerticle.class);
@@ -35,22 +36,24 @@ public class publishVerticle extends AbstractVerticle{
         InputStream zkIn = publishVerticle.class.getResourceAsStream("/zkConf.json");
         InputStream configIn = publishVerticle.class.getResourceAsStream("/config.json");//全局配置
         String zkConf = "";//jdbc连接配置
-        String config="";
+        String config = "";
         try {
             zkConf = IOUtils.toString(zkIn, "UTF-8");//获取配置
-            config=IOUtils.toString(configIn,"UTF-8");
+            config = IOUtils.toString(configIn, "UTF-8");
 
             if (!zkConf.equals("")) {
                 JsonObject json = new JsonObject(zkConf);
                 JsonObject configJson = new JsonObject(config);
 
                 ClusterManager mgr = new ZookeeperClusterManager(json);
-                System.setProperty("vertx.zookeeper.hosts",json.getString("hosts.zookeeper"));
-                VertxOptions options = new VertxOptions().setClusterManager(mgr).setClustered(true);
+                System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
+                VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
-                //集群s
-                RegisterHandler registerHandler=new RegisterHandler(configJson);
-                Vertx.clusteredVertx(options,registerHandler::consumer);
+                //集群
+                RegisterHandler registerHandler = new RegisterHandler(configJson);
+                Vertx.clusteredVertx(options, registerHandler::consumer);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,10 +68,6 @@ public class publishVerticle extends AbstractVerticle{
 
         startFuture.complete();
     }
-
-
-
-
 
 
     @Override

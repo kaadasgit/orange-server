@@ -5,5 +5,7 @@
   "repeat_message": "/orangeiot/gwId/call",
   "reply_message": "/clientId/rpc/reply",
   "app_fuc_message": "/request/app/func",
-  "app_return_message": "/response/app/return"
+  "app_return_message": "/response/app/return",
+  "event_message": "/orangeiot/gwuuid/event",
+  "OTA_Notify":"otaNotify"
 }

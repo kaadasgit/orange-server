@@ -111,6 +111,7 @@
                     <include>**/*.json</include>
                     <include>**/*.xml</include>
                     <include>**/*.properties</include>
+                    <include>**/*.p12</include>
                 </includes>
                 <excludes>
                     <exclude>zkConf.json</exclude>

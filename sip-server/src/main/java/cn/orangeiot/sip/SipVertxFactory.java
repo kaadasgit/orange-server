@@ -95,7 +95,7 @@ public class SipVertxFactory {
                 PorcessHandler porcessHandler = new PorcessHandler(msgFactory, headerFactory, jsonObject, addressFactory,vertx);
 
                 server.connectHandler(porcessHandler::processTcp);//连接处理
-                server.listen(jsonObject.getInteger("port"), jsonObject.getString("host"), res -> {
+                server.listen(jsonObject.getInteger("port"), jsonObject.getString("startHost"), res -> {
                     if (res.succeeded()) {
                         logger.info("Server is now listening!");
                     } else {
@@ -114,7 +114,7 @@ public class SipVertxFactory {
                 AddressFactory addressFactoryUdp = this.createAddressFactory();
                 PorcessHandler porcessHandlerUdp = new PorcessHandler(msgFactoryUdp, headerFactoryUdp, jsonObject, addressFactoryUdp,vertx);
 
-                socket.listen(jsonObject.getInteger("port"), jsonObject.getString("host"), asyncResult -> {
+                socket.listen(jsonObject.getInteger("port"), jsonObject.getString("startHost"), asyncResult -> {
                     if (asyncResult.succeeded()) {
                         socket.handler(porcessHandlerUdp::processUdp);//数据包处理
                     } else {

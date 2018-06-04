@@ -3,17 +3,17 @@
 <Configuration status="warn" name="MyApp" packages="">
     <Appenders>
         <!--控制台输出-->
-        <!--<Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">-->
-        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-        <!--</Console>-->
-        <!--按天分日志文件-->
-        <RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"
-                     filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
+        <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
-            </Policies>
-        </RollingFile>
+        </Console>
+        <!--按天分日志文件-->
+        <!--<RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"-->
+        <!--filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">-->
+        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
+        <!--<Policies>-->
+        <!--<TimeBasedTriggeringPolicy modulate="true" interval="1"/>-->
+        <!--</Policies>-->
+        <!--</RollingFile>-->
         <!--按天分日志文件-->
         <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
         <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">-->
@@ -22,9 +22,9 @@
         <!--</RollingFile>-->
     </Appenders>
     <Loggers>
-        <!--异步写入log-->
-        <AsyncLogger name="async">
-            <AppenderRef ref="serverLog"/>
-        </AsyncLogger>
+        <!--配置日志的根节点-->
+        <Root level="all">
+            <AppenderRef ref="Console"/>
+        </Root>
     </Loggers>
 </Configuration>

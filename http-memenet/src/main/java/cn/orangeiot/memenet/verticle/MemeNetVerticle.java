@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -22,7 +23,7 @@ import java.io.InputStream;
  * @date 2017-11-23
  */
 @SuppressWarnings("Duplicates")
-public class MemeNetVerticle extends AbstractVerticle{
+public class MemeNetVerticle extends AbstractVerticle {
 
     private static Logger logger = LogManager.getLogger(MemeNetVerticle.class);
 
@@ -34,23 +35,27 @@ public class MemeNetVerticle extends AbstractVerticle{
         InputStream zkIn = MemeNetVerticle.class.getResourceAsStream("/zkConf.json");
         InputStream configIn = MemeNetVerticle.class.getResourceAsStream("/config.json");//全局配置
         String zkConf = "";//jdbc连接配置
-        String config="";
+        String config = "";
         try {
             zkConf = IOUtils.toString(zkIn, "UTF-8");//获取配置
-            config=IOUtils.toString(configIn,"UTF-8");
+            config = IOUtils.toString(configIn, "UTF-8");
 
             if (!zkConf.equals("")) {
                 JsonObject json = new JsonObject(zkConf);
                 JsonObject configJson = new JsonObject(config);
 
-                System.setProperty("vertx.zookeeper.hosts",json.getString("hosts.zookeeper"));
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
+
+                System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
-//                options.setClusterHost(configJson.getString("host"));//本机地址
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
-                RegisterHandler registerHandler=new RegisterHandler(configJson);
-                Vertx.clusteredVertx(options,registerHandler::consumer);
+                RegisterHandler registerHandler = new RegisterHandler(configJson);
+                Vertx.clusteredVertx(options, registerHandler::consumer);
             }
         } catch (IOException e) {
             e.printStackTrace();

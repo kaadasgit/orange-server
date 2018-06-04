@@ -162,7 +162,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void telLogin(Message<JsonObject> message) {
         //查找DB
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel")), new JsonObject()
+        MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel"))
+                .put("versionType", message.body().getString("versionType")), new JsonObject()
                 .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
                 .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
             if (res.failed()) {
@@ -193,7 +194,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void mailLogin(Message<JsonObject> message) {
         //查找DB
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("userMail", message.body().getString("mail")), new JsonObject()
+        MongoClient.client.findOne("kdsUser", new JsonObject().put("userMail", message.body().getString("mail"))
+                .put("versionType", message.body().getString("versionType")), new JsonObject()
                 .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
                 .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
             if (res.failed()) {
@@ -246,43 +248,45 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      * @version 1.0
      */
     public void register(Message<JsonObject> message, String field) {
-        RedisClient.client.get(message.body().getString("name"), rs -> {
+        RedisClient.client.get(message.body().getString("versionType") + ":" + message.body().getString("name"), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
             } else {
                 if (Objects.nonNull(rs.result()) && rs.result().equals(message.body().getString("tokens"))) {//验证码验证通过
                     MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                            , new JsonObject().put("_id", 1), as -> {//是否已经注册
-                                if (as.failed()) {
-                                    as.cause().printStackTrace();
-                                } else {
-                                    if (!Objects.nonNull(as.result())) {//没有注册
-                                        String password = SHA1.encode(message.body().getString("password"));
-                                        MongoClient.client.insert("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                                                .put("userPwd", password).put("nickName", message.body().getString("name")), res -> {
-                                            if (res.failed()) {
-                                                res.cause().printStackTrace();
-                                            } else {
-                                                String uid = res.result();
-                                                String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", uid).put("username", message.body().getString("name")),
-                                                        new JWTOptions());//jwt加密
-                                                String[] jwts = StringUtils.split(jwtStr, ".");
-                                                RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, uid,
-                                                        jwts[1], jwtrs -> {
-                                                            if (jwtrs.failed()) jwtrs.cause().printStackTrace();
-                                                        });
-                                                message.reply(new JsonObject().put("token", jwts[1]).put("uid", uid));
-                                                onSynchUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
-                                                        .put("_id", uid).put("username", message.body().getString("name")));
-                                            }
-                                        });
+                            .put("versionType", message.body().getString("versionType")), new JsonObject().put("_id", 1), as -> {//是否已经注册
+                        if (as.failed()) {
+                            as.cause().printStackTrace();
+                        } else {
+                            if (!Objects.nonNull(as.result())) {//没有注册
+                                String password = SHA1.encode(message.body().getString("password"));
+                                MongoClient.client.insert("kdsUser", new JsonObject().put(field, message.body().getString("name"))
+                                        .put("userPwd", password).put("nickName", message.body().getString("name"))
+                                        .put("versionType", message.body().getString("versionType"))
+                                        .put("insertTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), res -> {
+                                    if (res.failed()) {
+                                        res.cause().printStackTrace();
                                     } else {
-                                        message.reply(null, new DeliveryOptions().addHeader("code",
-                                                String.valueOf(ErrorType.REGISTER_USER_DICT_FAIL.getKey())).addHeader("msg", ErrorType.REGISTER_USER_DICT_FAIL.getValue()));
-
+                                        String uid = res.result();
+                                        String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", uid).put("username", message.body().getString("name")),
+                                                new JWTOptions());//jwt加密
+                                        String[] jwts = StringUtils.split(jwtStr, ".");
+                                        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, uid,
+                                                jwts[1], jwtrs -> {
+                                                    if (jwtrs.failed()) jwtrs.cause().printStackTrace();
+                                                });
+                                        message.reply(new JsonObject().put("token", jwts[1]).put("uid", uid));
+                                        onSynchUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
+                                                .put("_id", uid).put("username", message.body().getString("name")));
                                     }
-                                }
-                            });
+                                });
+                            } else {
+                                message.reply(null, new DeliveryOptions().addHeader("code",
+                                        String.valueOf(ErrorType.REGISTER_USER_DICT_FAIL.getKey())).addHeader("msg", ErrorType.REGISTER_USER_DICT_FAIL.getValue()));
+
+                            }
+                        }
+                    });
                 } else {
                     message.reply(null, new DeliveryOptions().addHeader("code",
                             String.valueOf(ErrorType.VERIFY_CODE_FAIL.getKey())).addHeader("msg", ErrorType.VERIFY_CODE_FAIL.getValue()));
@@ -314,10 +318,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             //更新登錄記錄
             String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             MongoClient.client.findOneAndUpdateWithOptions("kdsUserLog", new JsonObject().put("userName"
-                    , jsonObject.getString("username")), new JsonObject().put("$set", new JsonObject().put("userName"
-                    , jsonObject.getString("username")).put("loginTime", time).put("loginIp", jsonObject.getString("loginIP")))
-                    , new FindOptions()
-                    , new UpdateOptions().setUpsert(true), logtime -> {
+                    , jsonObject.getString("username")).put("versionType", message.body().getString("versionType"))
+                    , new JsonObject().put("$set", new JsonObject().put("userName", jsonObject.getString("username"))
+                            .put("loginTime", time).put("loginIp", jsonObject.getString("loginIP"))
+                            .put("versionType", message.body().getString("versionType")))
+                    , new FindOptions(), new UpdateOptions().setUpsert(true), logtime -> {
                         if (logtime.failed()) logtime.cause().printStackTrace();
                     });
             if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
@@ -346,7 +351,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 if (Objects.nonNull(ars.result())) {
                     message.reply(new JsonObject().put("nickName", new JsonObject(ars.result()).getString("nickName")));
                 } else {
-                    MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid"))),
+                    MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
+                                    .put("versionType", message.body().getString("versionType")),
                             new JsonObject().put("nickName", "").put("_id", 0), rs -> {
                                 if (rs.failed()) {
                                     rs.cause().printStackTrace();
@@ -478,7 +484,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void forgetUserpwd(Message<JsonObject> message) {
-        RedisClient.client.get(message.body().getString("name"), rs -> {
+        RedisClient.client.get(message.body().getString("versionType") + ":" + message.body().getString("name"), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
             } else {
@@ -490,7 +496,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         field = "userMail";
                     }
                     String finalField = field;
-                    MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name")),
+                    MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name"))
+                                    .put("versionType", message.body().getString("versionType")),
                             new JsonObject().put("pwdSalt", "").put("_id", 1), mrs -> {
                                 if (mrs.failed()) {
                                     mrs.cause().printStackTrace();
@@ -505,6 +512,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                         }
                                         //重置密码
                                         MongoClient.client.updateCollection("kdsUser", new JsonObject().put(finalField, message.body().getString("name"))
+                                                        .put("versionType", message.body().getString("versionType"))
                                                 , new JsonObject().put("$set", new JsonObject().put("userPwd", pwd)), res -> {
                                                     if (res.failed()) {
                                                         res.cause().printStackTrace();
@@ -711,6 +719,85 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             });
         }
         return false;
+    }
+
+
+    /**
+     * @Description 獲取網關管理員
+     * @author zhang bo
+     * @date 18-5-4
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void selectGWAdmin(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsGatewayDeviceList",
+                new JsonObject().put("deviceSN", message.body().getString("gwId")
+                ).put("adminuid", new JsonObject().put("$exists", true)), new JsonObject()
+                        .put("_id", 0).put("adminuid", 1), rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                    } else {
+                        if (Objects.nonNull(rs.result())) {
+                            message.reply(rs.result());
+                        } else {
+                            message.reply(null);
+                        }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 上報pushId
+     * @author zhang bo
+     * @date 18-5-4
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void uploadPushId(Message<JsonObject> message) {
+        logger.info("==params -> " + message.body());
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+            if (rs.failed()) {
+                rs.cause().printStackTrace();
+                message.reply(null);
+            } else {
+                if (Objects.nonNull(rs.result())) {
+                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid"),
+                            new JsonObject(rs.result()).put("JPushId", message.body().getString("JPushId"))
+                                    .put("type", message.body().getInteger("type")).toString(),
+                            as -> {
+                                if (as.failed()) {
+                                    as.cause().printStackTrace();
+                                    message.reply(null);
+                                } else {
+                                    message.reply(as.result());
+                                }
+                            });
+                }
+            }
+        });
+    }
+
+    /**
+     * @Description 获取PushId
+     * @author zhang bo
+     * @date 18-5-4
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getPushId(Message<JsonObject> message) {
+        logger.info("==params -> " + message.body());
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+            if (rs.failed()) {
+                rs.cause().printStackTrace();
+                message.reply(null);
+            } else {
+                if (Objects.nonNull(rs.result()))
+                    message.reply(new JsonObject(rs.result()));
+                else
+                    message.reply(null);
+            }
+        });
     }
 
 }

@@ -4,7 +4,7 @@
   "maxTimes": 5,
   "intervalTimes": 1000,
   "audioPort": 7090,
-  "audioHost": "114.67.58.242",
+  "audioHost": "121.201.57.214",
   "videoPort": 7091,
-  "videoHost": "114.67.58.242"
+  "videoHost": "121.201.57.214"
 }

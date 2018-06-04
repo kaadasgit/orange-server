@@ -11,12 +11,10 @@ import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.Option;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.ext.dropwizard.DropwizardMetricsOptions;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
@@ -27,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by Giovanni Baleani on 13/11/2015.
@@ -119,6 +118,8 @@ public class MqttServerStart {
                     System.setProperty("vertx.zookeeper.hosts", zkConfig.getString("hosts.zookeeper"));
                     ClusterManager mgr = new ZookeeperClusterManager(zkConfig);
                     VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                    if (Objects.nonNull(zkConfig.getValue("node.host")))
+                        options.setClusterHost(zkConfig.getString("node.host"));
 
                     Vertx.clusteredVertx(options, res -> {
                         if (res.succeeded()) {
@@ -199,10 +200,10 @@ public class MqttServerStart {
 //            }
             } else {
                 VertxOptions options = new VertxOptions();
-                options.setMetricsOptions(new DropwizardMetricsOptions()
-                        .setEnabled(true)
-                        .setJmxEnabled(true)
-                );
+//                options.setMetricsOptions(new DropwizardMetricsOptions()
+//                        .setEnabled(true)
+//                        .setJmxEnabled(true)
+//                );
 
                 Vertx vertx = Vertx.vertx(options);
                 vertx.deployVerticle(MQTTBroker.class.getName(), deploymentOptions);

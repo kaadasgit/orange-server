@@ -1,0 +1,12 @@
+{
+  "host": "api.jpush.cn",
+  "port": 443,
+  "is_ssl": true,
+  "verifyHost": false,
+  "trustAll": true,
+  "timeout": 2000,
+  "alpn": true,
+  "maxPoolSize": 100,
+  "cert_password": "123456",
+  "IdleTimeout": 30
+}

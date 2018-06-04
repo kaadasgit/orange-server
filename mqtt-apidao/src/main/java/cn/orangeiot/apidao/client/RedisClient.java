@@ -1,12 +1,18 @@
 package cn.orangeiot.apidao.client;
 
+import cn.orangeiot.common.utils.UUIDUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.RedisOptions;
+import io.vertx.redis.impl.RedisCommand;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zhang bo
@@ -34,9 +40,12 @@ public class RedisClient {
             if (!redisConf.equals("")) {
                 JsonObject json = new JsonObject(redisConf);
 
-                client = io.vertx.redis.RedisClient.create(vertx, new RedisOptions().setHost(json.getString("host"))
-                        .setPort(json.getInteger("port")).setAuth(json.getString("password"))
-                        .setBinary(true));//创建redisclient
+                RedisOptions redisOptions = new RedisOptions().setHost(json.getString("host"))
+                        .setPort(json.getInteger("port"));
+
+                if (Objects.nonNull(json.getValue("password")))
+                    redisOptions.setAuth(json.getString("password"));
+                client = io.vertx.redis.RedisClient.create(vertx, redisOptions);//创建redisclient
             }
         } catch (IOException e) {
             e.printStackTrace();

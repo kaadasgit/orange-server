@@ -48,7 +48,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
      */
     @SuppressWarnings("Duplicates")
     @Override
-    public void bindGatewayByUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+    public void bindGatewayByUser(JsonObject jsonObject, String qos, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
                 .put("uid", DataType.STRING), as -> {
@@ -68,7 +68,8 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                         vertx.eventBus().send(MessageAddr.class.getName() + NOTIFY_GATEWAY_USER_ADMIN,
                                                 new JsonObject().put("devuuid", as.result().getString("devuuid"))
                                                         .put("uid", as.result().getString("uid"))
-                                                        .put("func", jsonObject.getString("func")), SendOptions.getInstance());
+                                                        .put("func", jsonObject.getString("func")), SendOptions.getInstance()
+                                                        .addHeader("qos", qos));
                                     handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
                                 } else {
                                     //同步绑定关系到第三方
@@ -106,7 +107,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
      */
     @SuppressWarnings("Duplicates")
     @Override
-    public void approvalBindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+    public void approvalBindGateway(JsonObject jsonObject, String qos, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
                 .put("requestuid", DataType.STRING).put("uid", DataType.STRING).put("type", DataType.INTEGER), as -> {
@@ -135,7 +136,8 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                                             .put("requestuid", as.result().getString("requestuid"))
                                                             .put("uid", as.result().getString("uid"))
                                                             .put("func", jsonObject.getString("func"))
-                                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance());
+                                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance()
+                                                            .addHeader("qos", qos));
                                         }
                                     });
                         } else {
@@ -147,7 +149,8 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                             .put("requestuid", as.result().getString("requestuid"))
                                             .put("uid", as.result().getString("uid"))
                                             .put("func", jsonObject.getString("func"))
-                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance());
+                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance()
+                                            .addHeader("qos", qos));
 
                         }
                     } else {

@@ -13,7 +13,7 @@ import java.util.stream.Collector;
 /**
  * @author zhang bo
  * @version 1.0
- * @Description  所有產品類型收集器
+ * @Description 所有產品類型收集器
  * @date 2018-03-30
  */
 public class ModelCollector implements Collector<JsonObject
@@ -31,7 +31,10 @@ public class ModelCollector implements Collector<JsonObject
                     new JsonObject(e.toString()).getString("modelCode").equals(con.getString("modelCode")))
                     .findFirst().orElse(null);
             if (Objects.nonNull(map)) {
-                map.getJsonArray("childCodes").add(con.getString("childCode"));
+                Object params = map.getJsonArray("childCodes").stream().filter(e -> e.equals(con.getString("childCode")))
+                        .findFirst().orElse(null);
+                if (!Objects.nonNull(params))
+                    map.getJsonArray("childCodes").add(con.getString("childCode"));
             } else {
                 con.put("childCodes", new JsonArray().add(con.getString("childCode")));
                 con.remove("childCode");

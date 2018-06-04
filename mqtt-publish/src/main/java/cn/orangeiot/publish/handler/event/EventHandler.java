@@ -47,24 +47,34 @@ public class EventHandler implements EventAddr {
      */
     public void onEventMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
         logger.info("==EventHandler=onEventMessage params -> " + message.body());
-        VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("eventcode", DataType.STRING)
+        VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("msgtype", DataType.STRING)
                 , (AsyncResult<JsonObject> rs) -> {
                     if (rs.failed()) {
                         message.reply(new JsonObject().put("code", 401));//参数校验失败
                     } else {
-                        redirectProcess(rs.result());
-                        vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, rs.result(), SendOptions.getInstance()
-                                , (AsyncResult<Message<JsonObject>> as) -> {
-                                    if (as.failed()) {
-                                        as.cause().printStackTrace();
-                                    } else {
-                                        if (Objects.nonNull(as.result().body()))
-                                            handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
-                                                    as.result().body().getString("uid")))));
-                                        else
-                                            handler.handle(Future.failedFuture("========gateway no have admin"));
-                                    }
-                                });
+                        try {
+                            redirectProcess(rs.result());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        //是否存在用户时间
+                        if (!Objects.nonNull(message.body().getString("userId"))) {
+                            vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, rs.result(), SendOptions.getInstance()
+                                    , (AsyncResult<Message<JsonObject>> as) -> {
+                                        if (as.failed()) {
+                                            as.cause().printStackTrace();
+                                        } else {
+                                            if (Objects.nonNull(as.result().body()))
+                                                handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
+                                                        as.result().body().getString("uid")))));
+                                            else
+                                                handler.handle(Future.failedFuture("========gateway no have admin"));
+                                        }
+                                    });
+                        } else {
+                            handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
+                                    message.body().getString("userId")))));
+                        }
                     }
                 });
     }
@@ -76,21 +86,27 @@ public class EventHandler implements EventAddr {
      * @date 18-3-22
      * @version 1.0
      */
-    public void redirectProcess(JsonObject message) {
+    public void redirectProcess(JsonObject message) throws Exception {
         logger.info("==EventHandler=redirectProcess params -> " + message.toString());
-
-        switch (message.getString("eventcode")) {
-            case "online"://設備上報
-                deviceHandler.deviceOnline(message);
-                break;
-            case "offline"://設備下線
-                deviceHandler.deviceOffline(message);
-                break;
-            default:
-                logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
-                break;
+        if (Objects.nonNull(message.getValue("eventcode"))) {
+            if (message.getInteger("eventcode") == 1) {//设备管理消息
+                switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
+                    case "online"://設備上報
+                        deviceHandler.deviceOnline(message);
+                        break;
+                    case "offline"://設備下線
+                        deviceHandler.deviceOffline(message);
+                        break;
+                    default:
+                        logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
+                        break;
+                }
+            } else {//设备自定义消息
+                logger.info("==EventHandler=redirectProcess eventcode function -> " + message.getValue("eventcode"));
+            }
+        } else {
+            logger.info("==EventHandler=redirectProcess eventcode is null -> " + message.getValue("eventcode"));
         }
     }
-
 
 }

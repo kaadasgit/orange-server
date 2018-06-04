@@ -33,5 +33,4 @@ public interface GatewayAddr {
     String DEVICE_OFFLINE="deviceOffline";//設備上線
 
     String GET_DEVICE_List="getDeviceList";//獲取設備列表
-
 }

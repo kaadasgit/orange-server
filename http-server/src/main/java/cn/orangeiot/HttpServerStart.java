@@ -15,8 +15,8 @@ import java.io.InputStream;
  * @Description
  * @date 2017-12-08
  */
-public class httpServerStart {
-    private static Logger logger = LogManager.getLogger(httpServerStart.class);
+public class HttpServerStart {
+    private static Logger logger = LogManager.getLogger(HttpServerStart.class);
 
     @SuppressWarnings("Duplicates")
     public static void main(String[] args) {
@@ -27,7 +27,7 @@ public class httpServerStart {
         ConfigurationSource source = null;
         try {
             //加载log4j2配置
-            InputStream in = httpServerStart.class.getResourceAsStream("/log4j2.xml");
+            InputStream in = HttpServerStart.class.getResourceAsStream("/log4j2.xml");
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {

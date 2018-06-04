@@ -2,12 +2,17 @@ package cn.orangeiot;
 
 import cn.orangeiot.message.verticle.MessageVerticle;
 import io.vertx.core.Vertx;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -33,6 +38,16 @@ public class MessageStart {
             Configurator.initialize(null, source);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        try {
+            if (!Objects.nonNull(System.getProperty("pushDev"))){
+                logger.fatal("-DpushDev  is not boolean type");
+                System.exit(1);
+            }
+        } catch (Exception e) {
+            System.exit(1);
+            logger.fatal("-DpushDev  is null or failure");
         }
 
         if (null != source) {

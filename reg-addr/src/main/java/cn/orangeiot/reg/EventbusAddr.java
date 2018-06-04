@@ -9,6 +9,7 @@ import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.ota.OtaAddr;
 import cn.orangeiot.reg.publish.PublishAddr;
+import cn.orangeiot.reg.storage.StorageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 
 /**
@@ -17,8 +18,8 @@ import cn.orangeiot.reg.user.UserAddr;
  * @Description
  * @date 2017-12-12
  */
-public interface EventbusAddr extends PublishAddr, MessageAddr, UserAddr, FileAddr, AdminlockAddr, MemenetAddr, GatewayAddr
-        , EventAddr, OtaAddr {
+public interface EventbusAddr extends PublishAddr, MessageAddr, UserAddr, FileAddr,
+        AdminlockAddr, MemenetAddr, GatewayAddr, EventAddr, OtaAddr, StorageAddr {
 
 
 }

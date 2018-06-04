@@ -5,16 +5,20 @@ import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
 import cn.orangeiot.sip.timer.RePlayCallTime;
+import com.sun.prism.impl.Disposer;
 import gov.nist.core.NameValueList;
 import gov.nist.javax.sip.Utils;
 import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.parsetools.RecordParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,6 +33,7 @@ import javax.sip.message.Response;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zhang bo
@@ -95,10 +100,12 @@ public class PorcessHandler {
      * 服务处理tcp
      */
     public void processTcp(NetSocket netSocket) {
+
         netSocket.handler(buffer -> {
             logger.info("SERVER received remoteAddress: " + netSocket.remoteAddress());
             logger.info("SERVER I received some bytes: " + buffer.length());
             logger.info("SERVER body(string):\n " + new String(buffer.getBytes()));
+
             //todo 消息协议解析
             MsgParserDecode.parseSIPMessage(buffer.getBytes(), true, false, rs -> {
                 if (rs.failed()) {//不是sip标准协议
@@ -158,6 +165,7 @@ public class PorcessHandler {
      * @date 18-1-31
      * @version 1.0
      */
+
     public void redirectSwitch(SIPRequest sipMessage, NetSocket netSocket, SipOptions sipOptions, SocketAddress socketAddress) {
         if (!Objects.nonNull(sipMessage)) {
             logger.error("processRequest request is null.");

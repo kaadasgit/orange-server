@@ -22,6 +22,15 @@ public class UUIDUtils {
     }
 
     /**
+     * 获得一个UUID
+     *
+     * @return String UUID
+     */
+    public static String getNativeUUID() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
      * 获得指定数目的UUID
      *
      * @param number int 需要获得的UUID数量
@@ -37,7 +46,6 @@ public class UUIDUtils {
         }
         return ss;
     }
-
 
 
     public static void main(String[] args) {

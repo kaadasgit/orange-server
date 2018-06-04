@@ -5,6 +5,8 @@ import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
+import cn.orangeiot.reg.message.MessageAddr;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -14,9 +16,11 @@ import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.UpdateOptions;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import scala.util.parsing.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -25,9 +29,14 @@ import java.util.stream.Collectors;
  * @Description
  * @date 2017-12-22
  */
-public class AdminDevDao implements AdminlockAddr {
+public class AdminDevDao implements AdminlockAddr, MessageAddr {
     private static Logger logger = LogManager.getLogger(AdminDevDao.class);
 
+    private Vertx vertx;
+
+    public AdminDevDao(Vertx vertx) {
+        this.vertx = vertx;
+    }
 
     /**
      * @Description 管理员设备添加
@@ -66,6 +75,7 @@ public class AdminDevDao implements AdminlockAddr {
                                         if (!Objects.nonNull(flag.result())) {
                                             MongoClient.client.insert("kdsNormalLock", new JsonObject().put("lockName"
                                                     , jsonObject.getString("devname")).put("lockNickName", jsonObject.getString("devname"))
+                                                            .put("versionType", message.body().getString("versionType"))
                                                             .put("macLock", finalMacLock).put("adminuid", jsonObject.getString("user_id"))
                                                             .put("adminname", adminname).put("adminnickname", userInfo.getString("nickName"))
                                                             .put("uid", jsonObject.getString("user_id")).put("uname", adminname).put("unickname", userInfo.getString("nickName"))
@@ -153,6 +163,7 @@ public class AdminDevDao implements AdminlockAddr {
                                             if (rs.failed()) rs.cause().printStackTrace();
                                         });
                                 MongoClient.client.removeDocuments("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("devname"))
+//                                                .put("versionType", message.body().getString("versionType"))
                                         , rs -> {
                                             if (rs.failed()) rs.cause().printStackTrace();
                                         });
@@ -177,8 +188,9 @@ public class AdminDevDao implements AdminlockAddr {
      */
     public void deleteNormalDev(Message<JsonObject> message) {
         JsonObject jsonObject = message.body();
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("userTel",
-                jsonObject.getString("dev_username"))).add(new JsonObject().put("userMail", jsonObject.getString("dev_username")))),
+        MongoClient.client.findOne("kdsUser", new JsonObject().put("versionType", message.body().getString("versionType"))
+                        .put("$or", new JsonArray().add(new JsonObject().put("userTel",
+                                jsonObject.getString("dev_username"))).add(new JsonObject().put("userMail", jsonObject.getString("dev_username")))),
                 new JsonObject().put("_id", 1), ars -> {//获取device_username的用户信息
                     if (ars.failed()) {
                         ars.cause().printStackTrace();
@@ -215,8 +227,9 @@ public class AdminDevDao implements AdminlockAddr {
             lockNickName = jsonObject.getString("devname");
         String finalMacLock = macLock;
         String finalLockNickName = lockNickName;
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("userTel",
-                jsonObject.getString("device_username"))).add(new JsonObject().put("userMail", jsonObject.getString("device_username")))),
+        MongoClient.client.findOne("kdsUser", new JsonObject().put("versionType", message.body().getString("versionType"))
+                        .put("$or", new JsonArray().add(new JsonObject().put("userTel"
+                                , jsonObject.getString("device_username"))).add(new JsonObject().put("userMail", jsonObject.getString("device_username")))),
                 new JsonObject().put("nickName", 1).put("userMail", 1).put("userTel", 1), ars -> {//获取device_username的用户信息
                     if (ars.failed()) {
                         ars.failed();
@@ -242,7 +255,8 @@ public class AdminDevDao implements AdminlockAddr {
                                                         .put("open_purview", jsonObject.getString("open_purview")).put("is_admin", "0").put("datestart", jsonObject.getString("start_time"))
                                                         .put("dateend", jsonObject.getString("end_time")).put("auto_lock", "0").put("items", jsonObject.getJsonArray("items"))
                                                         .put("password1", Objects.nonNull(returnData.result().getValue("password1")) ? returnData.result().getString("password1") : "")
-                                                        .put("password2", Objects.nonNull(returnData.result().getValue("password2")) ? returnData.result().getString("password2") : "");
+                                                        .put("password2", Objects.nonNull(returnData.result().getValue("password2")) ? returnData.result().getString("password2") : "")
+                                                        .put("versionType", message.body().getString("versionType"));
 
                                                 //todo 查询是否已经添加过的账号
                                                 MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
@@ -336,7 +350,8 @@ public class AdminDevDao implements AdminlockAddr {
                         ars.cause().printStackTrace();
                         message.reply(null);
                     } else {
-                        JsonObject paramsJsonObject = new JsonObject();
+                        JsonObject paramsJsonObject = new JsonObject()
+                                .put("versionType", message.body().getString("versionType"));
                         //TODO 根据不同权限查询记录
                         if (Objects.nonNull(ars.result()) && ars.result().getString("adminuid").equals(jsonObject.getString("user_id")))
                             paramsJsonObject.put("lockName", jsonObject.getString("device_name"));
@@ -402,6 +417,7 @@ public class AdminDevDao implements AdminlockAddr {
                             if (Objects.nonNull(ars.result())) {
                                 if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
                                     MongoClient.client.insert("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("devname"))
+                                            .put("versionType", message.body().getString("versionType"))
                                             .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("adminnickname"))
                                             .put("uname", ars.result().getString("adminname")).put("open_purview", "3").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
                                             .put("open_type", jsonObject.getString("open_type")), rs -> {
@@ -428,6 +444,7 @@ public class AdminDevDao implements AdminlockAddr {
                             ars.cause().printStackTrace();
                         } else {
                             JsonObject paramsJsoNObject = new JsonObject().put("lockName", jsonObject.getString("devname"))
+                                    .put("versionType", message.body().getString("versionType"))
                                     .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("unickname"))
                                     .put("uname", ars.result().getString("uname")).put("open_type", jsonObject.getString("open_type"));
 
@@ -450,6 +467,7 @@ public class AdminDevDao implements AdminlockAddr {
                                                         else
                                                             message.reply(new JsonObject());
                                                     });
+//                                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid", jsonObject.getString("user_id")));
                                         } else {//開鎖失敗
                                             message.reply(null, new DeliveryOptions()
                                                     .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
@@ -481,6 +499,7 @@ public class AdminDevDao implements AdminlockAddr {
                                                     });
                                                 }
                                                 message.reply(new JsonObject());
+//                                                vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid", jsonObject.getString("user_id")));
                                             } else {
                                                 message.reply(null, new DeliveryOptions()
                                                         .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
@@ -510,6 +529,7 @@ public class AdminDevDao implements AdminlockAddr {
                                             if (rs.failed()) rs.cause().printStackTrace();
                                         });
                                     }
+//                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid", jsonObject.getString("user_id")));
                                     message.reply(new JsonObject());
                                     break;
                             }
@@ -518,6 +538,100 @@ public class AdminDevDao implements AdminlockAddr {
         }
     }
 
+
+    /**
+     * @Description 开锁鉴权
+     * @author zhang bo
+     * @date 18-5-30
+     * @version 1.0
+     */
+    public void openLockAuth(Message<JsonObject> message) {
+        JsonObject jsonObject = message.body();
+        if (jsonObject.getString("is_admin").equals("1")) {//管理員
+            MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
+                            .put("adminuid", new JsonObject().put("$exists", true)),
+                    new JsonObject().put("adminname", 1).put("lockNickName", 1).put("adminnickname", 1), ars -> {
+                        if (ars.failed()) {
+                            ars.cause().printStackTrace();
+                        } else {
+                            if (Objects.nonNull(ars.result())) {
+                                message.reply(new JsonObject());
+                            } else {
+                                message.reply(null, new DeliveryOptions()
+                                        .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK__NOTFAIL.getKey()))
+                                        .addHeader("msg", ErrorType.OPEN_LOCK__NOTFAIL.getValue()));
+                            }
+                        }
+                    });
+        } else {//普通用戶申請開鎖
+            MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname")).put("uid", jsonObject.getString("user_id"))
+                    , new JsonObject().put("uname", 1).put("lockNickName", 1).put("unickname", 1).put("open_purview", 1)
+                            .put("datestart", 1).put("dateend", 1).put("items", 1), ars -> {
+                        if (ars.failed()) {
+                            ars.cause().printStackTrace();
+                        } else {
+                            switch (ars.result().getString("open_purview")) {
+                                case "1":
+                                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");//设置日期格式
+                                    long todaytime = new Date().getTime();
+                                    try {
+                                        if (todaytime > df.parse(ars.result().getString("datestart")).getTime() && todaytime < df.parse(ars.result().getString("dateend")).getTime()) {
+                                            message.reply(new JsonObject());
+                                        } else {//鉴权失敗
+                                            message.reply(null, new DeliveryOptions()
+                                                    .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
+                                                    .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                        message.reply(null, new DeliveryOptions()
+                                                .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
+                                                .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
+                                    }
+                                    break;
+                                case "2":
+                                    //设置日期格式
+                                    Calendar cal = Calendar.getInstance();
+                                    try {
+                                        Date startday = new SimpleDateFormat("HH:mm").parse(ars.result().getString("datestart"));
+                                        Date endday = new SimpleDateFormat("HH:mm").parse(ars.result().getString("dateend"));
+                                        Date todaytmp = new SimpleDateFormat("HH:mm").parse(Integer.toString(new Date().getHours()) + ":" + Integer.toString(new Date().getMinutes()));
+                                        //  1 才能开锁   默认 星期天 是第一位
+                                        cal.setTime(new Date());
+                                        int week_index = cal.get(Calendar.DAY_OF_WEEK) - 1;
+                                        if (ars.result().getJsonArray("items").getList().get(week_index).equals("1")) {
+                                            if (todaytmp.getTime() > startday.getTime() && todaytmp.getTime() < endday.getTime()) {
+                                                message.reply(new JsonObject());
+                                            } else {
+                                                message.reply(null, new DeliveryOptions()
+                                                        .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
+                                                        .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
+                                            }
+                                        } else {
+                                            message.reply(null, new DeliveryOptions()
+                                                    .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
+                                                    .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                        message.reply(null, new DeliveryOptions()
+                                                .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
+                                                .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
+                                    }
+                                    break;
+                                case "4":
+                                    message.reply(null, new DeliveryOptions()
+                                            .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK__NOTFAIL.getKey()))
+                                            .addHeader("msg", ErrorType.OPEN_LOCK__NOTFAIL.getValue()));
+                                    break;
+                                default:
+                                    message.reply(new JsonObject());
+                                    break;
+                            }
+                        }
+                    });
+        }
+    }
 
     /**
      * @Description 获取设备列表
@@ -695,11 +809,15 @@ public class AdminDevDao implements AdminlockAddr {
 
                 List<BulkOperation> bulkOperations = new ArrayList<>();
                 jsonObject.getJsonArray("openLockList").forEach(e -> {
-                    JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.INSERT)
-                            .put("document",
-                                    ((JsonObject) e).put("uname", uname).put("nickName", userInfo.getString("nickName"))
-                                            .put("lockName", jsonObject.getString("device_name")).put("lockNickName", jsonObject.getString("device_nickname"))
-                                            .put("open_purview", "0")).put("upsert", false).put("multi", false);
+                    JsonObject openLockLists = (JsonObject) e;
+                    JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                            .put("filter", new JsonObject().put("open_time", openLockLists.getString("open_time"))
+                                    .put("open_type", openLockLists.getString("open_type")).put("lockName", jsonObject.getString("device_name")))
+                            .put("document", new JsonObject().put("$set", openLockLists.put("uname", uname)
+                                    .put("versionType", message.body().getString("versionType"))
+                                    .put("nickName", userInfo.getString("nickName"))
+                                    .put("lockName", jsonObject.getString("device_name")).put("lockNickName", jsonObject.getString("device_nickname"))
+                                    .put("open_purview", "0"))).put("upsert", true).put("multi", false);
                     bulkOperations.add(new BulkOperation(params));
 
                 });

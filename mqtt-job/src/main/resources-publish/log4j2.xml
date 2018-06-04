@@ -3,14 +3,14 @@
 <Configuration status="warn" name="MyApp" packages="">
     <Appenders>
         <!--控制台输出-->
-        <!--<Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">-->
-        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-        <!--</Console>-->
+        <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
+        </Console>
         <!--按天分日志文件-->
-        <RollingFile name="serverLog" fileName="/home/zhangbo/logs/server.log"
-                     filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
+        <RollingFile name="serverLog" fileName="./logs/job.log"
+                     filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
             <PatternLayout
-                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:10.29.67.209:12370/mqtt-job] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>
+                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:10.29.67.209:45273/mqtt-job] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
             </Policies>
@@ -24,8 +24,9 @@
     </Appenders>
     <Loggers>
         <!--异步写入log-->
-        <Root name="async">
+        <Root level="info">
             <AppenderRef ref="serverLog"/>
+            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>

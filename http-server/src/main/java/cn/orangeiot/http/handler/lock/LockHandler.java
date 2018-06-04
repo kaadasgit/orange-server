@@ -331,6 +331,43 @@ public class LockHandler implements AdminlockAddr {
         });
     }
 
+
+    /**
+     * @Description 開鎖權權
+     * @author zhang bo
+     * @date 17-12-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void openLockAuth(RoutingContext routingContext) {
+        logger.info("==LockHandler=getAdminDevlist==params->" + routingContext.getBodyAsString());
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
+                .put("is_admin", DataType.STRING).put("open_type", DataType.STRING)
+                .put("user_id", DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + LOCK_AUTH, asyncResult.result(), SendOptions.getInstance()
+                        , (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                Result<JsonObject> result = new Result<>();
+                                if (Objects.nonNull(rs.result().body())) {
+                                    result.setData(null);
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                } else {
+                                    result.setErrorMessage(Integer.parseInt(rs.result().headers().get("code"))
+                                            , rs.result().headers().get("msg"));
+                                    routingContext.response().end(JsonObject.mapFrom(result).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
     /**
      * @Description 设备下的普通用户列表
      * @author zhang bo

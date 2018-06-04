@@ -1,13 +1,15 @@
 package cn.orangeiot.managent.utils;
 
+import cn.orangeiot.managent.handler.device.PublishDeviceHandler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import netscape.javascript.JSObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -15,13 +17,12 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -31,6 +32,8 @@ import java.util.Objects;
  * @date 2018-01-03
  */
 public class ExcelUtil {
+    private static Logger logger = LogManager.getLogger(ExcelUtil.class);
+
     public static String NO_DEFINE = "no_define";//未定义的字段
     public static String DEFAULT_DATE_PATTERN = "yyyy年MM月dd日";//默认日期格式
     public static int DEFAULT_COLOUMN_WIDTH = 17;
@@ -431,6 +434,115 @@ public class ExcelUtil {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    /**
+     * 读取Excel数据内容
+     *
+     * @param InputStream
+     * @return Map 包含单元格数据内容的Map对象
+     * @throws IOException
+     */
+    public static JsonArray readExcelContent(InputStream is) throws Exception {
+//        Map<Integer, String> content = new LinkedHashMap<Integer, String>();
+        JsonArray jsonArray = new JsonArray();
+        String str = "";
+        Workbook wb;
+        Sheet sheet;
+        Row row;
+        DecimalFormat df = new DecimalFormat("0");
+        try {
+            wb = WorkbookFactory.create(is);
+        } catch (IOException e) {
+            logger.error("读取Excel数据内容", e);
+            throw e;
+        }
+        sheet = wb.getSheetAt(0);
+        // 得到总行数
+        int rowNum = sheet.getLastRowNum();
+        row = sheet.getRow(0);
+        int colNum = row.getPhysicalNumberOfCells();
+        String[] arrs = new String[colNum];
+        //读取表头
+        for (int i = 0; i < colNum; i++) {
+            arrs[i] = getCellFormatValue(row.getCell(i), df);
+        }
+        // 正文内容应该从第二行开始,第一行为表头的标题
+        for (int i = 1; i <= rowNum; i++) {
+            row = sheet.getRow(i);
+            JsonObject jsonObject = new JsonObject();
+            int j = 0;
+            while (j < colNum) {
+                // 每个单元格的数据内容用"-"分割开，以后需要时用String类的replace()方法还原数据
+                // 也可以将每个单元格的数据设置到一个javabean的属性中，此时需要新建一个javabean
+                // str += getStringCellValue(row.getCell((short) j)).trim() +
+                // "-";
+                if (row != null) {
+                    jsonObject.put(arrs[j], getCellFormatValue(row.getCell(j), df).trim());
+                } else {
+//                    str += "" + ",";
+                }
+                j++;
+            }
+
+//            content.put(i, str.substring(0, str.length() - 1));
+            if (jsonObject.size() > 0)
+                jsonArray.add(jsonObject);
+//            str = "";
+        }
+        logger.info("读取Excel数据内容完毕");
+        return jsonArray;
+    }
+
+
+    /**
+     * 根据Cell类型设置数据
+     *
+     * @param cell
+     * @return
+     */
+    private static String getCellFormatValue(Cell cell, DecimalFormat df) {
+        String cellvalue = "";
+        if (cell != null) {
+            // 判断当前Cell的Type
+            switch (cell.getCellType()) {
+                // 如果当前Cell的Type为NUMERIC
+                case Cell.CELL_TYPE_NUMERIC:
+                case Cell.CELL_TYPE_FORMULA: {
+                    // 判断当前的cell是否为Date
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        // 如果是Date类型则，转化为Data格式
+
+                        //方法1：这样子的data格式是带时分秒的：2015-12-18 0:00:00
+                        cellvalue = cell.getDateCellValue().toString();
+
+                        //方法2：这样子的data格式是不带带时分秒的：2011-10-12
+//                        Date date = cell.getDateCellValue();
+//                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+//                        cellvalue = sdf.format(date);
+                    }
+                    // 如果是纯数字
+                    else {
+                        // 取得当前Cell的数值
+                        cellvalue = String.valueOf(df.format(cell.getNumericCellValue()));
+                    }
+                    break;
+                }
+                // 如果当前Cell的Type为STRIN
+                case Cell.CELL_TYPE_STRING:
+                    // 取得当前的Cell字符串
+                    cellvalue = cell.getRichStringCellValue().getString();
+                    break;
+                // 默认的Cell值
+                default:
+                    cellvalue = " ";
+            }
+        } else {
+            cellvalue = "";
+        }
+        return cellvalue;
+
     }
 
 

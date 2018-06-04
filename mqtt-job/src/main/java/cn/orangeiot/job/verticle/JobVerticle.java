@@ -15,6 +15,7 @@ import org.quartz.impl.JobDetailImpl;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 
 import static org.quartz.JobBuilder.newJob;
@@ -65,7 +66,8 @@ public class JobVerticle extends AbstractVerticle {
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
-//                options.setClusterHost(configJson.getString("host"));//本机地址
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
                 Vertx.clusteredVertx(options, rs -> {

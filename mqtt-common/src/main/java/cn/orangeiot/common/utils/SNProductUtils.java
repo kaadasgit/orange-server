@@ -175,26 +175,50 @@ public class SNProductUtils {
     public static String isGeNum(int num) {
         String result;
         if (num > 9)
-            result = String.valueOf((char) (64 + (num-9)));
+            result = String.valueOf((char) (64 + (num - 9)));
         else
             result = String.valueOf(num);
         return result;
     }
 
 
-    public static void main(String[] args) {
-        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yy"));//获取年代码
-        int dayWeek = LocalDate.now().get(ChronoField.ALIGNED_WEEK_OF_YEAR);//获取周代码
-        String week = String.valueOf(dayWeek).length() == 1 ? "0" + String.valueOf(dayWeek) : String.valueOf(dayWeek);
-
-        Map map = snDeviceInSN(new SNEntityModel().setProductNum(100000)
-                .setBatch(1).setStartCount(0).setModel("og").setChildCode("01")
-                .setWeekCode(week).setYearCode(time));
-        for (String str : (List<String>) map.get("snList")) {
-            System.out.println("=========sn=>" + str);
+    /**
+     * @Description 获取位置
+     * @author zhang bo
+     * @date 18-4-11
+     * @version 1.0
+     */
+    public static int getPosition(String SN) {
+        int num = 1;
+        final int FINAL_NUM = 9999;
+        String position = SN.substring(8, 9);//区号
+        int count = Integer.parseInt(SN.substring(9));//流水号
+        if (position.matches("[A-Z]+")) {
+            int par = ((int) position.toCharArray()[0]) - 65 + 1 + 9;
+            num = ((par - 1) * FINAL_NUM) + count;
+        } else {
+            num = ((Integer.parseInt(position) - 1) * FINAL_NUM) + count;
         }
-        System.out.println("=========size=>" + ((List<String>) map.get("snList")).size());
-        System.out.println("=========batchs=>" + map.get("batchs"));
-        System.out.println("=========rsCount=>" + map.get("rsCount"));
+        return num;
+    }
+
+
+    public static void main(String[] args) {
+//        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yy"));//获取年代码
+//        int dayWeek = LocalDate.now().get(ChronoField.ALIGNED_WEEK_OF_YEAR);//获取周代码
+//        String week = String.valueOf(dayWeek).length() == 1 ? "0" + String.valueOf(dayWeek) : String.valueOf(dayWeek);
+//
+//        Map map = snDeviceInSN(new SNEntityModel().setProductNum(100000)
+//                .setBatch(1).setStartCount(0).setModel("og").setChildCode("01")
+//                .setWeekCode(week).setYearCode(time));
+//        for (String str : (List<String>) map.get("snList")) {
+//            System.out.println("=========sn=>" + str);
+//        }
+//        System.out.println("=========size=>" + ((List<String>) map.get("snList")).size());
+//        System.out.println("=========batchs=>" + map.get("batchs"));
+//        System.out.println("=========rsCount=>" + map.get("rsCount"));
+
+        String SN = "BT011814B1236";
+        System.out.println(getPosition(SN));
     }
 }

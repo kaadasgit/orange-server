@@ -38,6 +38,8 @@ public interface UserAddr {
 
      String USER_LOGOUT="logout";//用户登出
 
+     String UPLOAD_JPUSHID="uploadPushId";//上報pushId
+
      String MEME_USER="memeUser";//同步米米用户信息
 
      String MEME_REGISTER_USER_BULK="memeRegisterUserBulk";//批量注册用户
@@ -51,4 +53,6 @@ public interface UserAddr {
      String SAVE_CALL_ID="saveCallIdAddr";//會話話的用戶地址映射
 
      String GET_CALL_ID="getCallIdAddr";//獲取用戶地址映射
+
+     String GET_GW_ADMIN="getGatewayAdmin";//獲取網關管理員
 }

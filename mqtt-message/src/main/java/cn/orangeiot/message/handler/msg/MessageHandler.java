@@ -34,6 +34,7 @@ public class MessageHandler implements MessageAddr {
         this.vertx = vertx;
     }
 
+
     /**
      * @Description 发送短信验证码
      * @author zhang bo
@@ -41,7 +42,9 @@ public class MessageHandler implements MessageAddr {
      * @version 1.0
      */
     public void SMSCode(Message<JsonObject> message) {
-        vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel", message.body().getString("tel"))
+        logger.info("params -> {}", message.body());
+        vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel",
+                message.body().getString("versionType") + ":" + message.body().getString("code") + message.body().getString("tel"))
                 .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {//查找手机验证码次数上限
             if (ars.failed()) {
                 ars.cause().printStackTrace();
@@ -51,22 +54,26 @@ public class MessageHandler implements MessageAddr {
                     message.reply(new JsonObject());
                     //请求tx短信验证码同步快不是异步请求代码
                     String tokens = KdsCreateRandom.createRandom(6);//验证码
-                    vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel", message.body().getString("tel"))
+                    vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel",
+                            message.body().getString("versionType") + ":"
+                                    + message.body().getString("code") + message.body().getString("tel"))
                             .put("verifyCode", tokens));//缓存验证码
+                    if (!message.body().getString("versionType").equals("PHILIPS")) {
+                        message.body().put("versionType", "kaadas");
+                    }
                     //请求参数
-                    String appid = config.getString("appid");//appiid
-                    String appkey = config.getString("appkey");//appkey
+                    String appid = config.getString(message.body().getString("versionType") + "appid");//appiid
+                    String appkey = config.getString(message.body().getString("versionType") + "appkey");//appkey
                     String random = KdsCreateRandom.createRandom(10);//随机数
                     Long time = System.currentTimeMillis() / 1000;//时间戳
                     int tpl_id;
                     if (message.body().getString("code").equals("86")) {//地区限制
-                        tpl_id = config.getInteger("tmplcnId");//国内模板id
-
+                        tpl_id = config.getInteger(message.body().getString("versionType") + "tmplcnId");//国内模板id
                     } else {
-                        tpl_id = config.getInteger("tmpworldId");//国外模板id
+                        tpl_id = config.getInteger(message.body().getString("versionType") + "tmpworldId");//国外模板id
                     }
                     //sha256签名
-                    SHA256.getSHA256Str("appkey=APPKEY&random=RANDOM&time=TIME&mobile=MOBILE"
+                    SHA256.getSHA256Str(config.getString(message.body().getString("versionType") + "sig")
                             .replace("APPKEY", appkey).replace("RANDOM"
                                     , random).replace("TIME", time.toString()).replace("MOBILE", message.body().getString("tel")), rs -> {
                         if (rs.failed()) {
@@ -107,7 +114,9 @@ public class MessageHandler implements MessageAddr {
      * @version 1.0
      */
     public void mailCode(Message<JsonObject> message) {
-        vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel", message.body().getString("mail"))
+        logger.info("params -> {}", message.body());
+        vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel"
+                , message.body().getString("versionType") + ":" + message.body().getString("mail"))
                 .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {
             if (ars.failed()) {
                 ars.cause().printStackTrace();
@@ -116,19 +125,34 @@ public class MessageHandler implements MessageAddr {
                 if (ars.result().body()) {
                     message.reply(new JsonObject());
                     String tokens = KdsCreateRandom.createRandom(6);
-                    vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel", message.body().getString("mail"))
+                    vertx.eventBus().send(MessageAddr.class.getName() + SAVE_CODE, new JsonObject().put("tel"
+                            , message.body().getString("versionType") + ":" + message.body().getString("mail"))
                             .put("verifyCode", tokens));//缓存验证码
+
                     //TODO 邮箱通知
-                    String text = config.getString("email_text").replaceFirst("verifyCode", tokens);
-                    MailClient.client.sendMail(new MailMessage().setTo(message.body().getString("mail"))
-                            .setFrom(config.getString("email_fromAddress"))
-                            .setText(text)
-                            .setSubject(config.getString("email_subject")), rs -> {
-                        if (rs.failed())
-                            rs.cause().printStackTrace();
-                        else
-                            logger.info(">>>>send email success emailAddr -> " + message.body().getString("mail"));
-                    });
+                    if (message.body().getString("versionType").equals("PHILIPS")) {
+                        String text = config.getString(message.body().getString("versionType") + "email_text").replaceFirst("verifyCode", tokens);
+                        MailClient.philipClient.sendMail(new MailMessage().setTo(message.body().getString("mail"))
+                                .setFrom(config.getString(message.body().getString("versionType") + "email_fromAddress"))
+                                .setText(text)
+                                .setSubject(config.getString(message.body().getString("versionType") + "email_subject")), rs -> {
+                            if (rs.failed())
+                                rs.cause().printStackTrace();
+                            else
+                                logger.info(">>>>philip send email success emailAddr -> " + message.body().getString("mail"));
+                        });
+                    } else {
+                        String text = config.getString("kaadasemail_text").replaceFirst("verifyCode", tokens);
+                        MailClient.kaadasClient.sendMail(new MailMessage().setTo(message.body().getString("mail"))
+                                .setFrom(config.getString("kaadasemail_fromAddress"))
+                                .setText(text)
+                                .setSubject(config.getString("kaadasemail_subject")), rs -> {
+                            if (rs.failed())
+                                rs.cause().printStackTrace();
+                            else
+                                logger.info(">>>>kaadas send email success emailAddr -> " + message.body().getString("mail"));
+                        });
+                    }
                 } else {
                     message.reply(null);
                 }

@@ -17,7 +17,7 @@ public enum  ErrorType {
     RESULT_UNKONWN(999, "资源未找到"),   //未知异常
     RESULT_SERVER_TIME_OUT(509, "服務請求處理超時"),   //處理超時
     REQUIRED_PRECESSS_FAIL(501, "业务处理失败"),
-    RESULT_DATA_FAIL(400, "请求数据或或格式不对"),   //请求数据或或格式不对
+    RESULT_DATA_FAIL(400, "请求数据或格式不对"),   //请求数据或或格式不对
     RESULT_PARAMS_FAIL(401, "数据参数不对"),   //必需的参数没有传或参数类型不对null值
     BODY_SIZE_FAIL(413, "图像体积过大"),   //必需的参数没有传或参数类型不对null值
     RESULT_CODE_NOREQUIRED(406, "不需要显示验证码"),   //不需要显示验证码
@@ -31,6 +31,7 @@ public enum  ErrorType {
     CODE_COUNT_FAIL(704, "验证码发送次数过多"),
     PASSWORD_FAIL(435, "密码只能数字和字母组合，6-15位"),
     LOGOUT_FAIL(780, "登出失败"),
+    UPLOAD_PUSHID_FAIL(431, "上傳pushid失敗"),
     ADD_ADMIN_DEV_FAIL(781, "添加设备失败"),
     OPEN_LOCK_FAIL(803, "开锁失败,当前时间没有权限"),
     OPERATION_FAIL(782, "操作失敗"),
@@ -58,7 +59,8 @@ public enum  ErrorType {
     GET_GATEWAY_DEVICE_FAIL(820,"获取网关设备列表失败"),
     DATA_MAP_FAIL(436,"数据不是映射关系"),
     SELECT_DATA_NULL(419,"没有数据，参数不匹配"),
-    REGISTER_USER_BULK_FAIL(567,"批量注册用户失败");
+    REGISTER_USER_BULK_FAIL(567,"批量注册用户失败"),
+    UOLOAD_VERIFY_DATA_MAC_FIAL(592,"SN和password1与mac映射不对");
 
     private int key;
 

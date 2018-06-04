@@ -48,7 +48,8 @@ public class NotifyHandler implements MessageAddr {
                 if (Objects.nonNull(rs.result())) {
                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, rs.result().body().put("requestuid",
                             message.body().getString("uid")).put("func", "notifyApprovalBindGW"),
-                            SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", rs.result().body().getString("adminuid")));
+                            SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                    .addHeader("uid", rs.result().body().getString("adminuid")));
                 }
             }
         });
@@ -63,6 +64,7 @@ public class NotifyHandler implements MessageAddr {
     public void replyGatewayUser(Message<JsonObject> message) {
         logger.info("==NotifyHandler=replyGatewayUser===params -> " + message.body());
         vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body().put("func", "replyApprovalBindGW"),
-                SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", "app:" + message.body().getString("requestuid")));
+                SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                        .addHeader("uid", "app:" + message.body().getString("requestuid")));
     }
 }

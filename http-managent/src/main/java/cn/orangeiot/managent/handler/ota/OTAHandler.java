@@ -1,5 +1,6 @@
 package cn.orangeiot.managent.handler.ota;
 
+import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.DataType;
@@ -147,21 +148,24 @@ public class OTAHandler implements EventbusAddr {
     public void submitOTAUpgrade(RoutingContext routingContext) {
         logger.info("===OTAHandler==submitOTAUpgrade==params -> {}", routingContext.getBodyAsString());
 
-        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("modelType", DataType.STRING)
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("modelCode", DataType.STRING)
                 .put("childCode", DataType.STRING).put("yearCode", DataType.STRING).put("weekCode", DataType.STRING)
-                .put("type", DataType.INTEGER).put("range", DataType.STRING), rs -> {
+                .put("type", DataType.INTEGER).put("range", DataType.STRING).put("filePathUrl", DataType.STRING)
+                .put("modelType", DataType.INTEGER).put("SW", DataType.STRING)
+                .put("fileMd5", DataType.STRING).put("fileLen", DataType.INTEGER), rs -> {
             if (rs.failed()) {
                 routingContext.fail(401);
             } else {
-                routingContext.response().end(JsonObject.mapFrom(new Result<>()).toString());
-                //保存記錄
-                vertx.eventBus().send(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE,
-                        rs.result(), SendOptions.getInstance(), as -> {
-                            if (as.failed())
-                                as.cause().printStackTrace();
-                        });
-                //升级处理
-                vertx.eventBus().send(OtaAddr.class.getName() + OTA_UPGRADE_PROCESS, rs.result());
+                if (rs.result().getString("range").indexOf("-") > 0
+                        || rs.result().getString("range").indexOf(",") > 0) {
+                    routingContext.response().end(JsonObject.mapFrom(new Result<>()).toString());
+                    //保存記錄
+                    vertx.eventBus().send(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, rs.result());
+                    //升级处理
+                    vertx.eventBus().send(OtaAddr.class.getName() + OTA_UPGRADE_PROCESS, rs.result());
+                } else
+                    routingContext.response().end(JsonObject.mapFrom(new Result<>()
+                            .setErrorMessage(ErrorType.RESULT_DATA_FAIL.getKey(), ErrorType.RESULT_DATA_FAIL.getValue())).toString());
             }
         });
     }

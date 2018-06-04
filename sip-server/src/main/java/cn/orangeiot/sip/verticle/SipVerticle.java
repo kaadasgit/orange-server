@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sip.SipFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -61,6 +62,8 @@ public class SipVerticle extends AbstractVerticle {
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
                 Vertx.clusteredVertx(options, this::register);

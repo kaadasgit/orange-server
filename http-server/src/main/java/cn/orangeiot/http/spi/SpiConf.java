@@ -15,16 +15,18 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.ext.hawkular.AuthenticationOptions;
-import io.vertx.ext.hawkular.VertxHawkularOptions;
+//import io.vertx.ext.hawkular.AuthenticationOptions;
+//import io.vertx.ext.hawkular.VertxHawkularOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.omg.CORBA.INTERNAL;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -35,7 +37,7 @@ import java.io.InputStream;
 public class SpiConf {
     private static Logger logger = LogManager.getLogger(SpiConf.class);
 
-    private JsonObject configJson;
+    private static JsonObject configJson;
 
     private Vertx vertx;
 
@@ -80,6 +82,8 @@ public class SpiConf {
             router.post(ApiConf.FORGET_PASSWORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::forgetPwd);
             router.post(ApiConf.SUGGEST_MSG).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::suggestMsg);
             router.post(ApiConf.USER_LOGOUT).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::logOut);
+            router.post(ApiConf.UPLOAD_PUSHID).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::uploadJPushId);
+            router.post(ApiConf.SEND_PUSH_APPLICATION).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::sendPushNotify);
 
             //TODO 消息相关
             MessageHandler messageHandler = new MessageHandler(vertx.eventBus(), configJson);
@@ -111,6 +115,7 @@ public class SpiConf {
             router.post(ApiConf.UPDATE_DEV_NICKNAME).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateAdminlockNickName);
             router.post(ApiConf.CHECK_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::checkAdmindev);
             router.post(ApiConf.UPLOAD_OPEN_LOCK_RECORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::uploadOpenLockList);
+            router.post(ApiConf.REQUEST_USER_AUTH).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::openLockAuth);
 
             //mac地址相关
             MacHandler macHandler = new MacHandler(vertx.eventBus(), configJson);
@@ -138,7 +143,8 @@ public class SpiConf {
             byte[] jksByte = IOUtils.toByteArray(jksIn);
             buffer = Buffer.buffer().appendBytes(jksByte);
             vertx.createHttpServer(
-                    new HttpServerOptions().setCompressionSupported(true).setSsl(true)
+                    new HttpServerOptions()
+                            .setCompressionSupported(true).setSsl(true)
                             .setKeyStoreOptions(new JksOptions().setValue(buffer)
                                     .setPassword(configJson.getString("pwd"))))
                     .requestHandler(router::accept).listen(vertxConfig.getInteger("http-port",
@@ -165,13 +171,38 @@ public class SpiConf {
             zkConf = IOUtils.toString(zkIn, "UTF-8");//获取配置
             config = IOUtils.toString(configIn, "UTF-8");
 
+            String versionType = System.getProperty("HTTP.SERVER.TYPE");//系統区分
+            String port = System.getProperty("HTTP.SERVER.PORT");//系統区分
+
+            if (!Objects.nonNull(versionType) || !Objects.nonNull(port)) {
+                logger.fatal("env system params << -DHTTP.SERVER.TYPE >> or << -DHTTP.SERVER.PORT >> is null ");
+                System.exit(1);//程序異常
+                return;
+            } else {
+                try {
+                    Integer.parseInt(port);
+                } catch (Exception e) {
+                    logger.fatal("env system params << -DHTTP.SERVER.PORT cast intType failure>> is null ");
+                    System.exit(1);//程序異常
+                    return;
+                }
+            }
+
             if (!zkConf.equals("")) {
                 JsonObject json = new JsonObject(zkConf);
                 configJson = new JsonObject(config);
+                configJson.put("versionType", versionType);//添加区分配置
+                configJson.put("port", Integer.parseInt(port));//添加区分配置
+
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
 
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
+
 //                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
 //                                .setHost("127.0.0.1")
 //                                .setPort(8080)
@@ -194,14 +225,6 @@ public class SpiConf {
     }
 
 
-    public Router getRouter() {
-        return router;
-    }
-
-    public void setRouter(Router router) {
-        this.router = router;
-    }
-
     public Vertx getVertx() {
         return vertx;
     }
@@ -210,11 +233,8 @@ public class SpiConf {
         this.vertx = vertx;
     }
 
-    public JsonObject getConfigJson() {
+    public static JsonObject getConfigJson() {
         return configJson;
     }
 
-    public void setConfigJson(JsonObject configJson) {
-        this.configJson = configJson;
-    }
 }

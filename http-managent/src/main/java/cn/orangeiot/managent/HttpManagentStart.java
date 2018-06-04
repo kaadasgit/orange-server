@@ -2,11 +2,9 @@ package cn.orangeiot.managent;
 
 import cn.orangeiot.managent.verticle.HttpServerVerticle;
 import io.vertx.core.Vertx;
-import org.apache.log4j.NDC;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.*;
-import org.slf4j.MDC;
 
 import java.io.InputStream;
 
@@ -16,9 +14,9 @@ import java.io.InputStream;
  * @Description
  * @date 2017-12-08
  */
-public class httpManagentStart {
+public class HttpManagentStart {
 
-    private static Logger logger = LogManager.getLogger(httpManagentStart.class);
+    private static Logger logger = LogManager.getLogger(HttpManagentStart.class);
 
     @SuppressWarnings("Duplicates")
     public static void main(String[] args) {
@@ -29,7 +27,7 @@ public class httpManagentStart {
         ConfigurationSource source = null;
         try {
             //加载log4j2配置
-            InputStream in = httpManagentStart.class.getResourceAsStream("/log4j2.xml");
+            InputStream in = HttpManagentStart.class.getResourceAsStream("/log4j2.xml");
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {

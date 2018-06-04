@@ -1,5 +1,6 @@
 {
   "hosts.zookeeper": "0.0.0.0:2181",
+  "node.host": "10.29.67.209",
   "sessionTimeout": 5000,
   "connectTimeout": 10000,
   "rootPath": "io.vertx",

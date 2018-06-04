@@ -112,7 +112,6 @@
                 <excludes>
                     <exclude>zkConf.json</exclude>
                     <exclude>log4j2.xml</exclude>
-                    <exclude>quartz.properties</exclude>
                 </excludes>
             </resource>
             <resource>
@@ -121,7 +120,6 @@
                 <includes>
                     <include>*.json</include>
                     <include>*.xml</include>
-                    <include>*.properties</include>
                 </includes>
             </resource>
         </resources>

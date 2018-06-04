@@ -1,5 +1,6 @@
 package cn.orangeiot.apidao.handler.dao.message;
 
+import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.Constant;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
