@@ -182,7 +182,8 @@ public class OtaDao {
                                         as.cause().printStackTrace();
                                         message.reply(null);
                                     } else {
-                                        message.reply(new JsonArray(as.result()));
+                                        message.reply(new JsonArray(
+                                                as.result().stream().distinct().collect(Collectors.toList())));
                                     }
                                 });
                     }
