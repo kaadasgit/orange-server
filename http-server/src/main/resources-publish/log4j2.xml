@@ -2,17 +2,13 @@
 
 <Configuration status="warn" name="MyApp" packages="">
     <Appenders>
-        <!--控制台输出-->
-        <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
-        </Console>
         <!--按天分日志文件-->
         <RollingFile name="serverLog" fileName="./logs/server.log"
                      filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
             <PatternLayout
                     pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:10.45.46.77:8090/http_server] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>
             <Policies>
-                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1" />
             </Policies>
         </RollingFile>
         <!--按天分日志文件-->
@@ -26,7 +22,6 @@
         <!--异步写入log-->
         <Root level="info">
             <AppenderRef ref="serverLog"/>
-            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>
