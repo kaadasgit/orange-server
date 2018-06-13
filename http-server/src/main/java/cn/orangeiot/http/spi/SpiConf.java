@@ -146,7 +146,8 @@ public class SpiConf {
                     new HttpServerOptions()
                             .setCompressionSupported(true).setSsl(true)
                             .setKeyStoreOptions(new JksOptions().setValue(buffer)
-                                    .setPassword(configJson.getString("pwd"))))
+                                    .setPassword(configJson.getString("pwd")))
+            .setIdleTimeout(configJson.getInteger("IdleTimeout")))
                     .requestHandler(router::accept).listen(vertxConfig.getInteger("http-port",
                     configJson.getInteger("port")),
                     vertxConfig.getString("host-name", configJson.getString("host")));

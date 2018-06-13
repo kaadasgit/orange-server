@@ -161,6 +161,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void telLogin(Message<JsonObject> message) {
+        logger.info("params -> {}",message.body());
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel"))
                 .put("versionType", message.body().getString("versionType")), new JsonObject()
@@ -169,6 +170,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             if (res.failed()) {
                 res.cause().printStackTrace();
             } else {
+                logger.info("params -> ok");
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
                         encyPwd(res.result().put("username", message.body().getString("tel"))
