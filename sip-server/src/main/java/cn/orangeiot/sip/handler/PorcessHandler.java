@@ -109,7 +109,7 @@ public class PorcessHandler {
             //todo 消息协议解析
             MsgParserDecode.parseSIPMessage(buffer.getBytes(), true, false, rs -> {
                 if (rs.failed()) {//不是sip标准协议
-                    rs.cause().printStackTrace();
+                    logger.error(rs.cause().getMessage(), rs.cause());
                     netSocket.close();
                 } else {
                     if (rs.result() instanceof SIPResponse)
@@ -148,7 +148,7 @@ public class PorcessHandler {
         //todo 消息协议解析
         MsgParserDecode.parseSIPMessage(datagramPacket.data().getBytes(), true, false, rs -> {
             if (rs.failed()) {//不是sip标准协议
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (rs.result() instanceof SIPResponse)
                     responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
@@ -236,7 +236,7 @@ public class PorcessHandler {
             branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
             transactions.remove(callID.getCallIdentifer().toString());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }
@@ -262,7 +262,7 @@ public class PorcessHandler {
                     byeReq.setContent(request.getContent(), contentType);
 
                 } catch (ParseException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             } else {
                 logger.info("sdp is null");
@@ -275,7 +275,7 @@ public class PorcessHandler {
             transactions.remove(callID.getCallIdentifer().toString());
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }
@@ -302,10 +302,10 @@ public class PorcessHandler {
 
         } catch (ParseException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -360,7 +360,7 @@ public class PorcessHandler {
             ResponseMsgUtil.sendMessage(toURI.toString(), sipRequest.toString(), sipOptions);
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 

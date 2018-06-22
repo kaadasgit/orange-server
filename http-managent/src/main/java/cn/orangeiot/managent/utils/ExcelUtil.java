@@ -166,7 +166,7 @@ public class ExcelUtil {
             workbook.write(out);
             workbook.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -299,7 +299,7 @@ public class ExcelUtil {
             workbook.close();
             workbook.dispose();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -432,7 +432,7 @@ public class ExcelUtil {
             workbook.close();
             workbook.dispose();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -573,7 +573,7 @@ public class ExcelUtil {
 //            outputStream.flush();
 //            outputStream.close();
 //        } catch (Exception e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        }
 //    }
 }

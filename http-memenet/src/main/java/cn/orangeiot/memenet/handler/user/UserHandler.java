@@ -60,7 +60,7 @@ public class UserHandler implements UserAddr {
                         .sendJsonObject(new JsonObject().put("username", message.body().getString("username"))
                                 .put("password", message.body().getString("password")).put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==UserHandler=onRegisterUser===request /v1/accsvr/accregister timeout");
                             } else {
                                 logger.info("==UserHandler=onRegisterUser===request /v1/accsvr/accregister result -> " + rs.result().body());
@@ -97,7 +97,7 @@ public class UserHandler implements UserAddr {
                         .sendJsonObject(new JsonObject().put("userid", message.body().getString("userid"))
                                 .put("password", message.body().getString("password")).put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==UserHandler=onUpdatePwd===request /v1/accsvr/resetpassword timeout");
                             } else {
                                 logger.info("==UserHandler=onUpdatePwd===request /v1/accsvr/resetpassword result -> " + rs.result().body());
@@ -121,7 +121,7 @@ public class UserHandler implements UserAddr {
         //TODO sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==UserHandler==onRegisterUserBulk Usersha256 encrypt is fail");
             } else {
                 //批量注册
@@ -136,7 +136,7 @@ public class UserHandler implements UserAddr {
                             .as(BodyCodec.jsonObject())
                             .sendJsonObject(jsonObject, rs -> {
                                 if (rs.failed()) {
-                                    rs.cause().printStackTrace();
+                                    logger.error(rs.cause().getMessage(), rs.cause());
                                     logger.error("==UserHandler=onRegisterUserBulk===request /v1/accsvr/accsregister timeout");
                                 } else {
                                     logger.info("==UserHandler=onRegisterUserBulk===request /v1/accsvr/accsregister result -> " + rs.result().body());

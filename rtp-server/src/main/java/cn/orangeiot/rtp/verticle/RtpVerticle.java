@@ -63,19 +63,19 @@ public class RtpVerticle extends AbstractVerticle {
                 Vertx.clusteredVertx(options, this::register);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != zkIn)
                 try {
                     zkIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             if (null != configIn)
                 try {
                     configIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

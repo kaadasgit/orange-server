@@ -4,6 +4,8 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.mail.MailConfig;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.mail.StartTLSOptions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -20,6 +22,7 @@ public class MailClient {
 
     public static io.vertx.ext.mail.MailClient philipClient;
 
+    private static Logger logger = LogManager.getLogger(MailClient.class);
     /**
      * r
      *
@@ -52,7 +55,7 @@ public class MailClient {
             philipConfig.setMaxPoolSize(Integer.parseInt(mainConfig.getProperty("maxPool")));
             philipClient = io.vertx.ext.mail.MailClient.createNonShared(vertx, philipConfig);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

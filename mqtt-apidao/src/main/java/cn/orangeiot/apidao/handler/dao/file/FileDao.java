@@ -30,7 +30,7 @@ public class FileDao {
         MongoClient.client.findOne("kdsUserHead", message.body(), new JsonObject().put("content", "")
                 .put("_id", 0).put("size", "").put("contentType", "").put("uploadDate", ""), res -> {
             if (res.failed()) {
-                res.cause().printStackTrace();
+                logger.error(res.cause().getMessage(), res.cause());
             } else {
                 if (Objects.nonNull(res.result())) {
                     message.reply(res.result());
@@ -51,12 +51,12 @@ public class FileDao {
     public void onUploadHeaderImg(Message<JsonObject> message) {
         MongoClient.client.removeDocument("kdsUserHead",new JsonObject().put("uid", message.body().getString("uid")),rs->{
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             }else{
                 MongoClient.client.save("kdsUserHead",
                         message.body(), res -> {
                             if (res.failed()) {
-                                res.cause().printStackTrace();
+                                logger.error(res.cause().getMessage(), res.cause());
                             } else if (Objects.nonNull(res.result())) {
                                 message.reply(new JsonObject());
                             } else {

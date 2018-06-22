@@ -62,7 +62,7 @@ public class ApiDaoVerticle extends AbstractVerticle {
 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             startFuture.failed();
         } finally {
             if (null != zkIn)

@@ -36,7 +36,7 @@ public class ApiDaoStart {
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         if (null != source && args.length > 0) {
@@ -44,7 +44,6 @@ public class ApiDaoStart {
             Vertx.vertx().deployVerticle(ApiDaoVerticle.class.getName(), rs -> {
                 if (rs.failed()) {
                     logger.error("deploy CacheVerticle fail");
-                    rs.cause().printStackTrace();
                 } else {
                     logger.info("deploy CacheVerticle successs");
                 }

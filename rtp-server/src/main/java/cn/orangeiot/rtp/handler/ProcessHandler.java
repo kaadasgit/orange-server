@@ -52,16 +52,16 @@ public class ProcessHandler implements UserAddr {
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.VIDEO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                     } else {
                         if (Objects.nonNull(rs.result().body())) {
                             String[] socketAddress = rs.result().body().split(":");
                             RtpVertFactory.getVideoSocket().send(datagramPacket.data(), Integer.parseInt(socketAddress[1]), socketAddress[0]
                                     , as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as.cause());
                                         } else {
-                                            logger.info("send success ->" + rs.succeeded());
+                                            logger.info("send success ->" + as.succeeded());
                                             if (as.failed())
                                                 reSendVideo(datagramPacket.data(), socketAddress);
                                         }
@@ -90,7 +90,7 @@ public class ProcessHandler implements UserAddr {
             }
             RtpVertFactory.getVideoSocket().send(bufferStream, Integer.parseInt(socketAddress[1]), socketAddress[0], ars -> {
                 if (ars.failed())
-                    ars.cause().printStackTrace();
+                    logger.error(ars.cause().getMessage(), ars.cause());
                 else
                     vertx.cancelTimer(rs);//取消周期定时
             });
@@ -113,14 +113,14 @@ public class ProcessHandler implements UserAddr {
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.AUDIO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                     } else {
                         if (Objects.nonNull(rs.result().body())) {
                             String[] socketAddress = rs.result().body().split(":");
                             RtpVertFactory.getAudioSocket().send(datagramPacket.data(), Integer.parseInt(socketAddress[1]), socketAddress[0]
                                     , as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as.cause());
                                         } else {
                                             logger.info("send success ->" + rs.succeeded());
                                             if (as.failed())
@@ -151,7 +151,7 @@ public class ProcessHandler implements UserAddr {
             }
             RtpVertFactory.getVideoSocket().send(bufferStream, Integer.parseInt(socketAddress[1]), socketAddress[0], ars -> {
                 if (ars.failed())
-                    ars.cause().printStackTrace();
+                    logger.error(ars.cause().getMessage(), ars.cause());
                 else
                     vertx.cancelTimer(rs);//取消周期定时
             });

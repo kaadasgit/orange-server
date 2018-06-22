@@ -277,7 +277,7 @@ public class BaseHandler implements UserAddr {
                 excludePathList = json.getJsonArray("exclude_path").getList();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 

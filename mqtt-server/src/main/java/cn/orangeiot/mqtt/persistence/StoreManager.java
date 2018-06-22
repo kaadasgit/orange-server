@@ -11,6 +11,8 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 
 import javax.mail.Store;
@@ -25,6 +27,8 @@ public class StoreManager implements StorageAddr {
     private Vertx vertx;
     private MQTTEncoder encoder;
     private MQTTDecoder decoder;
+
+    private static Logger logger = LogManager.getLogger(StoreManager.class);
 
     public StoreManager(Vertx vertx) {
         this.vertx = vertx;
@@ -47,7 +51,7 @@ public class StoreManager implements StorageAddr {
                     new DeliveryOptions().addHeader("command", "saveRetainMessage"));
 
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -62,7 +66,7 @@ public class StoreManager implements StorageAddr {
                     new DeliveryOptions().addHeader("command", "deleteRetainMessage"));
 
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -92,7 +96,7 @@ public class StoreManager implements StorageAddr {
                                 PublishMessage pm = (PublishMessage) decoder.dec(pmBytes);
                                 list.add(pm);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                logger.error(e.getMessage(), e);
                             }
                         }
                         handler.handle(list);

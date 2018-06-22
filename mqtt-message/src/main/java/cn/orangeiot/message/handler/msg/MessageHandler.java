@@ -47,7 +47,7 @@ public class MessageHandler implements MessageAddr {
                 message.body().getString("versionType") + ":" + message.body().getString("code") + message.body().getString("tel"))
                 .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {//查找手机验证码次数上限
             if (ars.failed()) {
-                ars.cause().printStackTrace();
+                logger.error(ars.cause().getMessage(), ars.cause());
                 message.reply(null);
             } else {
                 if (ars.result().body()) {
@@ -77,7 +77,7 @@ public class MessageHandler implements MessageAddr {
                             .replace("APPKEY", appkey).replace("RANDOM"
                                     , random).replace("TIME", time.toString()).replace("MOBILE", message.body().getString("tel")), rs -> {
                         if (rs.failed()) {
-                            rs.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars.cause());
                         } else {
                             JsonObject jsonObject = new JsonObject();
                             logger.info("====MessageHandler=SMSCode==sendResult==params ->tel= {},nationcode = {}", message.body().getString("tel")
@@ -90,7 +90,7 @@ public class MessageHandler implements MessageAddr {
                                     .addQueryParam("random", random)
                                     .sendJsonObject(jsonObject, qrs -> {
                                         if (qrs.failed()) {
-                                            qrs.cause().printStackTrace();
+                                            logger.error(qrs.cause().getMessage(), qrs.cause());
                                         } else {
                                             logger.info("====MessageHandler=SMSCode==sendResult==return -> " + qrs.result().body());
                                         }
@@ -119,7 +119,7 @@ public class MessageHandler implements MessageAddr {
                 , message.body().getString("versionType") + ":" + message.body().getString("mail"))
                 .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {
             if (ars.failed()) {
-                ars.cause().printStackTrace();
+                logger.error(ars.cause().getMessage(), ars.cause());
                 message.reply(null);
             } else {
                 if (ars.result().body()) {
@@ -137,7 +137,7 @@ public class MessageHandler implements MessageAddr {
                                 .setText(text)
                                 .setSubject(config.getString(message.body().getString("versionType") + "email_subject")), rs -> {
                             if (rs.failed())
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                             else
                                 logger.info(">>>>philip send email success emailAddr -> " + message.body().getString("mail"));
                         });
@@ -148,7 +148,7 @@ public class MessageHandler implements MessageAddr {
                                 .setText(text)
                                 .setSubject(config.getString("kaadasemail_subject")), rs -> {
                             if (rs.failed())
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                             else
                                 logger.info(">>>>kaadas send email success emailAddr -> " + message.body().getString("mail"));
                         });

@@ -141,7 +141,7 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPLOAD_OPEN_LOCK_RECORD, adminDevDao::uploadOpenLockList);
 
             //生产相关
-            DeviceDao deviceDao = new DeviceDao();
+            DeviceDao deviceDao = new DeviceDao(vertx);
             vertx.eventBus().consumer(MemenetAddr.class.getName() + PRODUCTION_DEVICESN, deviceDao::productionDeviceSN);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_PRODUCT, deviceDao::productionModelSN);
             vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MAC_IN, deviceDao::modelMacIn);

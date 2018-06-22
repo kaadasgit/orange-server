@@ -24,6 +24,8 @@ import java.util.Objects;
  */
 public abstract class BaseService {
 
+    private static Logger logger = LogManager.getLogger(BaseService.class);
+
     private Vertx vertx;
 
     private JsonObject jsonObject;
@@ -43,7 +45,7 @@ public abstract class BaseService {
     public void send(String addr, JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
         vertx.eventBus().send(addr, jsonObject, SendOptions.getInstance(),(AsyncResult<Message<Object>> rs) -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 ResultInfo<Object> result = new ResultInfo<>();
                 if (Objects.nonNull(rs.result().body())) {

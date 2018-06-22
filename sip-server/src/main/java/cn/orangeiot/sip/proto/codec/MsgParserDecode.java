@@ -126,7 +126,7 @@ public class MsgParserDecode {
                         try {
                             message.setMessageContent(body, !strict, false, message.getContentLength().getContentLength());
                         } catch (ParseException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(), e);
                         }
                     } else if (!false && message.getContentLength().getContentLength() == 0 & strict) {
                         String last4Chars = new String(msgBuffer, msgBuffer.length - 4, 4);

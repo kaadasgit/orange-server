@@ -119,7 +119,7 @@ public class CommonThreadPool <Job extends Runnable> implements ThreadPool<Job> 
                         try {
                             jobs.wait();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+//                            logger.error(e.getMessage(), e);
                             Thread.currentThread().interrupt();// 中断
                             return;// 结束
                         }
@@ -130,7 +130,7 @@ public class CommonThreadPool <Job extends Runnable> implements ThreadPool<Job> 
                             job.run();//注意，这里是run而不是start，传入的Job
                         } catch (Exception e) {
                             // 忽略Job执行中的Exception
-                            e.printStackTrace();
+//                            logger.error(e.getMessage(), e);
                         }
                     }
                 }

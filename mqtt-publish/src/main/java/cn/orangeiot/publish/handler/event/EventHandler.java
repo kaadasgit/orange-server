@@ -55,7 +55,7 @@ public class EventHandler implements EventAddr {
                         try {
                             redirectProcess(rs.result());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(), e);
                         }
                         //是否存在用户时间
                         if (!Objects.nonNull(message.body().getString("userId"))) {

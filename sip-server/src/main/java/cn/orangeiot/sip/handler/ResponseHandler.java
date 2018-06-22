@@ -94,7 +94,7 @@ public class ResponseHandler implements UserAddr {
             if (Objects.nonNull(response.getReasonPhrase(code)))
                 callerResp.setReasonPhrase(response.getReasonPhrase(code));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         // 拷贝to头域
@@ -148,7 +148,7 @@ public class ResponseHandler implements UserAddr {
                 callerResp.setContent(response.getContent(), contentType);
 //                }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         } else
 

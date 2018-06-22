@@ -10,6 +10,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.quartz.*;
 import org.quartz.impl.JobDetailImpl;
 import org.quartz.impl.StdSchedulerFactory;
@@ -28,6 +30,7 @@ import static org.quartz.JobBuilder.newJob;
  */
 public class JobVerticle extends AbstractVerticle {
 
+    private static Logger logger = LogManager.getLogger(JobVerticle.class);
 
     private Properties properties;
 
@@ -71,34 +74,34 @@ public class JobVerticle extends AbstractVerticle {
 
                 //集群
                 Vertx.clusteredVertx(options, rs -> {
-                      if(rs.failed()){
-                          rs.cause().printStackTrace();
-                      }else {
-                          vertx=rs.result();
-                          //创建scheduler
-                          SchedulerFactory schedulerFactory = null;
-                          try {
-                              schedulerFactory = new StdSchedulerFactory(properties);
-                              Scheduler scheduler = schedulerFactory.getScheduler();
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs.cause());
+                    } else {
+                        vertx = rs.result();
+                        //创建scheduler
+                        SchedulerFactory schedulerFactory = null;
+                        try {
+                            schedulerFactory = new StdSchedulerFactory(properties);
+                            Scheduler scheduler = schedulerFactory.getScheduler();
 
-                              JobConf jobConf=new JobConf(vertx,configJson,scheduler);//配置任务调度
-                              jobConf.verifyCode();
+                            JobConf jobConf = new JobConf(vertx, configJson, scheduler);//配置任务调度
+                            jobConf.verifyCode();
 
-                              scheduler.start(); //启动
-                          } catch (SchedulerException e) {
-                              e.printStackTrace();
-                          }
-                      }
+                            scheduler.start(); //启动
+                        } catch (SchedulerException e) {
+                            logger.error(e.getMessage(), e);
+                        }
+                    }
                 });
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
 
-        @Override
-        public void stop (Future < Void > stopFuture) throws Exception {
-            super.stop(stopFuture);
-        }
+    @Override
+    public void stop(Future<Void> stopFuture) throws Exception {
+        super.stop(stopFuture);
+    }
 }

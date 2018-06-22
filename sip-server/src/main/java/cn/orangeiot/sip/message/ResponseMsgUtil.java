@@ -40,18 +40,18 @@ public class ResponseMsgUtil implements UserAddr {
         SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
                 username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                     if (as.failed()) {
-                        as.cause().printStackTrace();
+                        logger.error(as.cause().getMessage(), as.cause());
                     } else {
                         if (Objects.nonNull(as.result().body())) {
                             logger.info("==ResponseMsgUtil==sendMessage send  username->\n" + username);
                             logger.info("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
                             if (sipOptions == SipOptions.UDP) {
-                                String[] address=as.result().body().split(":");
-                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]),address[0]);
+                                String[] address = as.result().body().split(":");
+                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
                                 logger.info("==ResponseMsgUtil==sendMessage send  UDP host -> {},port -> {}->\n", socket.host(), socket.port());
-                                SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(),rs -> {
+                                SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(), rs -> {
                                     if (rs.failed()) {
-                                        rs.cause().printStackTrace();
+                                        logger.error(rs.cause().getMessage(), rs.cause());
                                     } else {
                                         logger.info("send success ->" + rs.succeeded());
                                         if (rs.failed())
@@ -89,7 +89,7 @@ public class ResponseMsgUtil implements UserAddr {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
                     username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as.cause());
                         } else {
                             atomicInteger.getAndIncrement();//原子自增
                             if (atomicInteger.intValue() == SipVertxFactory.getConfig().getInteger("maxTimes")) {//达到重发次数
@@ -97,11 +97,11 @@ public class ResponseMsgUtil implements UserAddr {
                             }
 
                             if (Objects.nonNull(as.result().body())) {
-                                String[] address=as.result().body().split(":");
-                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]),address[0]);
+                                String[] address = as.result().body().split(":");
+                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
                                 SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(), ars -> {
                                     if (ars.failed())
-                                        ars.cause().printStackTrace();
+                                        logger.error(ars.cause().getMessage(), ars.cause());
                                     else
                                         SipVertxFactory.getVertx().cancelTimer(rs);//取消周期定时
                                 });

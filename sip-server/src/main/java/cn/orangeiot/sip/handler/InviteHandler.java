@@ -84,7 +84,7 @@ public class InviteHandler implements UserAddr {
 //                ResponseMsgUtil.sendMessage(request.getFrom().getAddress().getURI().toString()
 //                        , response.toString(), sipOptions);
 //            } catch (ParseException e) {
-//                e.printStackTrace();
+//                logger.error(e.getMessage(), e)();
 //            }
 //            return;
 //        }
@@ -176,7 +176,7 @@ public class InviteHandler implements UserAddr {
                 Exception e)
 
         {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

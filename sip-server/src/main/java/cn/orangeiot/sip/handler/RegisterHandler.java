@@ -86,7 +86,7 @@ public class RegisterHandler implements UserAddr {
                 response.setExpires(request.getExpires());
             ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
         } catch (ParseException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

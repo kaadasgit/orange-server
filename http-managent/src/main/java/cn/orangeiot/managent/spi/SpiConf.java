@@ -116,7 +116,7 @@ public class SpiConf {
                     configJson.getInteger("port"), configJson.getString("host"));
             ThreadContext.put("ip", configJson.getString("host"));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -140,6 +140,9 @@ public class SpiConf {
                 JsonObject json = new JsonObject(zkConf);
                 configJson = new JsonObject(config);
 
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
+
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
@@ -161,7 +164,7 @@ public class SpiConf {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }

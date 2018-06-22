@@ -28,7 +28,7 @@ public abstract class SynchUserDao {
         logger.info("==UserHandler=onSynchUser" + message);
         RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, message.getString("username")
                 , message.getString("userPwd"), rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
                 });
     }
 
@@ -43,7 +43,7 @@ public abstract class SynchUserDao {
         logger.info("==UserHandler=onSynchUserInfo" + message);
         RedisClient.client.hset(RedisKeyConf.USER_INFO, message.getString("_id")
                 , message.toString(), rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
                 });
     }
 
@@ -58,13 +58,13 @@ public abstract class SynchUserDao {
         logger.info("==UserHandler=onSynchUpdateUserInfo" + message);
         RedisClient.client.hget(RedisKeyConf.USER_INFO, message.getString("uid"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     JsonObject jsonObject = new JsonObject(rs.result()).put("userPwd", message.getString("userPwd"));
                     RedisClient.client.hset(RedisKeyConf.USER_INFO, message.getString("uid")
                             , jsonObject.toString(), as -> {
-                                if (as.failed()) as.cause().printStackTrace();
+                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
                             });
                 }
 

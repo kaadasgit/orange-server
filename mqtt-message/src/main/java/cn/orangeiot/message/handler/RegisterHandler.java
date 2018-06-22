@@ -101,7 +101,7 @@ public class RegisterHandler implements EventbusAddr {
                 MessagePushHandler messagePushHandler = new MessagePushHandler(config, vertx);
                 vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, messagePushHandler::sendPushNotify);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         } else {
             // failed!

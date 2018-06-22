@@ -3,6 +3,8 @@ package cn.orangeiot.common.utils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
@@ -24,6 +26,10 @@ import java.util.Random;
  */
 
 public class KdsCreateRandom {
+
+    private static Logger logger = LogManager.getLogger(KdsCreateRandom.class);
+
+
     /**
      * 创建指定数量的随机字符串
      *
@@ -117,7 +123,7 @@ public class KdsCreateRandom {
             return result.toString();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
 
         }
         return null;

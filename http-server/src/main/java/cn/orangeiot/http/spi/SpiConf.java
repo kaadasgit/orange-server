@@ -152,7 +152,7 @@ public class SpiConf {
                     configJson.getInteger("port")),
                     vertxConfig.getString("host-name", configJson.getString("host")));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -220,7 +220,7 @@ public class SpiConf {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }

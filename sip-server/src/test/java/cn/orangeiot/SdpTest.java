@@ -130,7 +130,7 @@ public class SdpTest {
             ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(outFile, false));
             os.writeObject(sessiondescription1);
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
     }
 //    }

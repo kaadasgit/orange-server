@@ -1,6 +1,7 @@
 package cn.orangeiot.message.handler.client;
 
 import cn.orangeiot.message.constant.ConstantConf;
+import cn.orangeiot.message.verticle.MessageVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
@@ -8,6 +9,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +26,8 @@ public class PushClient {
     public static io.vertx.ext.web.client.WebClient androidClient;
 
     public static io.vertx.ext.web.client.WebClient iosClient;
+
+    private static Logger logger = LogManager.getLogger(PushClient.class);
 
     /**
      * @Description 配置androdi push服务
@@ -46,13 +51,13 @@ public class PushClient {
                         .setMaxPoolSize(json.getInteger("maxPoolSize")).setConnectTimeout(json.getInteger("timeout")));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != pushIn)
                 try {
                     pushIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }
@@ -95,13 +100,13 @@ public class PushClient {
                         .setIdleTimeout(json.getInteger("IdleTimeout")));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != pushIn)
                 try {
                     pushIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

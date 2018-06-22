@@ -23,7 +23,7 @@ public class RegisterDao {
     public void saveRegisterInfo(Message<JsonObject> message) {
         RedisClient.client.hset(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), message.body().getString("socketAddress"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             }
         });
     }
@@ -39,7 +39,7 @@ public class RegisterDao {
     public void getRegisterInfo(Message<String> message) {
         RedisClient.client.hget(RedisKeyConf.REGISTER_USER, message.body(), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()))
                     message.reply(rs.result());
@@ -59,7 +59,7 @@ public class RegisterDao {
     public void delRegisterInfo(Message<JsonObject> message) {
         RedisClient.client.hdel(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), rs -> {
             if (rs.failed())
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
         });
     }
 
@@ -73,7 +73,7 @@ public class RegisterDao {
     public void saveCallIdAddr(Message<JsonObject> message) {
         RedisClient.client.hget(RedisKeyConf.REGISTER_USER, message.body().getString("sendAddr"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     RedisClient.client.hset(RedisKeyConf.CALLIDADDR, message.body().getString("mediaType") + rs.result().split(":")[0], message.body().getString("receAddr"), as -> {
@@ -97,7 +97,7 @@ public class RegisterDao {
     public void getCallIdAddr(Message<String> message) {
         RedisClient.client.hget(RedisKeyConf.CALLIDADDR, message.body(), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()))
                     message.reply(rs.result());

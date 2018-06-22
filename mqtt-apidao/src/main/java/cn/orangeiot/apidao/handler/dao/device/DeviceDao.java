@@ -7,7 +7,9 @@ import cn.orangeiot.common.utils.KdsCreateRandom;
 import cn.orangeiot.common.utils.SHA1;
 import cn.orangeiot.common.utils.SNProductUtils;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -15,14 +17,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import scala.util.parsing.json.JSONObject;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+import static io.vertx.core.Future.succeededFuture;
 
 /**
  * @author zhang bo
@@ -34,6 +41,11 @@ public class DeviceDao {
 
     private static Logger logger = LogManager.getLogger(DeviceDao.class);
 
+    private Vertx vertx;
+
+    public DeviceDao(Vertx vertx) {
+        this.vertx = vertx;
+    }
 
     /**
      * @Description 设备SN号生产
@@ -254,29 +266,62 @@ public class DeviceDao {
         for (int i = 0; i < batch; i++) {
             bulkOperationList[i] = new LinkedList<>();
         }
-        AtomicInteger atomicInteger = new AtomicInteger(1);
-        AtomicInteger count = new AtomicInteger(0);
-        message.body().stream().forEach(e -> {
-            JsonObject datas = new JsonObject(e.toString());
-            JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
-                    .put("filter", new JsonObject().put("SN", datas.getString("SN")).put("password1", datas.getString("Password1")))
-                    .put("document", new JsonObject().put("$set", new JsonObject().put("mac", datas.getString("MAC"))))
-                    .put("upsert", false).put("multi", false);
+        AtomicInteger atomicInteger = new AtomicInteger(0);
 
-            bulkOperationList[count.get()].add(new BulkOperation(params));
+        final Future<JsonObject>[] future = new Future[batch];//分批回調
 
-            if (atomicInteger.get() != 0 && atomicInteger.get() % BOUNART_NUM == 0) {//阀值批次
-                uploadMac(bulkOperationList[count.get()]);
-                count.incrementAndGet();
-            } else if (atomicInteger.get() == num) {//最后一次
-                uploadMac(bulkOperationList[count.get()]);
-                count.incrementAndGet();
-            } else if (num < BOUNART_NUM && atomicInteger.get() == num) {//小于阀值
-                uploadMac(bulkOperationList[count.get()]);
-                count.incrementAndGet();
+
+        for (int i = 0; i < bulkOperationList.length; i++) {//上傳
+            int times;
+            if (num < BOUNART_NUM) {
+                times = num;
+            } else if (bulkOperationList.length - 1 == i) {
+                if (message.body().size() % BOUNART_NUM == 0)
+                    times = BOUNART_NUM;
+                else
+                    times = BOUNART_NUM * (i + 1) - message.body().size();
+            } else {
+                times = BOUNART_NUM;
             }
-            atomicInteger.incrementAndGet();
-        });
+            for (int j = 0; j < times; j++) {
+                JsonObject datas = message.body().getJsonObject(i * BOUNART_NUM + j);
+                JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                        .put("filter", new JsonObject().put("SN", datas.getString("SN")).put("password1", datas.getString("Password1")))
+                        .put("document", new JsonObject().put("$set", new JsonObject().put("mac", datas.getString("MAC"))))
+                        .put("upsert", false).put("multi", false);
+                bulkOperationList[i].add(new BulkOperation(params));
+            }
+            future[i] = uploadMac(bulkOperationList[i]);
+        }
+
+        vertx.executeBlocking(res -> {
+                    //处理返回结果
+                    List<JsonObject> list = new Vector();
+                    for (int i = 0; i < future.length; i++) {
+                        future[i].setHandler((AsyncResult<JsonObject> rs) -> {
+                            if (rs.failed()) {
+                                rs.cause().printStackTrace();
+                            } else {
+                                list.add(rs.result());
+                                if (atomicInteger.get() == batch - 1) {//最后一次
+                                    res.complete(list);
+                                }
+                                atomicInteger.incrementAndGet();
+                            }
+                        });
+                    }
+                }, (AsyncResult<List<JsonObject>> rs) -> {
+                    if (rs.result().size() > 0) {
+                        int updateTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
+                        int matchTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
+                        message.reply(new JsonObject().put("uploadTotal", message.body().size())
+                                .put("updateTotal", updateTotal).put("matchTotal", matchTotal));
+                    } else {
+                        message.reply(new JsonObject().put("uploadTotal", message.body().size())
+                                .put("updateTotal", 0).put("matchTotal", 0));
+                    }
+                }
+        );
     }
 
     /**
@@ -285,15 +330,20 @@ public class DeviceDao {
      * @date 18-4-26
      * @version 1.0
      */
-    public void uploadMac(List<BulkOperation> bulkOperationList) {
-        MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
-                , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
-                    if (ars.failed()) {
-                        ars.cause().printStackTrace();
-                    } else {
-                        logger.info("=========mongoBulk============" + JsonObject.mapFrom(ars.result()).toString());
-                    }
-                });
+    public Future<JsonObject> uploadMac(List<BulkOperation> bulkOperationList) {
+        return Future.future(rs -> {
+            MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
+                    , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
+                        if (ars.failed()) {
+                            ars.cause().printStackTrace();
+                            rs.fail(ars.cause());
+                        } else {
+                            JsonObject resultJson = JsonObject.mapFrom(ars.result());
+                            logger.info("=========mongoBulk============" + resultJson.toString());
+                            rs.complete(resultJson);
+                        }
+                    });
+        });
     }
 
     /**

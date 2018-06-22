@@ -25,7 +25,7 @@ public class JobDao {
      */
     public void onMsgVerifyCodeCount(Message<String> message){
         RedisClient.client.del(RedisKeyConf.VERIFY_CODE_COUNT,rs->{
-            if(rs.failed())rs.cause().printStackTrace();
+            if(rs.failed())logger.error(rs.cause().getMessage(), rs.cause());
         });
     }
 

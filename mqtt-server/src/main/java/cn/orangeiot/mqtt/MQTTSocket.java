@@ -281,7 +281,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     rs.remove("topicName");
                     publish.setPayload(rs.toString());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             String topic = publish.getTopicName();
             PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
@@ -362,7 +362,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
             publish.setPayload(rs.body().toString());
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         switch (Integer.parseInt(rs.headers().get("qos"))) {
             case 0:

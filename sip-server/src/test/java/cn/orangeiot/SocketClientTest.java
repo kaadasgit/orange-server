@@ -36,7 +36,7 @@ public class SocketClientTest {
 //                System.out.println("我是客户端，服务器说：" + info);
 //            }
 //        } catch (Exception e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        }
 
         String sendStr = "INVITE sip:zwz222@192.168.1.100 SIP/2.0\n" +
@@ -134,11 +134,11 @@ public class SocketClientTest {
         });
 
 //        } catch (SocketException e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        } catch (UnknownHostException e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        } catch (IOException e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        } finally {
 //            // 关闭socket
 //            if (datagramSocket != null) {

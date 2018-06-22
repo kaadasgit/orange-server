@@ -74,7 +74,7 @@ public class PublishDeviceHandler implements EventbusAddr {
                     .put("model", routingContext.request().getParam("model"))
                     .put("secret", false), (AsyncResult<Message<JsonArray>> rs) -> {
                 if (rs.failed()) {
-                    rs.cause().printStackTrace();
+                    logger.error(rs.cause().getMessage(), rs.cause());
                     routingContext.fail(501);
                 } else {
                     if (Objects.nonNull(rs.result())) {
@@ -194,11 +194,18 @@ public class PublishDeviceHandler implements EventbusAddr {
                 //解析数据集
                 JsonArray jsonArray = ExcelUtil.readExcelContent(new ByteArrayInputStream(fileByteBuffer.getBytes()));
 
-                vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, jsonArray);
-                routingContext.response().end(JsonObject.mapFrom(
-                        new Result<>()).toString());
+                vertx.eventBus().send(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, jsonArray,
+                        new DeliveryOptions().setSendTimeout(30000), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(
+                                        new Result<>().setData(rs.result().body())).toString());
+                            }
+                        });
+
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         }
     }

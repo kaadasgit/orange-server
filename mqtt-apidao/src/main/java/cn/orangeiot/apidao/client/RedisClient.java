@@ -1,11 +1,14 @@
 package cn.orangeiot.apidao.client;
 
+import cn.orangeiot.apidao.verticle.ApiDaoVerticle;
 import cn.orangeiot.common.utils.UUIDUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.RedisOptions;
 import io.vertx.redis.impl.RedisCommand;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RedisClient {
 
     public static io.vertx.redis.RedisClient client;
+
+
+    private static Logger logger = LogManager.getLogger(RedisClient.class);
 
     /**
      * r
@@ -48,13 +54,13 @@ public class RedisClient {
                 client = io.vertx.redis.RedisClient.create(vertx, redisOptions);//创建redisclient
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != redisIn)
                 try {
                     redisIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

@@ -99,7 +99,7 @@ public class SipVertxFactory {
                     if (res.succeeded()) {
                         logger.info("Server is now listening!");
                     } else {
-                        res.cause().printStackTrace();
+                        logger.error(res.cause().getMessage(), res.cause());
                         logger.error("Failed to bind!");
                         System.exit(0);
                     }

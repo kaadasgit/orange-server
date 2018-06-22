@@ -31,7 +31,7 @@ public class HttpServerStart {
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         if (null != source) {
@@ -39,7 +39,6 @@ public class HttpServerStart {
             vertx.deployVerticle(HttpServerVerticle.class.getName(), rs -> {
                 if (rs.failed()) {
                     logger.error("deploy HttpServerVerticle fail");
-                    rs.cause().printStackTrace();
                 } else {
                     logger.info("deploy HttpServerVerticle successs");
                 }

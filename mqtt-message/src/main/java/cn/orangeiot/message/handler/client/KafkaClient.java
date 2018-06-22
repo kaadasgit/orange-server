@@ -3,6 +3,8 @@ package cn.orangeiot.message.handler.client;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
 import io.vertx.kafka.client.producer.KafkaProducer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +17,8 @@ import java.util.Properties;
  * @date 2018-03-26
  */
 public class KafkaClient {
+
+    private static Logger logger = LogManager.getLogger(KafkaClient.class);
 
     public static KafkaConsumer<String, String> consumer;//kafka消费者
 
@@ -36,13 +40,13 @@ public class KafkaClient {
             consumer = KafkaConsumer.create(vertx, kfkconfig);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != consumerkfkIn)
                 try {
                     consumerkfkIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }
@@ -61,13 +65,13 @@ public class KafkaClient {
             config.load(kafkaIn);
             producer = KafkaProducer.create(vertx, config);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != kafkaIn)
                 try {
                     kafkaIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

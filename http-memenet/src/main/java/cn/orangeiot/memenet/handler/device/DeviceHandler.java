@@ -55,7 +55,7 @@ public class DeviceHandler implements GatewayAddr {
                 vertx.eventBus().send(GatewayAddr.class.getName() + GET_USERINFO, message.body(), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> ers) -> {
                             if (ers.failed()) {
-                                ers.cause().printStackTrace();
+                                logger.error(ers.cause().getMessage(), ers.cause());
                                 logger.error("==DeviceHandler=onBindDeviceByUser===501");
                             } else {
                                 //注册用户请求
@@ -67,7 +67,7 @@ public class DeviceHandler implements GatewayAddr {
                                         .sendJsonObject(new JsonObject().put("userid", ers.result().body().getLong("userid").toString())
                                                 .put("devicesn", message.body().getString("devicesn")).put("sig", as.result()), rs -> {
                                             if (rs.failed()) {
-                                                rs.cause().printStackTrace();
+                                                logger.error(rs.cause().getMessage(), rs.cause());
                                                 logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice timeout");
                                                 message.reply(null);
                                                 vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
@@ -112,12 +112,12 @@ public class DeviceHandler implements GatewayAddr {
         //TODO sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onRelieveDeviceByUser Usersha256 encrypt is fail");
             } else {
                 vertx.eventBus().send(GatewayAddr.class.getName() + GET_GATEWWAY_USERID_LIST, message.body(), (AsyncResult<Message<JsonArray>> drs) -> {
                     if (drs.failed()) {
-                        drs.cause().printStackTrace();
+                        logger.error(drs.cause().getMessage(), drs.cause());
                     } else {
                         if (Objects.nonNull(drs.result())) {
                             drs.result().body().forEach(e -> {
@@ -128,7 +128,7 @@ public class DeviceHandler implements GatewayAddr {
                                         .sendJsonObject(new JsonObject().put("userid", new JsonObject(e.toString()).getLong("userid"))
                                                 .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
                                             if (rs.failed()) {
-                                                rs.cause().printStackTrace();
+                                                logger.error(rs.cause().getMessage(), rs.cause());
                                                 logger.error("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice timeout");
                                             } else {
                                                 logger.info("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());
@@ -157,7 +157,7 @@ public class DeviceHandler implements GatewayAddr {
         //TODO sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onDelDevice Usersha256 encrypt is fail");
             } else {
                 //注册用户请求
@@ -168,7 +168,7 @@ public class DeviceHandler implements GatewayAddr {
                         .sendJsonObject(new JsonObject().put("devicesn", message.body().getString("devicesn"))
                                 .put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==DeviceHandler=onDelDevice===request /v1/accsvr/deldevice timeout");
                             } else {
                                 logger.info("==DeviceHandler=onDelDevice===request /v1/accsvr/deldevice result -> " + rs.result().body());
@@ -192,7 +192,7 @@ public class DeviceHandler implements GatewayAddr {
         //TODO sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onDelGatewayByUser Usersha256 encrypt is fail");
             } else {
                 //注册用户请求
@@ -203,7 +203,7 @@ public class DeviceHandler implements GatewayAddr {
                         .sendJsonObject(new JsonObject().put("userid", message.body().getLong("userid"))
                                 .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==DeviceHandler=onDelGatewayByUser===request /v1/accsvr/unbinddevice timeout");
                             } else {
                                 logger.info("==DeviceHandler=onDelGatewayByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());

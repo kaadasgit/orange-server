@@ -60,7 +60,7 @@ public class MessageVerticle extends AbstractVerticle {
                 Vertx.clusteredVertx(options, registerHandler::consumer);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             startFuture.failed();
         } finally {
             if (null != zkIn)

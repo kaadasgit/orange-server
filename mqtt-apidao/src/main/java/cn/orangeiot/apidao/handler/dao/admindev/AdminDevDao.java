@@ -474,7 +474,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                     .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(), e);
                                         message.reply(null, new DeliveryOptions()
                                                 .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
                                                 .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
@@ -511,7 +511,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                     .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(), e);
                                         message.reply(null, new DeliveryOptions()
                                                 .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
                                                 .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
@@ -583,7 +583,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                     .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(), e);
                                         message.reply(null, new DeliveryOptions()
                                                 .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
                                                 .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
@@ -613,7 +613,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                     .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
+                                        logger.error(e.getMessage(), e);
                                         message.reply(null, new DeliveryOptions()
                                                 .addHeader("code", String.valueOf(ErrorType.OPEN_LOCK_FAIL.getKey()))
                                                 .addHeader("msg", ErrorType.OPEN_LOCK_FAIL.getValue()));

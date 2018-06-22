@@ -151,7 +151,7 @@ public class Test extends AbstractVerticle {
 //                        }
 //                    });
 //        } catch (Exception e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        }
 
 //        final Base64.Decoder decoder = Base64.getDecoder();
@@ -167,7 +167,7 @@ public class Test extends AbstractVerticle {
 //            System.out.println(new String(decoder.decode(encodedText), "UTF-8"));
 //
 //        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
+//            logger.error(e.getMessage(), e)();
 //        }
     }
 
@@ -251,7 +251,7 @@ public class Test extends AbstractVerticle {
             byte[] jksByte = IOUtils.toByteArray(jksIn);
             buffer = Buffer.buffer().appendBytes(jksByte);
         } catch (IOException e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
         return buffer;
     }

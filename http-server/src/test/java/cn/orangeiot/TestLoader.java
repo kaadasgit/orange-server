@@ -28,7 +28,7 @@ public class TestLoader {
             System.out.println(result.toString());
 
         } catch (IOException e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
 
 

@@ -43,7 +43,7 @@ public class NotifyHandler implements MessageAddr {
         //获取网关管理员信息
         vertx.eventBus().send(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, message.body(), (AsyncResult<Message<JsonObject>> rs) -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, rs.result().body().put("requestuid",

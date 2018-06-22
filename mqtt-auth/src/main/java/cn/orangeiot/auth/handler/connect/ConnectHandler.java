@@ -40,7 +40,7 @@ public class ConnectHandler {
             /*查找*/
             vertx.eventBus().send(config.getString("send_connect_dao"),message.body(), SendOptions.getInstance(),(AsyncResult<Message<Boolean>> rs)->{
                 if(rs.failed()){
-                    rs.cause().printStackTrace();
+                    logger.error(rs.cause().getMessage(), rs.cause());
                     message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
                             jsonObject.getString("username")).put("auth_valid", false));
                 }else {

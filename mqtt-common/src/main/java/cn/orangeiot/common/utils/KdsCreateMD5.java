@@ -1,5 +1,8 @@
  package cn.orangeiot.common.utils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -18,6 +21,9 @@ import java.security.NoSuchAlgorithmException;
   */
 
  public class KdsCreateMD5 {
+
+     private static Logger logger = LogManager.getLogger(KdsCreateMD5.class);
+
      //静态方法，便于作为工具类
      public static String getMd5(String plainText) {
          try {
@@ -41,7 +47,7 @@ import java.security.NoSuchAlgorithmException;
              // 16位的加密
              //return buf.toString().substring(8, 24);
          } catch (NoSuchAlgorithmException e) {
-             e.printStackTrace();
+             logger.error(e.getMessage(), e);
              return null;
          }
 

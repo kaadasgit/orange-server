@@ -34,7 +34,7 @@ public class HttpRequest {
         try {
             httpclient = new SSLClient();
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
         try {
             String uri = "https://192.168.1.100:8090/user/edit/uploaduserhead";
@@ -71,7 +71,7 @@ public class HttpRequest {
             EntityUtils.consume(resEntity);
 
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
 
         } finally {
             try {
@@ -80,7 +80,7 @@ public class HttpRequest {
                     httpclient.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+//                logger.error(e.getMessage(), e);
             }
         }
 

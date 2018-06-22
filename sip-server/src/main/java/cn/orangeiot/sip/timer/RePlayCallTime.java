@@ -39,18 +39,18 @@ public class RePlayCallTime implements UserAddr {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
                     username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as.cause());
                         } else {
                             atomicInteger.getAndIncrement();//原子自增
                             if (atomicInteger.intValue() == SipVertxFactory.getConfig().getInteger("maxTimes")) {//达到重发次数
                                 SipVertxFactory.getVertx().cancelTimer(rs);//取消周期定时
                             }
                             if (Objects.nonNull(as.result().body())) {
-                                String[] address=as.result().body().split(":");
-                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]),address[0]);
+                                String[] address = as.result().body().split(":");
+                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
                                 SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(), ars -> {
                                     if (ars.failed())
-                                        ars.cause().printStackTrace();
+                                        logger.error(ars.cause().getMessage(), ars.cause());
                                 });
                             }
                         }

@@ -35,7 +35,7 @@ public class SimpleAuthenticatorVerticle extends AuthenticatorVerticle {
                 vi.error_msg = "";
                 json = vi.toJson();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
             msg.reply(json);
         });
