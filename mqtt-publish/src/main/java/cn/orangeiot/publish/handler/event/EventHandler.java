@@ -88,24 +88,26 @@ public class EventHandler implements EventAddr {
      */
     public void redirectProcess(JsonObject message) throws Exception {
         logger.info("==EventHandler=redirectProcess params -> " + message.toString());
-        if (Objects.nonNull(message.getValue("eventcode"))) {
-            if (message.getInteger("eventcode") == 1) {//设备管理消息
-                switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
-                    case "online"://設備上報
-                        deviceHandler.deviceOnline(message);
-                        break;
-                    case "offline"://設備下線
-                        deviceHandler.deviceOffline(message);
-                        break;
-                    default:
-                        logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
-                        break;
-                }
-            } else {//设备自定义消息
-                logger.info("==EventHandler=redirectProcess eventcode function -> " + message.getValue("eventcode"));
+        if (Objects.nonNull(message.getValue("func"))) {
+            switch (message.getString("func")) {
+                case "gwevent":
+                    switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
+                        case "online"://設備上報
+                            deviceHandler.deviceOnline(message);
+                            break;
+                        case "offline"://設備下線
+                            deviceHandler.deviceOffline(message);
+                            break;
+                        default:
+                            logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
+                            break;
+                    }
+                default:
+                    logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));
+                    break;
             }
         } else {
-            logger.info("==EventHandler=redirectProcess eventcode is null -> " + message.getValue("eventcode"));
+            logger.info("==EventHandler=redirectProcess func is null -> " + message.getValue("func"));
         }
     }
 

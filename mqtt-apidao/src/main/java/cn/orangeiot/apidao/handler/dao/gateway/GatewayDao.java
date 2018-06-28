@@ -478,16 +478,21 @@ public class GatewayDao {
     public void deviceOnline(Message<JsonObject> message) {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                 message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
-                .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))), new JsonObject().put("_id", 1), as -> {
+                .put("$in", new JsonArray().add(message.body().getString("deviceId")))), new JsonObject().put("_id", 1), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
             } else {
                 if (Objects.nonNull(as.result()))
                     MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                             message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
-                                    .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))),
+                                    .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                             new JsonObject().put("$set", new JsonObject().put("deviceList.$.version"
-                                    , message.body().getJsonObject("eventparams").getString("version")))
+                                    , message.body().getJsonObject("eventparams").getString("SW"))
+                                    .put("deviceList.$.devtype", message.body().getString("eventtype"))
+                                    .put("deviceList.$.mac"
+                                            , message.body().getJsonObject("eventparams").getString("mac_addr"))
+                                    .put("status", 1)
+                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//上線狀態
                             , new UpdateOptions().setUpsert(false), rs -> {
                                 if (rs.failed()) {
                                     rs.cause().printStackTrace();
@@ -497,10 +502,12 @@ public class GatewayDao {
                     MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                             message.body().getString("clientId").split(":")[1]),
                             new JsonObject().put("$addToSet", new JsonObject().put("deviceList", new JsonObject()
-                                    .put("devid", message.body().getJsonObject("eventparams").getString("devid"))
-                                    .put("devtype", message.body().getJsonObject("eventparams").getString("devtype"))
-                                    .put("version", message.body().getJsonObject("eventparams").getString("version"))
+                                    .put("devid", message.body().getString("deviceId"))
+                                    .put("devtype", message.body().getString("eventtype"))
+                                    .put("version", message.body().getJsonObject("eventparams").getString("SW"))
+                                    .put("mac", message.body().getJsonObject("eventparams").getString("mac_addr"))
                                     .put("status", 1)//上線狀態
+                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                             )), new UpdateOptions().setUpsert(false), rs -> {
                                 if (rs.failed()) {
                                     rs.cause().printStackTrace();
@@ -521,9 +528,9 @@ public class GatewayDao {
     public void deviceOffline(Message<JsonObject> message) {
         MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                 message.body().getString("clientId").split(":")[1]).put("deviceList.devid", new JsonObject()
-                        .put("$in", new JsonArray().add(message.body().getJsonObject("eventparams").getString("devid")))),
+                        .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.status"
-                        , 2))//下线狀態
+                        , 2).put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//下线狀態
                 , new UpdateOptions().setUpsert(false), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
