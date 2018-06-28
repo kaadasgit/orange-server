@@ -98,6 +98,12 @@ public class EventHandler implements EventAddr {
                         case "offline"://設備下線
                             deviceHandler.deviceOffline(message);
                             break;
+                        case "delete"://設備删除
+                            deviceHandler.devicedelete(message);
+                            break;
+                        case "getDevList"://設備列表
+                            deviceHandler.getDeviceList(message);
+                            break;
                         default:
                             logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
                             break;

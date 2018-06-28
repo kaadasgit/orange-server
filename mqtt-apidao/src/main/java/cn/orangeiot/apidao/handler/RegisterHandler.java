@@ -165,8 +165,9 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
             vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_ONLINE, gatewayDao::deviceOnline);
             vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_OFFLINE, gatewayDao::deviceOffline);
+            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_DELETE, gatewayDao::deviceDelete);
             vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_DEVICE_List, gatewayDao::getDeviceList);
-
+            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_DEVICE_List, gatewayDao::getDeviceList);
 
             //stream 相關
             RegisterDao registerDao = new RegisterDao();

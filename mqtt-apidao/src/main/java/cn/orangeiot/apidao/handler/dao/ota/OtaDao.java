@@ -148,7 +148,7 @@ public class OtaDao {
         } else {
             arrs = message.body().getString("range").split(",");
             List<Integer> lists = Arrays.stream(arrs).map(e -> Integer.parseInt(e)).collect(Collectors.toList());
-            paramsJsonObject.put("position", new JsonObject().put("$in", lists.toArray(new Integer[lists.size()])));
+            paramsJsonObject.put("position", new JsonObject().put("$in", new JsonArray(lists)));
         }
 
         //獲取設備PN號
