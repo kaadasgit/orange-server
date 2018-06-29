@@ -18,7 +18,7 @@ public class MQTTNetSocket extends MQTTSocket {
     private NetSocket netSocket;
 
     public MQTTNetSocket(Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions) {
-        super(vertx, config,sessions);
+        super(vertx, config,sessions,netSocket);
         this.netSocket = netSocket;
     }
 

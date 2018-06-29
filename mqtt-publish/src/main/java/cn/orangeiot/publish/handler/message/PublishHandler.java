@@ -106,8 +106,9 @@ public class PublishHandler implements MessageAddr {
             } else {
                 String flag = rs.result().getString("clientId").split(":")[0];
                 funcHandler.onRpcMessage(message, as -> {
-                    if (rs.failed()) {
-                        message.reply(rs.failed());
+                    if (as.failed()) {
+                        logger.error(as.cause().getMessage(),as);
+                        message.reply(null);
                     } else {
                         if (Objects.nonNull(message.body().getValue("topicName")) && message.body().getString("topicName").indexOf("/event") >= 0) {
                             eventHandler.onEventMessage(message, eventRs -> {

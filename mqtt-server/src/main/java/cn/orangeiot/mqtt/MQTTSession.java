@@ -19,6 +19,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetSocket;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
@@ -65,12 +66,13 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private long keepAliveTimerID = -1;
     private boolean keepAliveTimeEnded;
     private Handler<String> keepaliveErrorHandler;
+    private NetSocket netSocket;
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
     private Queue<PublishMessage> queue;
 
-    public MQTTSession(Vertx vertx, ConfigParser config) {
+    public MQTTSession(Vertx vertx, ConfigParser config, NetSocket netSocket) {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
@@ -79,6 +81,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
         this.publish = config.getPublish();
+        this.netSocket = netSocket;
 
         PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<String, List<Subscription>>
                 expirePeriod = new PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<>(
@@ -90,6 +93,17 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.authenticatorAddress = config.getAuthenticatorAddress();
 
         this.queue = new LinkedList<>();
+    }
+
+    /**
+     * @Description 斷開連接
+     * @author zhang bo
+     * @date 18-6-29
+     * @version 1.0
+     */
+    public void closeConnect() {
+        if (Objects.nonNull(netSocket))
+            netSocket.close();
     }
 
     public void addMessageToQueue(PublishMessage pm) {
@@ -586,7 +600,10 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                         rs.cause().printStackTrace();
                         asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
                     } else {
-                        asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
+                        if (Objects.nonNull(rs.result().body()))
+                            asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
+                        else
+                            asyncResultHandler.handle(Future.failedFuture("return data is null"));
                     }
                 });
 
@@ -630,6 +647,11 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
     public String getClientID() {
         return clientID;
+    }
+
+    public MQTTSession setClientID(String clientID) {
+        this.clientID = clientID;
+        return this;
     }
 
     public String getProtoName() {

@@ -13,6 +13,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetSocket;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.dna.mqtt.moquette.proto.messages.*;
@@ -41,6 +42,19 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     protected MQTTSession session;
     private ConfigParser config;
     private Map<String, MQTTSession> sessions;
+    private NetSocket netSocket;
+
+
+    public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions, NetSocket netSocket) {
+        this.decoder = new MQTTDecoder();
+        this.encoder = new MQTTEncoder();
+        this.tokenizer = new MQTTPacketTokenizer();
+        this.tokenizer.registerListener(this);
+        this.vertx = vertx;
+        this.config = config;
+        this.sessions = sessions;
+        this.netSocket = netSocket;
+    }
 
     public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
         this.decoder = new MQTTDecoder();
@@ -73,6 +87,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     public void handle(Buffer buffer) {
         tokenizer.process(buffer.getBytes());
     }
+
 
     @Override
     public void onToken(byte[] token, boolean timeout) throws Exception {
@@ -114,18 +129,22 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 if (!connect.isCleanSession() && sessions.containsKey(connectedClientID)) {
                     session = sessions.get(connectedClientID);
                 }
+                //重复连接
                 if (session == null) {
-                    session = new MQTTSession(vertx, config);
+                    session = new MQTTSession(vertx, config, netSocket);
+                    session.setClientID(connectedClientID);
                     PromMetrics.mqtt_sessions_total.inc();
                     connAck.setSessionPresent(false);
                 } else {
                     logger.warn("Session alredy allocated ...");
                     /*
-                     The Server MUST process a second CONNECT Packet sent from a Client as a protocol violation and disconnect the Client
+                     The Server MUST process a second CONCT Packet sent from a Client as a protocol violation and disconnect the Client
                       */
                     connAck.setSessionPresent(true);
-//                    closeConnection();
-//                    break;
+                    connAck.setReturnCode(ConnAckMessage.NOT_AUTHORIZED);
+                    sendMessageToClient(connAck);
+                    closeConnection();
+                    break;
                 }
                 session.setPublishMessageHandler(this::sendMessageToClient);
                 session.setKeepaliveErrorHandler(clientID -> {
@@ -205,6 +224,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.handlerPublishMessage(publish, session.getClientID(), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage());
+                        publishReplyPackage(publish);
                     } else {
                         if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("flag")))
                             publishMsg(publish, rs.result(), false);
@@ -269,6 +289,38 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
         // TODO: forward mqtt message to backup server
 
+    }
+
+
+    /**
+     * @Description 回复确认包
+     * @author zhang bo
+     * @date 18-6-29
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void publishReplyPackage(PublishMessage publish) {
+        switch (publish.getQos()) {
+            case RESERVED:
+                session.handlePublishMessage(publish, null);
+                break;
+            case MOST_ONE:
+                session.handlePublishMessage(publish, null);
+                break;
+            case LEAST_ONE:
+                PubAckMessage pubAck = new PubAckMessage();
+                pubAck.setMessageID(publish.getMessageID());
+                sendMessageToClient(pubAck);
+                break;
+            case EXACTLY_ONCE:
+                PubRecMessage pubRec = new PubRecMessage();
+                pubRec.setMessageID(publish.getMessageID());
+                sendMessageToClient(pubRec);
+                break;
+            default:
+                logger.error("qos is mo have , qos ->" + publish.getQos());
+                break;
+        }
     }
 
 
