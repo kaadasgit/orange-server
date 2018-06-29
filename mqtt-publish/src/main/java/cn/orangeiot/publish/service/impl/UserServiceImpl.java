@@ -53,11 +53,11 @@ public class UserServiceImpl implements UserService {
                         .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", jsonObject.getString("gwId")));
 
                 if (Objects.nonNull(rs.result().body())) {
-                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, jsonObject
+                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_STORAGE_MSG, jsonObject
                                     .put("returnCode", 200).put("returnData", rs.result().body())
                             , deliveryOptions);
                 } else {
-                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, jsonObject
+                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_STORAGE_MSG, jsonObject
                                     .put("returnCode", ErrorType.RESULT_RESOURCES_NOT_FIND.getKey()).put("returnData", new JsonObject())
                             , deliveryOptions);
                 }
