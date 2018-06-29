@@ -103,7 +103,6 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(UserAddr.class.getName() + UPDATE_USER_PWD, userDao::updateUserpwd);
             vertx.eventBus().consumer(UserAddr.class.getName() + FORGET_USER_PWD, userDao::forgetUserpwd);
             vertx.eventBus().consumer(UserAddr.class.getName() + SUGGEST_MSG, userDao::suggestMsg);
-            vertx.eventBus().consumer(UserAddr.class.getName() + SUGGEST_MSG, userDao::suggestMsg);
             vertx.eventBus().consumer(UserAddr.class.getName() + USER_LOGOUT, userDao::logOut);
             vertx.eventBus().consumer(UserAddr.class.getName() + MEME_USER, userDao::meMeUser);
             vertx.eventBus().consumer(UserAddr.class.getName() + MEME_REGISTER_USER_BULK, userDao::meMeUserBulk);
