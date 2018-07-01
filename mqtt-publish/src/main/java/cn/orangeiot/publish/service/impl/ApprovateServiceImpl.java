@@ -2,6 +2,7 @@ package cn.orangeiot.publish.service.impl;
 
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.utils.DataType;
+import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.service.ApprovateService;
 import cn.orangeiot.publish.service.BaseService;
@@ -49,7 +50,8 @@ public class ApprovateServiceImpl extends BaseService implements ApprovateServic
         logger.info("params -> {}", jsonObject);
         //数据校验
         if (Objects.nonNull(jsonObject.getValue("userId")) && Objects.nonNull(jsonObject.getValue("params")) &&
-                Objects.nonNull(jsonObject.getJsonObject("params").getValue("type"))) {
+                Objects.nonNull(jsonObject.getJsonObject("params").getValue("type"))
+                && Objects.nonNull(jsonObject.getValue("OTAOrderNo"))) {
             if (jsonObject.getJsonObject("params").getInteger("type") == 1) {//同意升级
                 logger.info("OTA Approvate ok ,userId -> {}", jsonObject.getString("userId"));
                 JsonObject result = jsonObject.put("func",
@@ -66,7 +68,8 @@ public class ApprovateServiceImpl extends BaseService implements ApprovateServic
                     .put("type", jsonObject.getJsonObject("params").getInteger("type"))
                     .put("fileUrl", jsonObject.getJsonObject("params").getString("fileUrl"))
                     .put("SW", jsonObject.getJsonObject("params").getString("SW"))
-                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
+                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                    .put("OTAOrderNo", jsonObject.getString("OTAOrderNo")));
         } else {
             handler.handle(Future.failedFuture("Approvate OTA params verify fail"));
         }

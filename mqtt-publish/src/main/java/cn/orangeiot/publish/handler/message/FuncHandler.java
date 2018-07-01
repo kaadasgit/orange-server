@@ -176,7 +176,7 @@ public class FuncHandler {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
-            case "otaApprovateResult"://获取网关下的設備列表
+            case "otaApprovateResult"://审批ota升级请求
                 approvateService.approvateOTA(message.body(), rs -> {
                     handler.handle(rs);
                 });

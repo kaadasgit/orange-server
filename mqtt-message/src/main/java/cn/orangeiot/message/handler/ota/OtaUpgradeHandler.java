@@ -127,7 +127,6 @@ public class OtaUpgradeHandler implements EventbusAddr {
                 DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                         , "app:" + e.getString("userId")).addHeader("qos", "1")
                         .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", e.getString("userId")));
-                ;
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
             });
@@ -171,7 +170,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
-                recordOTA(e);
+                recordOTA(e.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
             });
         } else {//網關升級
             rs.result().body().stream().map(e -> {
@@ -192,7 +191,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
-                recordOTA(e);
+                recordOTA(e.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
             });
         }
     }
@@ -209,10 +208,12 @@ public class OtaUpgradeHandler implements EventbusAddr {
         vertx.eventBus().send(OtaAddr.class.getName() + OTA_APPROVATE_RECORD, new JsonObject()
                 .put("uid", jsonObject.getString("userId")).put("deviceList", jsonObject.getJsonObject("params")
                         .getJsonArray("deviceList"))
-                .put("type", jsonObject.getJsonObject("params").getInteger("type"))
+                .put("type", Objects.nonNull(jsonObject.getJsonObject("params").getInteger("type"))
+                        ? jsonObject.getJsonObject("params").getInteger("type") : 1)//默认升级
                 .put("fileUrl", jsonObject.getJsonObject("params").getString("fileUrl"))
                 .put("SW", jsonObject.getJsonObject("params").getString("SW"))
-                .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
+                .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .put("OTAOrderNo", jsonObject.getString("OTAOrderNo")));
     }
 
 }

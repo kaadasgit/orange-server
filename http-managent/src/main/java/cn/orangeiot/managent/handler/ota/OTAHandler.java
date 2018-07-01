@@ -3,7 +3,9 @@ package cn.orangeiot.managent.handler.ota;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.common.utils.CreateOTAOrderNoUtils;
 import cn.orangeiot.common.utils.DataType;
+import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.managent.collector.DateRangeCollector;
 import cn.orangeiot.managent.collector.ModelCollector;
 import cn.orangeiot.managent.verify.VerifyParamsUtil;
@@ -19,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * @author zhang bo
@@ -158,7 +161,12 @@ public class OTAHandler implements EventbusAddr {
             } else {
                 if (rs.result().getString("range").indexOf("-") > 0
                         || rs.result().getString("range").indexOf(",") > 0) {
-                    routingContext.response().end(JsonObject.mapFrom(new Result<>()).toString());
+
+                    String orderNO = CreateOTAOrderNoUtils.getOTAOrderNo();//生成ota唯一ID单号
+                    rs.result().put("OTAOrderNo", orderNO);
+
+                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()
+                            .setData(new JsonObject().put("OTAOrderNo", orderNO))).toString());
                     //保存記錄
                     vertx.eventBus().send(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, rs.result());
                     //升级处理
