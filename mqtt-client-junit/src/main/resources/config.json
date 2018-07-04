@@ -1,0 +1,5 @@
+{
+  "host":"127.0.0.1",
+  "connectAuth":"mqtt.authenticator.oauth2.apifest",
+  "send_connect_dao":"cn.orangeiot.apidao.getuser"
+}

@@ -2,7 +2,7 @@
   "brokers": [
     {
       "tcp_port": 1883,
-      "socket_idle_timeout": 120,
+      "socket_idle_timeout": 30,
       "authenticator_address": "mqtt.authenticator.oauth2.apifest"
     },
     {

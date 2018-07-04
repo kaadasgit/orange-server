@@ -166,7 +166,7 @@ public class OtaDao {
                                 pnJsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(_ids)));
                                 break;
                             case 2://挂载设备
-                                pnJsonObject.put("deviceList.devid"
+                                pnJsonObject.put("deviceList.deviceId"
                                         , new JsonObject().put("$in", new JsonArray(_ids)));
                                 break;
                             default:
@@ -175,8 +175,8 @@ public class OtaDao {
                                 return;
                         }
                         MongoClient.client.findWithOptions("kdsGatewayDeviceList", pnJsonObject
-                                , new FindOptions().setFields(new JsonObject().put("deviceList.devid", 1)
-                                        .put("deviceSN", 1).put("_id", 0).put("deviceList.status", 1)
+                                , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
+                                        .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
                                         .put("adminuid", 1)), as -> {
                                     if (as.failed()) {
                                         as.cause().printStackTrace();

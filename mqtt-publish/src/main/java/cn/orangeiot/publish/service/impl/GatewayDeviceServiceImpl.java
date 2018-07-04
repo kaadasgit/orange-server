@@ -78,9 +78,15 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                                     .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
                                             , mimiResult -> {
                                                 if (!Objects.nonNull(mimiResult.result().body())) {
-                                                    result.setErrorMessage(ErrorType.MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.MIMI_BIND_GATEWAY_FAIL.getValue()
-                                                            , jsonObject.getString("func"));
-                                                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+                                                    if (!mimiResult.result().headers().isEmpty()) {
+                                                        result.setErrorMessage(Integer.parseInt(mimiResult.result().headers().get("code")),
+                                                                mimiResult.result().headers().get("msg"), jsonObject.getString("func"));
+                                                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+                                                    } else {
+                                                        result.setErrorMessage(ErrorType.MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.MIMI_BIND_GATEWAY_FAIL.getValue()
+                                                                , jsonObject.getString("func"));
+                                                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
+                                                    }
                                                 } else {
                                                     result.setData(rs.result().body()).setFunc(jsonObject.getString("func"));
                                                     handler.handle(Future.succeededFuture(JsonObject.mapFrom(result)));
@@ -124,9 +130,16 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                             .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
                                     , mimiResult -> {
                                         if (!Objects.nonNull(mimiResult.result().body())) {
-                                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                                    new ResultInfo<>().setErrorMessage(ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getValue()
-                                                            , jsonObject.getString("func")))));
+                                            if (!mimiResult.result().headers().isEmpty()) {
+                                                handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                        new ResultInfo<>().setErrorMessage(Integer.parseInt(mimiResult.result().headers().get("code"))
+                                                                , mimiResult.result().headers().get("msg")
+                                                                , jsonObject.getString("func")))));
+                                            } else {
+                                                handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                        new ResultInfo<>().setErrorMessage(ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getValue()
+                                                                , jsonObject.getString("func")))));
+                                            }
                                         } else {
                                             handler.handle(Future.succeededFuture(JsonObject.mapFrom(
                                                     new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
@@ -151,7 +164,6 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                             .put("func", jsonObject.getString("func"))
                                             .put("type", as.result().getInteger("type")), SendOptions.getInstance()
                                             .addHeader("qos", qos));
-
                         }
                     } else {
                         handler.handle(Future.succeededFuture(JsonObject.mapFrom(

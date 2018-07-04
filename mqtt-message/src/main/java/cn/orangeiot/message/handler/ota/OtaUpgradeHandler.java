@@ -148,8 +148,8 @@ public class OtaUpgradeHandler implements EventbusAddr {
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
-                            if (dataJsonObject.getInteger("status").equals(1))
-                                return dataJsonObject.getString("devid");
+                            if (dataJsonObject.getString("event_str").equals("online"))
+                                return dataJsonObject.getString("deviceId");
                             else
                                 return null;
                         }).collect(Collectors.toList());

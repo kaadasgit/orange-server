@@ -26,6 +26,7 @@
         <module>http-managent</module>
         <module>sip-server</module>
         <module>rtp-server</module>
+        <module>mqtt-client-junit</module>
     </modules>
 
 
