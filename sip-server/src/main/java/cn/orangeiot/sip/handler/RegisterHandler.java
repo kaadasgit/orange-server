@@ -61,7 +61,8 @@ public class RegisterHandler implements UserAddr {
         logger.info("processRegister from: " + toURI + " request str: " + contactURI);
         int expires = Objects.nonNull(request.getExpires()) ? request.getExpires().getExpires() : 0;
         // 如果expires不等于0,则为注册，否则为注销。
-        if (expires != 0 || contactHeader.getExpires() != 0) {
+        boolean flag = true;//注冊
+        if (expires != 0) {
 //            if (Objects.nonNull(netSocket))
 //                pool.put(toURI.toString(), netSocket);
 //            else
@@ -70,9 +71,7 @@ public class RegisterHandler implements UserAddr {
                             .put("Expires", contactHeader.getExpires()));
             logger.info("register user " + toURI);
         } else {
-            vertx.eventBus().send(UserAddr.class.getName() + DEL_REGISTER_USER,
-                    new JsonObject().put("uri", toURI.toString()));
-            logger.info("unregister user " + toURI);
+            flag = false;
         }
 
         try {
@@ -84,7 +83,10 @@ public class RegisterHandler implements UserAddr {
             response.setHeader(contactHeader);
             if (Objects.nonNull(request.getExpires()))
                 response.setExpires(request.getExpires());
-            ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
+            if (flag)
+                ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
+            else
+                ResponseMsgUtil.sendMessageAndClean(vertx, toURI.toString(), response.toString(), sipOptions);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
         }

@@ -126,10 +126,17 @@ public class SocketClientTest {
 //            datagramSocket.close();
 
 
+
+        String sdp="REGISTER sip:192.168.1.105:5061 SIP/2.0\n" +
+                "Via: SIP/2.0/UDP 192.168.1.105:5061;branch=z9hG4bK-524287-1---726c884045c07c61;rport\n" +
+                "Max-Forwards: 70\n" +
+                "Expires: 3600\n" +
+                "Content-Length: 0";
+
         Vertx vertx = Vertx.vertx();
         DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
-        Buffer buffer = Buffer.buffer(sendStr);
-        socket.send(buffer, 5061, "47.106.87.6", asyncResult -> {
+        Buffer buffer = Buffer.buffer(sdp);
+        socket.send(buffer, 5061, "127.0.0.1", asyncResult -> {
             System.out.println("Send succeeded? " + asyncResult.succeeded());
         });
 
