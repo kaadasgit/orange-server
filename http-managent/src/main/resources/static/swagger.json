@@ -341,7 +341,7 @@
         },
         "type": {
           "type": "integer",
-          "description": "类型   0:强制升级 1用户确认升级"
+          "description": "类型   0:强制升级 1用户确认升级  2 App渠道升级"
         },
         "range": {
           "type": "string",
@@ -353,7 +353,7 @@
         },
         "modelType": {
           "type": "integer",
-          "description": "产品类型 1 网关  2 挂载设备"
+          "description": "产品类型 1 网关  2 挂载设备  3 蓝牙模块"
         },
         "SW": {
           "type": "string",

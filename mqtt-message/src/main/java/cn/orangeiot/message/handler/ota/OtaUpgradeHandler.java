@@ -61,7 +61,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         if (rs.result().body().size() > 0)
                             sendUserMsg(message, rs);
                         break;
-                    case 3://通过app渠道升级
+                    case 2://通过app渠道升级
                         if (rs.result().body().size() > 0)
                             sendAppMsg(message, rs);
                         break;
