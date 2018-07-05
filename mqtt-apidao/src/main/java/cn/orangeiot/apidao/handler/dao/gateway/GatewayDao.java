@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.UpdateOptions;
 import io.vertx.ext.mongo.WriteOption;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import scala.util.parsing.json.JSONArray;
@@ -284,11 +285,18 @@ public class GatewayDao {
                 });
 
         if (Objects.nonNull(message.body().getValue("type"))) {//綁定網關失敗
-            MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
-                    .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
-                if (rs.failed())
-                    rs.cause().printStackTrace();
-            });
+            if (StringUtils.isNotBlank(message.body().getString("userid")))
+                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
+                        .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
+                    if (rs.failed())
+                        rs.cause().printStackTrace();
+                });
+            else
+                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
+                        .put("deviceSN", message.body().getString("devicesn")).put("uid", message.body().getString("uid")), rs -> {
+                    if (rs.failed())
+                        rs.cause().printStackTrace();
+                });
         }
     }
 

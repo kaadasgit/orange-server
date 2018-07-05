@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -52,21 +53,64 @@ public class OtaUpgradeHandler implements EventbusAddr {
             //0:強制升级 1用户确认升级 //2定时强制升级
             if (Objects.nonNull(rs.result().body())) {
                 switch (message.body().getInteger("type")) {
-                    case 0:
+                    case 0://强制升级
                         if (rs.result().body().size() > 0)
                             sendGatewayMSG(message, rs);
                         break;
-                    case 1:
+                    case 1://用户确认升级
                         if (rs.result().body().size() > 0)
                             sendUserMsg(message, rs);
                         break;
-                    case 2:
+                    case 3://通过app渠道升级
+                        if (rs.result().body().size() > 0)
+                            sendAppMsg(message, rs);
                         break;
                     default:
                         logger.warn("==OtaUpgradeHandler=UpgradeProcess params type -> {}", message.body().getInteger("type"));
                         break;
                 }
             }
+        });
+    }
+
+
+    /**
+     * @Description app渠道升级
+     * @author zhang bo
+     * @date 18-7-4
+     * @version 1.0
+     */
+    public void sendAppMsg(Message<JsonObject> message, AsyncResult<Message<JsonArray>> rs) {
+        Map<Object, List<Object>> list = rs.result().body().stream().collect(Collectors.groupingBy(e ->
+                new JsonObject(e.toString()).remove("uid"), Collectors.toList()
+        ));
+        list.forEach((k, v) -> {
+            List<JsonObject> devList = v.stream().map(e -> {
+                JsonObject map = new JsonObject(e.toString());
+                map.remove("uid");
+                return map;
+            }).collect(Collectors.toList());
+            JsonObject pushJsonObject = new JsonObject().put("func", "otaBlueUpgrade").put("gwId", "EMPTY")
+                    .put("deviceId", "EMPTY")
+                    .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", k)
+                    .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
+                            .put("childCode", message.body().getString("childCode")).put("fileUrl"
+                                    , message.body().getString("filePathUrl")).put("SW"
+                                    , message.body().getString("SW")).put("deviceList"
+                                    , new JsonArray(devList))
+                            .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
+                                    , message.body().getInteger("fileLen"))
+                            .put("otaType", 1));
+
+            DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
+                    , "app:" + k).addHeader("qos", "1")
+                    .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", k.toString()));
+            vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, pushJsonObject
+                    , deliveryOptions);
+
+            //记录信息
+            JsonObject final_JsonObject = new JsonObject(pushJsonObject.toString());
+            recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
         });
     }
 
@@ -170,7 +214,9 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
-                recordOTA(e.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
+
+                JsonObject final_JsonObject = new JsonObject(e.toString());
+                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
             });
         } else {//網關升級
             rs.result().body().stream().map(e -> {
@@ -191,7 +237,9 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
-                recordOTA(e.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
+
+                JsonObject final_JsonObject = new JsonObject(e.toString());
+                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
             });
         }
     }

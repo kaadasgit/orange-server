@@ -99,6 +99,7 @@ public class DeviceHandler implements GatewayAddr {
                                     vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
                                             .put("type", 0)
                                             .put("userid", "")
+                                            .put("uid",message.body().getString("uid"))
                                             .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
                                     message.reply(null, new DeliveryOptions().addHeader("code", String.valueOf(ErrorType.MEMENET_USER_NO_REGISTER.getKey()))
                                             .addHeader("msg", ErrorType.MEMENET_USER_NO_REGISTER.getValue()));

@@ -153,7 +153,7 @@ public class OtaDao {
 
         //獲取設備PN號
         MongoClient.client.findWithOptions("kdsProductInfoList", paramsJsonObject,
-                new FindOptions().setFields(new JsonObject().put("SN", 1).put("_id", 0)), rs -> {
+                new FindOptions().setFields(new JsonObject().put("SN", 1).put("_id", 0).put("mac", 1)), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
                         message.reply(null);
@@ -169,6 +169,9 @@ public class OtaDao {
                                 pnJsonObject.put("deviceList.deviceId"
                                         , new JsonObject().put("$in", new JsonArray(_ids)));
                                 break;
+                            case 3://蓝牙
+                                getDeviceByApp(rs.result(), message);
+                                return;
                             default:
                                 logger.warn("modelType type is not params -> {}", message.body().getInteger("modelType"));
                                 message.reply(null);
@@ -188,6 +191,29 @@ public class OtaDao {
                                 });
                     }
                 });
+    }
+
+
+    /**
+     * @Description 根据app获取相应设备
+     * @author zhang bo
+     * @date 18-7-4
+     * @version 1.0
+     */
+    public void getDeviceByApp(List<JsonObject> list, Message<JsonObject> message) {
+        List<String> _ids = list.stream().map(e -> new JsonObject(e.toString()).getString("mac"))
+                .filter(x -> x != null).collect(Collectors.toList());
+        MongoClient.client.findWithOptions("kdsNormalLock", new JsonObject().put("is_admin", "1").put("macLock"
+                , new JsonObject().put("$in", new JsonArray(_ids))), new FindOptions().setFields(new JsonObject().put("lockName", 1)
+                .put("uid", 1).put("_id", 0).put("macLock", 1)), rs -> {
+            if (rs.failed()) {
+                rs.cause().printStackTrace();
+                message.reply(null);
+            } else {
+                message.reply(new JsonArray(
+                        rs.result().stream().distinct().collect(Collectors.toList())));
+            }
+        });
     }
 
     /**
