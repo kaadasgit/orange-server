@@ -106,11 +106,19 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
+                    <include>**/*.html</include>
+                    <include>**/*.svg</include>
+                    <include>**/*.css</include>
+                    <include>**/*.ect</include>
+                    <include>**/*.ttf</include>
+                    <include>**/*.woff</include>
+                    <include>**/*.jpg</include>
+                    <include>**/*.scss</include>
                     <include>**/*.json</include>
                 </includes>
                 <excludes>
-                    <exclude>zkConf.json</exclude>
                     <exclude>log4j2.xml</exclude>
+                    <exclude>config.json</exclude>
                 </excludes>
             </resource>
             <resource>

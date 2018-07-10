@@ -8,20 +8,27 @@ import cn.orangeiot.util.DataType;
 import cn.orangeiot.util.VerifyParamsUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
+import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import scala.util.parsing.json.JSONArray;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +48,8 @@ public class MqttClientVerticle extends AbstractVerticle {
     private Set<String> allowHeaders = new HashSet<>();//cors跨域header
 
     private Set<HttpMethod> allowMethods = new HashSet<>();//请求方法
+
+    private JsonObject config;
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
@@ -62,8 +71,6 @@ public class MqttClientVerticle extends AbstractVerticle {
         bodyOrUpload(router);
 
         int port = 34113;
-        String mqttAddr = "localhost";
-        int mqttPort = 1883;
         String dir = "./logdir";
 
         if (Objects.nonNull(System.getProperty("HTTPPORT"))) {
@@ -80,29 +87,31 @@ public class MqttClientVerticle extends AbstractVerticle {
         //文件管理
         cn.orangeiot.log.LogManager logManager = new cn.orangeiot.log.LogManager(vertx, dir);
 
+        //配置主頁
+        index(router);
+        //静态资源
+        staticResource(router);
+        //全局配置
         globalIntercept(router);
-
+        //全局异常处理
         ExceptionAndTimeout(router);
-
+        //上传 api doc
         setApi(router, logManager);
+        //获取所有接口
         getTitle(router, logManager);
+        //获取接口详细
         getApi(router, logManager);
+        //創建http服務器
         vertx.createHttpServer().requestHandler(router::accept).listen(config().getInteger("http-port", port), config().
                 getString("host-name", "0.0.0.0"));
 
+        //创建基于sockjs 的 websocket ,兼容性好
         SockJSHandlerOptions options = new SockJSHandlerOptions().setHeartbeatInterval(2000);
 
         SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
 
-        int finalMqttPort = mqttPort;
-        String finalMqttAddr = mqttAddr;
-        sockJSHandler.socketHandler(sockJSSocket -> {
-            new SockJSSocketAndMqttSocketImpl(sockJSSocket, vertx, finalMqttPort, finalMqttAddr).start();
-        });
-
-
+        sockJSHandler.socketHandler(sockJSSocket -> new SockJSSocketAndMqttSocketImpl(sockJSSocket, vertx).start());
         router.route("/websocket/*").handler(sockJSHandler);
-
     }
 
 
@@ -119,7 +128,7 @@ public class MqttClientVerticle extends AbstractVerticle {
 
             VerifyParamsUtil.verifyParams(routingContext.getBodyAsJson(), new JsonObject().put("topic", DataType.STRING)
                     .put("payload", DataType.JSONOBJECT).put("title", DataType.STRING)
-                    .put("qos", DataType.INTEGER), rs -> {
+                    .put("qos", DataType.INTEGER).put("scheme", DataType.STRING), rs -> {
                 if (rs.failed()) {
                     routingContext.fail(401);
                 } else {
@@ -176,11 +185,12 @@ public class MqttClientVerticle extends AbstractVerticle {
         router.post("/getScheme").produces(HttpAttrType.CONTENT_TYPE_JSON.getValue())
                 .consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).blockingHandler(routingContext -> {
 
-            VerifyParamsUtil.verifyParams(routingContext.getBodyAsJson(), new JsonObject().put("scheme", DataType.STRING), rs -> {
+            VerifyParamsUtil.verifyParams(routingContext.getBodyAsJson(), new JsonObject().put("scheme", DataType.STRING)
+                    .put("rootPath", DataType.STRING), rs -> {
                 if (rs.failed()) {
                     routingContext.fail(401);
                 } else {
-                    logManager.getApiDoc(rs.result().getString("scheme"), as -> {
+                    logManager.getApiDoc(rs.result().getString("scheme"), rs.result().getString("rootPath"), as -> {
                         if (as.failed()) {
                             routingContext.fail(501);
                         } else {
@@ -230,6 +240,20 @@ public class MqttClientVerticle extends AbstractVerticle {
             routingContext.put("params", params);
         }
         return flag;
+    }
+
+
+    /**
+     * @Description 主页
+     * @author zhang bo
+     * @date 18-7-9
+     * @version 1.0
+     */
+    public void index(Router router) {
+        router.get("/").blockingHandler(routingContext -> {
+//            routingContext.reroute("/web.html");//路由重置
+            routingContext.response().setStatusCode(301).putHeader("location", "/web.html").end();//http狀態嗎301,重定向
+        });
     }
 
 
@@ -335,4 +359,15 @@ public class MqttClientVerticle extends AbstractVerticle {
     public void requestlog(Router router) {
         router.route("/*").handler(LoggerHandler.create(LoggerFormat.DEFAULT));//请求接口日志
     }
+
+    /**
+     * 配置静态资源路径
+     *
+     * @param router
+     */
+    public void staticResource(Router router) {
+        router.route("/*").handler(StaticHandler.create().setWebRoot("static")
+                .setCachingEnabled(true).setDirectoryListing(false));
+    }
+
 }

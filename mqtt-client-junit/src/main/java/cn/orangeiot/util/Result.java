@@ -24,12 +24,12 @@ public class Result<E> implements Serializable {
 
     public Result() {
         this.code = CODE_SUCCESS;
-        this.msg = "成功";
+        this.msg = "success";
     }
 
     public Result(E data) {
         this.code = CODE_SUCCESS;
-        this.msg = "成功";
+        this.msg = "success";
         this.data = data;
     }
 

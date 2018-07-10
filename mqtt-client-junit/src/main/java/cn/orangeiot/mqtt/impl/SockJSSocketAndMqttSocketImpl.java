@@ -37,22 +37,11 @@ public class SockJSSocketAndMqttSocketImpl {
 
     private Vertx vertx;
 
-    private int port;//mqtt服務器端口
-
-    private String addr;//mqtt服務器地址
-
     private MqttClient client;
 
-    /**
-     * 是否发送mqtt消息状态  0 不可发送(订阅过程中,或失败)  1可发送  可发送状态, 可能遇见先发送,后订阅,丢失消息
-     */
-    private int isSendState = 0;
-
-    public SockJSSocketAndMqttSocketImpl(SockJSSocket sockJSSocket, Vertx vertx, int port, String addr) {
+    public SockJSSocketAndMqttSocketImpl(SockJSSocket sockJSSocket, Vertx vertx) {
         this.sockJSSocket = sockJSSocket;
         this.vertx = vertx;
-        this.port = port;
-        this.addr = addr;
     }
 
     public void start() {
@@ -243,10 +232,7 @@ public class SockJSSocketAndMqttSocketImpl {
             } else
                 client.subscribe(topics);
         }).subscribeCompletionHandler(ackMsg -> {
-            isSendState = 1;
-
             publishWebClient(JsonObject.mapFrom(new Result<JsonObject>()));//连接成功
-
         }).publishHandler(this::mqttPublish);
     }
 

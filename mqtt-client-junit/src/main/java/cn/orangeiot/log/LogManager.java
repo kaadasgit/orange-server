@@ -6,14 +6,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +48,32 @@ public class LogManager {
      * @version 1.0
      */
     public void updateLog(String title, JsonObject msg, Handler<AsyncResult<Boolean>> handler) {
-        String filePath = dir + "/" + title + SUFFIX;
+        String filePath = dir + "/" + msg.getString("scheme") + "/" + title + SUFFIX;//目标文件
+        String schemePath = dir + "/" + msg.getString("scheme");//主题目录
+        vertx.fileSystem().exists(schemePath, mkRes -> {
+            if (mkRes.succeeded() && mkRes.result()) {
+                createDoc(filePath, msg, handler);
+            } else {
+                vertx.fileSystem().mkdir(schemePath, mkArs -> {
+                    if (mkArs.succeeded()) {
+                        createDoc(filePath, msg, handler);
+                    } else {
+                        logger.error(mkArs.cause().getMessage(), mkArs);
+                        handler.handle(Future.succeededFuture(false));
+                    }
+                });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 创建文档
+     * @author zhang bo
+     * @date 18-7-9
+     * @version 1.0
+     */
+    public void createDoc(String filePath, JsonObject msg, Handler<AsyncResult<Boolean>> handler) {
         vertx.fileSystem().exists(filePath, result -> {
             if (result.succeeded() && result.result()) {//文件是否存在
                 //更新log
@@ -55,10 +81,12 @@ public class LogManager {
                         .setAppend(true), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
+                        handler.handle(Future.succeededFuture(false));
                     } else {
                         rs.result().setReadBufferSize(100000);//讀取緩衝區的大小
                         rs.result().handler(buffer -> {
-                            JsonArray jsonArray = new JsonArray(buffer).add(new JsonObject().put("topic", msg.getString("topic"))
+//                            JsonArray jsonArray = new JsonArray(buffer).add(new JsonObject().put("topic", msg.getString("topic"))
+                            JsonArray jsonArray = new JsonArray().add(new JsonObject().put("topic", msg.getString("topic"))
                                     .put("payload", msg.getJsonObject("payload"))
                                     .put("qos", msg.getInteger("qos"))
                                     .put("description", Objects.nonNull(msg.getValue("description")) ? msg.getString("description") : "")
@@ -84,6 +112,7 @@ public class LogManager {
                 vertx.fileSystem().createFile(filePath, ars -> {
                     if (ars.failed()) {
                         logger.error(ars.cause().getMessage(), ars);
+                        handler.handle(Future.succeededFuture(false));
                     } else {
                         vertx.fileSystem().writeFile(filePath, Buffer.buffer(jsonArray.encodePrettily().toString().getBytes().length)
                                 .appendString(jsonArray.encodePrettily().toString()), rs -> {
@@ -108,13 +137,33 @@ public class LogManager {
      * @version 1.0
      */
     public void getDirTitle(Handler<AsyncResult<List>> handler) {
-        vertx.fileSystem().readDir(dir + "/", REGEX, rs -> {
+        vertx.fileSystem().readDir(dir, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 handler.handle(Future.succeededFuture());
             } else {
-                handler.handle(Future.succeededFuture(rs.result().stream().map(e ->
-                        e.substring(e.lastIndexOf("/") + 1, e.indexOf("."))).collect(Collectors.toList())));
+                List<JsonObject> lists = new ArrayList<>();
+                List<String> dirList = rs.result().stream().map(e ->
+                        e.substring(e.lastIndexOf("/") + 1)).filter(e -> e.indexOf(".") < 0).collect(Collectors.toList());
+                AtomicInteger atomicInteger = new AtomicInteger(0);
+                int times = dirList.size();
+                vertx.executeBlocking((Future<List<JsonObject>> future) -> {
+                    dirList.forEach(res ->
+                            vertx.fileSystem().readDir(dir + "/" + res, REGEX, ars -> {
+                                if (ars.failed()) {
+                                    logger.error(ars.cause().getMessage(), ars.cause());
+                                    handler.handle(Future.succeededFuture());
+                                } else {
+                                    List<String> titles = ars.result().stream().map(e ->
+                                            e.substring(e.lastIndexOf("/") + 1, e.indexOf("."))).collect(Collectors.toList());
+                                    lists.add(new JsonObject().put(res, new JsonArray(titles)));
+                                    atomicInteger.incrementAndGet();
+                                    if (atomicInteger.get() == times) {
+                                        future.complete(lists);
+                                    }
+                                }
+                            }));
+                }, futureRes -> handler.handle(Future.succeededFuture(futureRes.result())));
             }
         });
     }
@@ -126,8 +175,8 @@ public class LogManager {
      * @date 18-7-3
      * @version 1.0
      */
-    public void getApiDoc(String scheme, Handler<AsyncResult<JsonArray>> handler) {
-        vertx.fileSystem().readFile(dir + "/" + scheme + SUFFIX, rs -> {
+    public void getApiDoc(String scheme, String rootPath, Handler<AsyncResult<JsonArray>> handler) {
+        vertx.fileSystem().readFile(dir + "/" + rootPath + "/" + scheme + SUFFIX, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 handler.handle(Future.succeededFuture());
