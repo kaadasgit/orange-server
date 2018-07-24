@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import scala.util.parsing.json.JSONArray;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -130,10 +131,12 @@ public class OtaUpgradeHandler implements EventbusAddr {
         if (message.body().getInteger("modelType") == 2) {//掛載設備
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
+                JsonArray matIds=new JsonArray(rs.result().headers().get("matchIds"));
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
-                            if (dataJsonObject.getString("event_str").equals("online"))
+                            if (dataJsonObject.getString("event_str").equals("online")
+                                    && matIds.contains(dataJsonObject.getString("deviceId")))
                                 return dataJsonObject.getString("deviceId");
                             else
                                 return null;
@@ -194,10 +197,12 @@ public class OtaUpgradeHandler implements EventbusAddr {
         if (message.body().getInteger("modelType") == 2) {//掛載設備
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
+                JsonArray matIds=new JsonArray(rs.result().headers().get("matchIds"));
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
-                            if (dataJsonObject.getString("event_str").equals("online"))
+                            if (dataJsonObject.getString("event_str").equals("online")
+                                    && matIds.contains(dataJsonObject.getString("deviceId")))
                                 return dataJsonObject.getString("deviceId");
                             else
                                 return null;

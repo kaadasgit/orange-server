@@ -2,6 +2,7 @@ package cn.orangeiot.apidao.handler.dao.ota;
 
 import cn.orangeiot.apidao.client.MongoClient;
 import com.sun.org.apache.bcel.internal.generic.PUTFIELD;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -164,7 +165,7 @@ public class OtaDao {
                                 .collect(Collectors.toList());
                         switch (message.body().getInteger("modelType")) {
                             case 1://网关
-                                getDeviceByGateway(pnJsonObject, message,_ids);
+                                getDeviceByGateway(pnJsonObject, message, _ids);
                                 return;
                             case 2://挂载设备
                                 pnJsonObject.put("deviceList.deviceId", new JsonObject().put("$in", new JsonArray(_ids)));
@@ -186,7 +187,8 @@ public class OtaDao {
                                         message.reply(null);
                                     } else {
                                         message.reply(new JsonArray(
-                                                as.result().stream().distinct().collect(Collectors.toList())));
+                                                as.result().stream().distinct().collect(Collectors.toList()))
+                                        ,new DeliveryOptions().addHeader("matchIds", new JsonArray(_ids).toString()));
                                     }
                                 });
                     }
@@ -201,8 +203,8 @@ public class OtaDao {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public void getDeviceByGateway(JsonObject jsonObject, Message<JsonObject> message,List<String> ids) {
-        if (message.body().getInteger("type")==1) {//用户确认升级
+    public void getDeviceByGateway(JsonObject jsonObject, Message<JsonObject> message, List<String> ids) {
+        if (message.body().getInteger("type") == 1) {//用户确认升级
             jsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(ids)));
             MongoClient.client.findWithOptions("kdsGatewayDeviceList", jsonObject
                     , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
@@ -216,7 +218,7 @@ public class OtaDao {
                                     as.result().stream().distinct().collect(Collectors.toList())));
                         }
                     });
-        }else{
+        } else {
             jsonObject.put("SN", new JsonObject().put("$in", new JsonArray(ids)));
             MongoClient.client.findWithOptions("kdsProductInfoList", jsonObject
                     , new FindOptions().setFields(new JsonObject().put("SN", 1)

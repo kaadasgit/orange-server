@@ -214,7 +214,7 @@ public class GatewayDao {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1).put("adminuid", 1).put("status", 1)), rs -> {
+                .put("deviceNickName", 1).put("adminuid", 1)), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
                 message.reply(null);
@@ -226,7 +226,7 @@ public class GatewayDao {
                         e.put("isAdmin", 2);//普通用户
                     e.remove("adminuid");
                     return e;
-                }).filter(e -> !Objects.nonNull(e.getValue("status")) || e.getInteger("status") != 2).collect(Collectors.toList());
+                }).collect(Collectors.toList());
                 message.reply(new JsonArray(resultList));
             }
         });
@@ -342,16 +342,23 @@ public class GatewayDao {
                 } else {
                     message.reply(new JsonArray(rs.result()));
 
-                    MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
+//                    MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
+//                            , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
+//                            , new JsonObject().put("$set", new JsonObject().put("status", 2)),
+//                            new UpdateOptions().setUpsert(false).setMulti(true), as -> {//status 2失效
+//                                if (as.failed()) {
+//                                    as.cause().printStackTrace();
+//                                    message.reply(null);
+//                                } else {
+//                                    message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "false"));
+//                                }
+//                            });
+
+                    MongoClient.client.removeDocuments("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
                             , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
-                            , new JsonObject().put("$set", new JsonObject().put("status", 2)),
-                            new UpdateOptions().setUpsert(false).setMulti(true), as -> {//status 2失效
-                                if (as.failed()) {
-                                    as.cause().printStackTrace();
-                                    message.reply(null);
-                                } else {
-                                    message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "false"));
-                                }
+                            , as -> {//status 2失效
+                                if (as.failed())
+                                    logger.error(as.cause().getMessage(), as);
                             });
 
                     //未审批的列表失效
@@ -361,7 +368,28 @@ public class GatewayDao {
                                     .put("failureTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))
                             , new UpdateOptions().setMulti(true).setUpsert(true), as -> {
                                 if (as.failed())
-                                    as.cause().printStackTrace();
+                                    logger.error(as.cause().getMessage(), as);
+
+                            });
+
+                    //插入綁定網關的歷史記錄
+                    MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
+                            , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
+                            , new JsonObject().put("userid", 1).put("_id", 0).put("deviceList", 1).put("bindTime", 1), ars -> {
+                                if (ars.failed()) {
+                                    logger.error(ars.cause().getMessage(), ars);
+                                } else {
+                                    MongoClient.client.insert("kdsbindGWHistoryRecord", new JsonObject().put("deviceSN"
+                                            , message.body().getString("devuuid")).put("deviceList",
+                                            Objects.nonNull(ars.result().getValue("deviceList")) ?
+                                                    ars.result().getJsonArray("deviceList") : new JsonArray())
+                                                    .put("adminuid", message.body().getString("uid"))
+                                                    .put("bindTime", ars.result().getString("bindTime"))
+                                            , as -> {
+                                                if (as.failed())
+                                                    logger.error(as.cause().getMessage(), as);
+                                            });
+                                }
                             });
                 }
             });
@@ -379,12 +407,8 @@ public class GatewayDao {
                             MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
                                     , message.body().getString("devuuid")).put("uid", message.body().getString("uid"))
                                     , as -> {
-                                        if (as.failed()) {
-                                            as.cause().printStackTrace();
-                                            message.reply(null);
-                                        } else {
-                                            message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "false"));
-                                        }
+                                        if (as.failed())
+                                            logger.error(as.cause().getMessage(), as);
                                     });
                         }
                     });
@@ -619,7 +643,7 @@ public class GatewayDao {
      * @version 1.0
      */
     public void selectOpenLock(Message<JsonObject> message) {
-        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("devuuid", message.body().getString("deviceSN"))
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
                         .put("adminuid", new JsonObject().put("$exists", true)).put("uid", message.body().getString("uid")),
                 new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
                         .put("deviceSN", 1)), ars -> {
@@ -631,17 +655,24 @@ public class GatewayDao {
                         // 根据不同权限查询记录
                         if (ars.result().size() > 0 && ars.result().get(0).getString("adminuid").equals(message.body().getString("uid"))) {
 
-                            MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject()
+                            MongoClient.client.findWithOptions("kdsbindGWHistoryRecord", new JsonObject()
                                             .put("deviceList.deviceId", message.body().getString("deviceId")),
-                                    new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
+                                    new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0)
                                             .put("deviceSN", 1)), rs -> {
-
-                                        List<String> deviceList = ars.result().stream().filter(e -> e.getString("adminuid").equals(message.body().getString("uid"))).map(e -> e.getString("deviceSN"))
-                                                .distinct().collect(Collectors.toList());
-
-                                        paramsJsonObject.put("lockName", message.body().getString("deviceId"))
-                                                .put("medium", new JsonObject().put("$in", new JsonArray(deviceList)));
-                                        selectLockRecord(message, paramsJsonObject);
+                                        if (rs.failed()) {
+                                            logger.error(rs.cause().getMessage(), rs);
+                                        } else {
+                                            if (rs.result().size() > 0) {
+                                                List<String> deviceList = rs.result().stream().filter(e -> e.getString("adminuid").equals(message.body().getString("uid"))).map(e -> e.getString("deviceSN"))
+                                                        .distinct().collect(Collectors.toList());
+                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+                                                        .put("medium", new JsonObject().put("$in", new JsonArray(deviceList)));
+                                            } else {
+                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+                                                        .put("medium", message.body().getString("devuuid"));
+                                            }
+                                            selectLockRecord(message, paramsJsonObject);
+                                        }
                                     });
                         } else {//普通用戶
                             paramsJsonObject.put("lockName", message.body().getString("deviceId"))
