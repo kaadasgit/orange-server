@@ -70,7 +70,7 @@ public class SpiConf {
             baseHandler.globalIntercept(router);
 
 
-            //TODO 用户相关
+            // 用户相关
             UserHandler userHandler = new UserHandler(vertx.eventBus(), configJson);
             router.post(ApiConf.USER_LOGIN_TEL).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::getUserByTel);
             router.post(ApiConf.USER_LOGIN_MAIL).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::getUserByEmail);
@@ -85,19 +85,19 @@ public class SpiConf {
             router.post(ApiConf.UPLOAD_PUSHID).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::uploadJPushId);
             router.post(ApiConf.SEND_PUSH_APPLICATION).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(userHandler::sendPushNotify);
 
-            //TODO 消息相关
+            // 消息相关
             MessageHandler messageHandler = new MessageHandler(vertx.eventBus(), configJson);
             router.post(ApiConf.SEND_SMS_CODE).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(messageHandler::sendSMS);
             router.post(ApiConf.SEND_EMAIL_CODE).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(messageHandler::sendMail);
 
 
-            //TODO 文件相关
+            // 文件相关
             FileHandler fileHandler = new FileHandler(vertx, configJson);
             router.get(ApiConf.GET_FILE_HEADER_IMG).handler(fileHandler::getHeaderImg);
             router.post(ApiConf.UPLOAD_HEADER_IMG).consumes(HttpAttrType.CONTENT_TYPE_FORM_DATA.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(fileHandler::downHeaderImg);
 
 
-            //TODO 锁相关
+            // 锁相关
             LockHandler lockHandler = new LockHandler(vertx.eventBus(), configJson);
             router.post(ApiConf.CREATE_ADMIN_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::createAdminDev);
             router.post(ApiConf.DELETE_EVEND_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::deletevendorDev);
@@ -116,6 +116,11 @@ public class SpiConf {
             router.post(ApiConf.CHECK_DEV).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::checkAdmindev);
             router.post(ApiConf.UPLOAD_OPEN_LOCK_RECORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::uploadOpenLockList);
             router.post(ApiConf.REQUEST_USER_AUTH).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::openLockAuth);
+            router.post(ApiConf.UPDATE_LOCK_INFO).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateLockInfo);
+            router.post(ApiConf.OPEN_LOCK_NO_AUTH_SUCCESS).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::openLockNoAuthRecord);
+            router.post(ApiConf.UPDATE_LOCK_NUMBER).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateLockNumberInfo);
+            router.post(ApiConf.GET_LOCK_NUMBER).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::getLockNumberInfo);
+            router.post(ApiConf.SELECT_OPENLOCK_RECORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::selectOpenLockRecord);
 
             //mac地址相关
             MacHandler macHandler = new MacHandler(vertx.eventBus(), configJson);

@@ -51,4 +51,17 @@ public interface AdminlockAddr {
     String GET_WRITE_MAC_RESULT = "getWriteMacResult";//获取mac写入结果
 
     String GET_MODEL_PASSWORD = "getPwdByMac";//根据mac获取模块的password1
+
+    String OPEN_LOCK_BY_GATEWAY = "openLockByGateway";//通過網關的開鎖
+
+    @Deprecated
+    String UPDATE_LOCK_INFO = "updateLockInfo";//修改鎖的信息
+
+    String OPEN_LOCK_NO_AUTH_SUCCESS = "openLockNoAuth";//上傳無服務器鉴权開門記錄
+
+    String UPDATE_LOCK_NUM_INFO = "updateLockNumInfo";//修改锁的编号相关信息
+
+    String GET_LOCK_NUM_INFO = "getLockNumInfo";//獲取锁的编号相关信息
+
+    String SELECT_OPNELOCK_RECORD = "selectOpenLockRecord";//查詢開鎖記錄
 }

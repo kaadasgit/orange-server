@@ -182,6 +182,7 @@ public class MQTTBroker extends AbstractVerticle {
             MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket, sessions);
             mqttNetSocket.start();
         }).listen();
+
     }
 
     private void startWebsocketServer(ConfigParser c) {

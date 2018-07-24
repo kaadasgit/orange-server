@@ -34,7 +34,7 @@ public class SipVerticle extends AbstractVerticle {
     public void start(Future<Void> startFuture) throws Exception {
 
         loadConf();
-        //todo 建立sip实例
+        // 建立sip实例
         startFuture.complete();
     }
 

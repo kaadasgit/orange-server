@@ -12,6 +12,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +22,7 @@ import org.dna.mqtt.moquette.proto.messages.*;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.EXACTLY_ONCE;
@@ -99,6 +101,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 sendMessage();
                 sendGWMessage();
                 sendStorage();
+                getloginAll();
             } else {
                 logger.warn("Timeout occurred ...");
             }
@@ -126,7 +129,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 ConnAckMessage connAck = new ConnAckMessage();
                 String connectedClientID = connect.getClientID();
                 PromMetrics.mqtt_connect_total.labels(connectedClientID).inc();
-                if (!connect.isCleanSession() && sessions.containsKey(connectedClientID)) {
+//                if (!connect.isCleanSession() && sessions.containsKey(connectedClientID)) {
+                if (sessions.containsKey(connectedClientID)) {
                     session = sessions.get(connectedClientID);
                 }
                 //重复连接
@@ -140,11 +144,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     /*
                      The Server MUST process a second CONCT Packet sent from a Client as a protocol violation and disconnect the Client
                       */
-                    connAck.setSessionPresent(true);
-                    connAck.setReturnCode(ConnAckMessage.NOT_AUTHORIZED);
-                    sendMessageToClient(connAck);
-                    closeConnection();
-                    break;
+//                    connAck.setSessionPresent(true);
+//                    connAck.setReturnCode(ConnAckMessage.NOT_AUTHORIZED);
+//                    sendMessageToClient(connAck);
+//                    closeConnection();
+//                    break;
+
+                    /**挤掉上一个用户*/
+                    sessions.remove(connectedClientID);
+                    session.closeConnect();
+
+                    session = new MQTTSession(vertx, config, netSocket);
+                    session.setClientID(connectedClientID);
+                    PromMetrics.mqtt_sessions_total.inc();
+                    connAck.setSessionPresent(false);
                 }
                 session.setPublishMessageHandler(this::sendMessageToClient);
                 session.setKeepaliveErrorHandler(clientID -> {
@@ -287,7 +300,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         }
 
 
-        // TODO: forward mqtt message to backup server
+        // : forward mqtt message to backup server
 
     }
 
@@ -548,5 +561,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //        logger.info("handle will message end.");
     }
 
+
+    private void getloginAll() {
+        vertx.eventBus().consumer("cn.login.all", msg -> {
+            msg.reply(new JsonArray(sessions.keySet().stream().collect(Collectors.toList())));
+        });
+    }
 
 }

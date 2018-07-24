@@ -91,23 +91,29 @@ public class EventHandler implements EventAddr {
         if (Objects.nonNull(message.getValue("func"))) {
             switch (message.getString("func")) {
                 case "gwevent":
-                    switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
-                        case "online"://設備上報
-                            deviceHandler.deviceOnline(message);
-                            break;
-                        case "offline"://設備下線
-                            deviceHandler.deviceOffline(message);
-                            break;
-                        case "delete"://設備删除
-                            deviceHandler.devicedelete(message);
-                            break;
-                        case "getDevList"://設備列表
-                            deviceHandler.getDeviceList(message);
-                            break;
-                        default:
-                            logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
-                            break;
+                    if (Objects.nonNull(message.getJsonObject("eventparams").getValue("event_str"))) {
+                        switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
+                            case "online"://設備上報
+                                deviceHandler.deviceOnline(message);
+                                break;
+                            case "offline"://設備下線
+                                deviceHandler.deviceOffline(message);
+                                break;
+                            case "delete"://設備删除
+                                deviceHandler.devicedelete(message);
+                                break;
+                            case "getDevList"://設備列表
+                                deviceHandler.getDeviceList(message);
+                                break;
+                            default:
+                                logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
+                                break;
+                        }
+                    } else if (Objects.nonNull(message.getJsonObject("eventparams").getValue("devecode"))
+                            && message.getJsonObject("eventparams").getInteger("devecode") == 2) {//开门
+                        deviceHandler.openLock(message);
                     }
+                    break;
                 default:
                     logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));
                     break;

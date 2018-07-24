@@ -353,6 +353,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
      * @date 18-3-22
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void getDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING), as -> {
@@ -374,5 +375,37 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
             }
         });
 
+    }
+
+
+    /**
+     * @Description 查询開門记录
+     * @author zhang bo
+     * @date 18-7-24
+     * @version 1.0
+     */
+    @Override
+    public void selectOpenLockRecord(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+        //数据校验
+        VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
+                .put("deviceId", DataType.STRING).put("uid", DataType.STRING)
+                .put("page", DataType.INTEGER).put("pageNum", DataType.INTEGER), as -> {
+            if (as.failed()) {
+                handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
+                        .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
+            } else {
+                vertx.eventBus().send(GatewayAddr.class.getName() + SELECT_OPEN_LOCK_RECORD, jsonObject, SendOptions.getInstance(), rs -> {
+                    if (Objects.nonNull(rs.result())) {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setData(rs.result().body()).setFunc(jsonObject.getString("func"))
+                        )));
+                    } else {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setErrorMessage(ErrorType.GET_GATEWAY_DEVICE_LOCK_RECORD.getKey(), ErrorType.GET_GATEWAY_DEVICE_LOCK_RECORD.getValue()
+                                        , jsonObject.getString("func")))));
+                    }
+                });
+            }
+        });
     }
 }

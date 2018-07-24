@@ -27,12 +27,12 @@ public class SipPhone extends AbstractVerticle implements SipListener {
     private static Logger logger = LogManager.getLogger(SipPhone.class);
 
     public void processDialogTerminated(DialogTerminatedEvent arg0) {
-        // TODO Auto-generated method stub
+        //  Auto-generated method stub
         System.out.println("processDialogTerminated " + arg0.toString());
     }
 
     public void processIOException(IOExceptionEvent arg0) {
-        // TODO Auto-generated method stub
+        //  Auto-generated method stub
         System.out.println("processIOException " + arg0.toString());
     }
 
@@ -119,13 +119,13 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             }
 
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }
@@ -181,10 +181,10 @@ public class SipPhone extends AbstractVerticle implements SipListener {
 
             System.out.println("send invite to callee: " + cliReq);
         } catch (TransactionUnavailableException e1) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             e1.printStackTrace();
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
@@ -207,10 +207,10 @@ public class SipPhone extends AbstractVerticle implements SipListener {
         try {
             serverTransactionId = sipProvider.getNewServerTransaction(request);
         } catch (TransactionAlreadyExistsException e1) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             e1.printStackTrace();
         } catch (TransactionUnavailableException e1) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             e1.printStackTrace();
         }
 
@@ -231,13 +231,13 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             }
 
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }
@@ -273,7 +273,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
 
             System.out.println("send bye to peer:" + byeReq.toString());
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
 
@@ -322,10 +322,10 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             calleeDialog.sendAck(ackRequest);
             System.out.println("send ack to callee:" + ackRequest.toString());
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
 
@@ -374,19 +374,19 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             ClientTransaction cancelClientTran = sipProvider.getNewClientTransaction(cancelReq);
             cancelClientTran.sendRequest();
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (TransactionAlreadyExistsException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (TransactionUnavailableException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }
@@ -459,13 +459,13 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             }
             System.out.println("send bye response to peer:" + byeResp.toString());
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }
@@ -539,13 +539,13 @@ public class SipPhone extends AbstractVerticle implements SipListener {
 
 
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -561,25 +561,25 @@ public class SipPhone extends AbstractVerticle implements SipListener {
             cancelResp = msgFactory.createResponse(response.getStatusCode(), servTran.getRequest());
             servTran.sendResponse(cancelResp);
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (SipException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
 
     }
 
     public void processTimeout(TimeoutEvent arg0) {
-        // TODO Auto-generated method stub
+        //  Auto-generated method stub
         System.out.println(" processTimeout " + arg0.toString());
     }
 
     public void processTransactionTerminated(TransactionTerminatedEvent arg0) {
-        // TODO Auto-generated method stub
+        //  Auto-generated method stub
         System.out.println(" processTransactionTerminated " + arg0.getClientTransaction().getBranchId()
                 + " " + arg0.getServerTransaction().getBranchId());
     }
@@ -616,7 +616,7 @@ public class SipPhone extends AbstractVerticle implements SipListener {
         try {
             sipStack = sipFactory.createSipStack(properties);
         } catch (PeerUnavailableException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
             return;
         }

@@ -50,7 +50,7 @@ public class MsgParserDecode {
                 boolean isFirstLine = true;//是否是第一行
                 SIPMessage message = null;//消息解析成消息對象
 
-                //todo 讀取數據
+                // 讀取數據
                 do {
                     int lineStart = i;
                     // 找到一行的長度 length

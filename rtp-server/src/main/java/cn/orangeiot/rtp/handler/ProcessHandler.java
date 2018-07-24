@@ -48,7 +48,7 @@ public class ProcessHandler implements UserAddr {
         logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
 
 
-        //TODO 轉發rtp stream
+        // 轉發rtp stream
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.VIDEO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
@@ -81,7 +81,7 @@ public class ProcessHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void reSendVideo(Buffer bufferStream, String[] socketAddress) {
         logger.info("==ResponseMsgUtil==reSendVideo==params -> socket = {}", socketAddress);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         vertx.setPeriodic(conf.getLong("intervalTimes"), rs -> {
             atomicInteger.getAndIncrement();//原子自增
@@ -109,7 +109,7 @@ public class ProcessHandler implements UserAddr {
         logger.info("SERVER received remoteAddress: " + datagramPacket.sender().toString());
         logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
 
-        //TODO 轉發rtp stream
+        // 轉發rtp stream
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.AUDIO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
@@ -142,7 +142,7 @@ public class ProcessHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void reSendAudio(Buffer bufferStream, String[] socketAddress) {
         logger.info("==ResponseMsgUtil==reSendAudio==params -> socket = {}", socketAddress);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         vertx.setPeriodic(conf.getLong("intervalTimes"), rs -> {
             atomicInteger.getAndIncrement();//原子自增

@@ -123,18 +123,22 @@ public class OtaUpgradeHandler implements EventbusAddr {
      */
     @SuppressWarnings("Duplicates")
     public void sendUserMsg(Message<JsonObject> message, AsyncResult<Message<JsonArray>> rs) {
+        String modelDevice = "SN";
+        if (message.body().getInteger("type") == 1)//用户确认升级
+            modelDevice = "deviceSN";
+
         if (message.body().getInteger("modelType") == 2) {//掛載設備
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
-                            if (dataJsonObject.getInteger("status").equals(1))
-                                return dataJsonObject.getString("devid");
+                            if (dataJsonObject.getString("event_str").equals("online"))
+                                return dataJsonObject.getString("deviceId");
                             else
                                 return null;
                         }).collect(Collectors.toList());
-                devIds.remove(null);
+                List<String> newDevIds= devIds.stream().filter(id->id!=null).collect(Collectors.toList());
                 return new JsonObject().put("func", "otaApprovate").put("gwId", jsonObject.getString("deviceSN"))
                         .put("deviceId", jsonObject.getString("deviceSN"))
                         .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
@@ -142,7 +146,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                                 .put("childCode", message.body().getString("childCode")).put("fileUrl"
                                         , message.body().getString("filePathUrl")).put("SW"
                                         , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray(devIds))
+                                        , new JsonArray(newDevIds))
                                 .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
                                         , message.body().getInteger("fileLen")))
                         .put("otaType", 2);//掛載設備
@@ -154,16 +158,17 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         , deliveryOptions);
             });
         } else {//網關升級
+            String finalModelDevice = modelDevice;
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
-                return new JsonObject().put("func", "otaApprovate").put("gwId", jsonObject.getString("deviceSN"))
-                        .put("deviceId", jsonObject.getString("deviceSN"))
+                return new JsonObject().put("func", "otaApprovate").put("gwId", jsonObject.getString(finalModelDevice))
+                        .put("deviceId", jsonObject.getString(finalModelDevice))
                         .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
                         .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
                                 .put("childCode", message.body().getString("childCode")).put("fileUrl"
                                         , message.body().getString("filePathUrl")).put("SW"
                                         , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray().add(jsonObject.getString("deviceSN")))
+                                        , new JsonArray().add(jsonObject.getString(finalModelDevice)))
                                 .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
                                         , message.body().getInteger("fileLen"))
                                 .put("otaType", 1));//网关升级
@@ -197,7 +202,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                             else
                                 return null;
                         }).collect(Collectors.toList());
-                devIds.remove(null);
+                List<String> newDevIds= devIds.stream().filter(id->id!=null).collect(Collectors.toList());
                 return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("deviceSN"))
                         .put("deviceId", jsonObject.getString("deviceSN"))
                         .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
@@ -205,7 +210,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                                 .put("childCode", message.body().getString("childCode")).put("fileUrl"
                                         , message.body().getString("filePathUrl")).put("SW"
                                         , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray(devIds))
+                                        , new JsonArray(newDevIds))
                                 .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
                                         , message.body().getInteger("fileLen")));
             }).forEach(e -> {
@@ -221,14 +226,14 @@ public class OtaUpgradeHandler implements EventbusAddr {
         } else {//網關升級
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
-                return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("deviceSN"))
-                        .put("deviceId", jsonObject.getString("deviceSN"))
-                        .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
+                return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("SN"))
+                        .put("deviceId", jsonObject.getString("SN"))
+                        .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", "SYS")
                         .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
                                 .put("childCode", message.body().getString("childCode")).put("fileUrl"
                                         , message.body().getString("filePathUrl")).put("SW"
                                         , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray().add(jsonObject.getString("deviceSN")))
+                                        , new JsonArray().add(jsonObject.getString("SN")))
                                 .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
                                         , message.body().getInteger("fileLen")));
             }).forEach(e -> {

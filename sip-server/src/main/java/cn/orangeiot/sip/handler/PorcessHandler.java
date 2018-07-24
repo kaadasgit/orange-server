@@ -106,7 +106,7 @@ public class PorcessHandler {
             logger.info("SERVER I received some bytes: " + buffer.length());
             logger.info("SERVER body(string):\n " + new String(buffer.getBytes()));
 
-            //todo 消息协议解析
+            // 消息协议解析
             MsgParserDecode.parseSIPMessage(buffer.getBytes(), true, false, rs -> {
                 if (rs.failed()) {//不是sip标准协议
                     logger.error(rs.cause().getMessage(), rs.cause());
@@ -145,7 +145,7 @@ public class PorcessHandler {
         logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
         logger.info("SERVER body(string):\n " + new String(datagramPacket.data().getBytes()));
 
-        //todo 消息协议解析
+        // 消息协议解析
         MsgParserDecode.parseSIPMessage(datagramPacket.data().getBytes(), true, false, rs -> {
             if (rs.failed()) {//不是sip标准协议
                 logger.error(rs.cause().getMessage(), rs.cause());
@@ -274,7 +274,7 @@ public class PorcessHandler {
             branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
             transactions.remove(callID.getCallIdentifer().toString());
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
 
@@ -301,10 +301,10 @@ public class PorcessHandler {
             ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
 
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         } catch (InvalidArgumentException e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }
@@ -359,7 +359,7 @@ public class PorcessHandler {
 
             ResponseMsgUtil.sendMessage(toURI.toString(), sipRequest.toString(), sipOptions);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            //  Auto-generated catch block
             logger.error(e.getMessage(), e);
         }
     }

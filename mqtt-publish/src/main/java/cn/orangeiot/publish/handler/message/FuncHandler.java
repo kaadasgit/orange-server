@@ -3,10 +3,8 @@ package cn.orangeiot.publish.handler.message;
 import cn.orangeiot.publish.service.AdminLockService;
 import cn.orangeiot.publish.service.ApprovateService;
 import cn.orangeiot.publish.service.GatewayDeviceService;
-import cn.orangeiot.publish.service.impl.AdminLockServiceImpl;
-import cn.orangeiot.publish.service.impl.ApprovateServiceImpl;
-import cn.orangeiot.publish.service.impl.GatewayDeviceServiceImpl;
-import cn.orangeiot.publish.service.impl.UserServiceImpl;
+import cn.orangeiot.publish.service.LockService;
+import cn.orangeiot.publish.service.impl.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -15,6 +13,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -39,6 +39,8 @@ public class FuncHandler {
 
     private UserServiceImpl userService;
 
+    private LockService lockService;
+
     public FuncHandler(Vertx vertx, JsonObject jsonObject) {
         this.vertx = vertx;
         this.jsonObject = jsonObject;
@@ -46,6 +48,7 @@ public class FuncHandler {
         gatewaydeviceService = new GatewayDeviceServiceImpl(vertx, jsonObject);
         approvateService = new ApprovateServiceImpl(vertx, jsonObject);
         userService = new UserServiceImpl(vertx, jsonObject);
+        lockService = new LockServiceImpl(vertx, jsonObject);
     }
 
 
@@ -181,6 +184,11 @@ public class FuncHandler {
                     handler.handle(rs);
                 });
                 break;
+            case "selectOpenLockRecord"://查询開門记录
+                gatewaydeviceService.selectOpenLockRecord(message.body(), rs -> {
+                    handler.handle(rs);
+                });
+                break;
             default:
                 handler.handle(Future.failedFuture("func resources not find "));
                 break;
@@ -195,9 +203,16 @@ public class FuncHandler {
      */
     public void onRpcMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
         switch (message.body().getString("func")) {
-            case "selectGWAdmin"://获取网关下的設備列表
+            case "selectGWAdmin"://获取网关管理员
                 userService.selectGWAdmin(message.body());
                 handler.handle(Future.failedFuture("selectGWAdmin process successs"));
+                break;
+            case "openLock"://开门
+                if (message.body().getString("clientId").indexOf("gw:") >= 0
+                        && Objects.nonNull(message.body().getValue("params"))
+                        && message.body().getJsonObject("params").getString("optype").equals("unlock"))
+                    lockService.openLock(message.body());
+                handler.handle(Future.succeededFuture());
                 break;
             default:
                 handler.handle(Future.succeededFuture());

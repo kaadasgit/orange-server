@@ -129,7 +129,7 @@ public class MessageHandler implements MessageAddr {
                             , message.body().getString("versionType") + ":" + message.body().getString("mail"))
                             .put("verifyCode", tokens));//缓存验证码
 
-                    //TODO 邮箱通知
+                    // 邮箱通知
                     if (message.body().getString("versionType").equals("PHILIPS")) {
                         String text = config.getString(message.body().getString("versionType") + "email_text").replaceFirst("verifyCode", tokens);
                         MailClient.philipClient.sendMail(new MailMessage().setTo(message.body().getString("mail"))

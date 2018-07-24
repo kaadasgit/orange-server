@@ -73,7 +73,7 @@ public class InviteHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void processInvite(SIPRequest request, SipOptions sipOptions,SocketAddress socketAddress) {
-        //todo 查询是否存在相关账户信息
+        //查询是否存在相关账户信息
         To to = (To) request.getHeader(To.NAME);
         Via via = (Via) request.getHeader(Via.NAME);
 
@@ -101,7 +101,7 @@ public class InviteHandler implements UserAddr {
 
 
             CallID callID = (CallID) request.getHeader(CallID.NAME);
-            //todo sdp解析
+            // sdp解析
 //            String contents = request.getMultipartMimeContent().getContents().next().getContent().toString();
 //            SDPAnnounceParser parser = new SDPAnnounceParser(contents);
 //            SessionDescriptionImpl parsedDescription = parser.parse();
@@ -144,10 +144,10 @@ public class InviteHandler implements UserAddr {
             request.setHeader(contactHeaders);
 
 
-            // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+            // 需要测试是否能够通过设置VIA头域来修改VIA头域值
             if(request.getViaHeaders().size()>1) {
                 ViaList viaList=request.getViaHeaders();
-                // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+                // 需要测试是否能够通过设置VIA头域来修改VIA头域值
 //                request.removeHeader(Via.NAME);
                 request.getViaHeaders().forEach(e -> {
                     if (Objects.nonNull(e.getRPort())) {
@@ -160,7 +160,7 @@ public class InviteHandler implements UserAddr {
                     }
                 });
             }else{
-                // FIXME 需要测试是否能够通过设置VIA头域来修改VIA头域值
+                // 需要测试是否能够通过设置VIA头域来修改VIA头域值
                 request.removeHeader(Via.NAME);
                 request.addHeader(via);
             }

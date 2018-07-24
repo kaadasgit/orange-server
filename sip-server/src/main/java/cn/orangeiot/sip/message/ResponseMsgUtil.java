@@ -133,7 +133,7 @@ public class ResponseMsgUtil implements UserAddr {
     @SuppressWarnings("Duplicates")
     public static void reSendAndClean(Vertx vertx, String msg, String username) {
         logger.info("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
@@ -175,7 +175,7 @@ public class ResponseMsgUtil implements UserAddr {
     @SuppressWarnings("Duplicates")
     public static void reSend(String msg, String username) {
         logger.info("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,

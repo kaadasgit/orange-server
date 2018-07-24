@@ -20,7 +20,7 @@ public class NetSocketWrapper {
         this.netSocket = netSocket;
     }
 
-    // TODO: this method is equals to MQTTNetSocket.sendMessageToClient... need refactoring
+    // : this method is equals to MQTTNetSocket.sendMessageToClient... need refactoring
     public void sendMessageToClient(Buffer bytes) {
         try {
             netSocket.write(bytes);

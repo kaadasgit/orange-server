@@ -112,7 +112,7 @@ public class ResponseHandler implements UserAddr {
             callerResp.setContentLength(contentLen);
             try {
 //                if (response.getCSeq().getMethod() == Request.INVITE) {//relay
-//                    //todo sdp解析
+//                    // sdp解析
 //                    String contents = response.getMultipartMimeContent().getContents().next().getContent().toString();
 //                    SDPAnnounceParser parser = new SDPAnnounceParser(contents);
 //                    SessionDescriptionImpl parsedDescription = parser.parse();

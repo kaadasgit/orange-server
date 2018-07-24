@@ -55,7 +55,7 @@ class SubscribeDecoder extends DemuxDecoder {
             throw new CorruptedFrameException("subscribe MUST have QoS byte with reserved buts to 0, found " + Integer.toHexString(qosByte));
         }
         byte qos = (byte)(qosByte & 0x03);
-        //TODO check qos id 000000xx
+        // check qos id 000000xx
         message.addSubscription(new SubscribeMessage.Couple(qos, topic));
     }
     

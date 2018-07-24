@@ -147,7 +147,7 @@ public class DeviceDao {
                                     .setWeekCode(week).setYearCode(time));
                         }
 
-                        //TODO 插入数据
+                        // 插入数据
                         List<BulkOperation> bulkOperations = new ArrayList<>();
                         List<BulkOperation> GWbulkOperations = new ArrayList<>();
                         String insert_time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));

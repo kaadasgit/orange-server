@@ -57,6 +57,7 @@ public enum ErrorType {
     APPROVAL_FAIL(816, "审批失败"),
     GET_GATEWAY_BIND_FAIL(819, "获取列表失败"),
     GET_GATEWAY_DEVICE_FAIL(820, "获取网关设备列表失败"),
+    GET_GATEWAY_DEVICE_LOCK_RECORD(823, "获取開鎖記錄失敗"),
     DATA_MAP_FAIL(436, "数据不是映射关系"),
     SELECT_DATA_NULL(419, "没有数据，参数不匹配"),
     REGISTER_USER_BULK_FAIL(567, "批量注册用户失败"),

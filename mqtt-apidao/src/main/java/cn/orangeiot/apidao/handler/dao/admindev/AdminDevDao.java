@@ -19,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import scala.util.parsing.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +51,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         JsonObject jsonObject = message.body();
         //设备注册
         MongoClient.client.insert("kdsDeviceList", new JsonObject().put("lockName", jsonObject.getString("devname"))
-                .put("uname", jsonObject.getString("user_id")), ars -> {
+                .put("uname", jsonObject.getString("user_id")).put("model"
+                        , Objects.nonNull(jsonObject.getValue("model")) ? jsonObject.getString("model") : ""), ars -> {
             if (ars.failed()) {
                 ars.cause().printStackTrace();
                 message.reply(null);
@@ -84,6 +87,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                             .put("items", new JsonArray().add("0").add("0").add("0").add("0").add("0").add("0").add("0"))
                                                             .put("password1", Objects.nonNull(jsonObject.getValue("password1")) ? jsonObject.getString("password1") : "")
                                                             .put("password2", Objects.nonNull(jsonObject.getValue("password2")) ? jsonObject.getString("password2") : "")
+                                                            .put("model", Objects.nonNull(jsonObject.getValue("model")) ? jsonObject.getString("model") : "")
                                                     , res -> {
                                                         if (res.failed()) {
                                                             res.cause().printStackTrace();
@@ -256,9 +260,10 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                         .put("dateend", jsonObject.getString("end_time")).put("auto_lock", "0").put("items", jsonObject.getJsonArray("items"))
                                                         .put("password1", Objects.nonNull(returnData.result().getValue("password1")) ? returnData.result().getString("password1") : "")
                                                         .put("password2", Objects.nonNull(returnData.result().getValue("password2")) ? returnData.result().getString("password2") : "")
-                                                        .put("versionType", message.body().getString("versionType"));
+                                                        .put("versionType", message.body().getString("versionType"))
+                                                        .put("model", Objects.nonNull(returnData.result().getValue("model")) ? returnData.result().getString("model") : "");
 
-                                                //todo 查询是否已经添加过的账号
+                                                // 查询是否已经添加过的账号
                                                 MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                                         .put("uname", jsonObject.getString("device_username")), new JsonObject().put("_id", 1), drs -> {
                                                     if (drs.failed()) {
@@ -352,7 +357,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                     } else {
                         JsonObject paramsJsonObject = new JsonObject()
                                 .put("versionType", message.body().getString("versionType"));
-                        //TODO 根据不同权限查询记录
+                        // 根据不同权限查询记录
                         if (Objects.nonNull(ars.result()) && ars.result().getString("adminuid").equals(jsonObject.getString("user_id")))
                             paramsJsonObject.put("lockName", jsonObject.getString("device_name"));
                         else
@@ -644,7 +649,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         MongoClient.client.findWithOptions("kdsNormalLock", new JsonObject().put("uid", jsonObject.getString("user_id")),
                 new FindOptions().setFields(new JsonObject().put("lockName", 1).put("lockNickName", 1).put("is_admin", 1)
                         .put("open_purview", 1).put("auto_lock", 1).put("macLock", 1).put("circle_radius", 1).put("center_latitude", 1)
-                        .put("center_longitude", 1).put("password1", 1).put("password2", 1)), rs -> {
+                        .put("center_longitude", 1).put("password1", 1).put("password2", 1).put("model", 1)), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
                     } else {
@@ -802,7 +807,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         JsonObject jsonObject = message.body();
         RedisClient.client.hget(RedisKeyConf.USER_INFO, jsonObject.getString("user_id"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
             } else {
                 JsonObject userInfo = new JsonObject(rs.result());
                 String uname = userInfo.getString("username");
@@ -829,6 +834,207 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         });
 
     }
+
+
+    /**
+     * @Description 修改鎖信息
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    @Deprecated
+    public void updateLockInfo(Message<JsonObject> message) {
+        MongoClient.client.updateCollection("kdsNormalLock", new JsonObject().put("lockName",
+                message.body().getString("devname")).put("adminuid", message.body().getString("uid"))
+                , new JsonObject().put("lockNickName", message.body().getString("uid")), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        message.reply(new JsonObject());
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 上傳無服務器鉴权開門記錄 open_purview 1表示1次  2表示多次 3表示永久
+     * auth 0 无鉴权
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void openLockNoAuth(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", message.body().getString("devname"))
+                        .put("uid", message.body().getString("uid")),
+                new JsonObject().put("uname", 1).put("lockNickName", 1).put("unickname", 1), ars -> {
+                    if (ars.failed()) {
+                        logger.error(ars.cause().getMessage(), ars);
+                        message.reply(null);
+                    } else {
+                        MongoClient.client.insert("kdsOpenLockList", new JsonObject().put("lockName", message.body().getString("devname"))
+                                .put("versionType", message.body().getString("versionType"))
+                                .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("unickname"))
+                                .put("uname", ars.result().getString("uname")).put("open_purview",
+                                        message.body().getString("open_purview"))
+                                .put("auth", 0).put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
+                                .put("open_type", message.body().getString("open_type")), rs -> {
+                            if (rs.failed()) {
+                                logger.error(rs.cause().getMessage(), rs);
+                                message.reply(null);
+                            } else {
+                                message.reply(new JsonObject());
+                            }
+                        });
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 修改鎖的編號信息
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    public void updateLockNumInfo(Message<JsonObject> message) {
+        MongoClient.client.updateCollection("kdsDeviceList", new JsonObject().put("lockName", message.body().getString("devname"))
+                        .put("uname", message.body().getString("uid")).put("infoList.num", new JsonObject()
+                                .put("$in", new JsonArray().add(message.body().getString("num")))),
+                new JsonObject().put("$pull", new JsonObject().put("infoList"
+                        , new JsonObject().put("num", message.body().getString("num")))), as -> {
+                    if (as.failed()) {
+                        logger.error(as.cause().getMessage(), as);
+                        message.reply(null);
+                    } else {
+                        MongoClient.client.updateCollectionWithOptions("kdsDeviceList", new JsonObject().put("lockName"
+                                , message.body().getString("devname")).put("uname", message.body().getString("uid")),
+                                new JsonObject().put("$addToSet", new JsonObject().put("infoList"
+                                        , new JsonObject().put("num", message.body().getString("num"))
+                                                .put("numNickname", message.body().getString("numNickname"))
+                                                .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))))
+                                , new UpdateOptions().setUpsert(false), rs -> {
+                                    if (rs.failed()) {
+                                        logger.error(rs.cause().getMessage(), rs);
+                                        message.reply(null);
+                                    } else {
+                                        message.reply(new JsonObject());
+                                    }
+                                });
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 獲取鎖的編號信息
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    public void getLockNumInfo(Message<JsonObject> message) {
+        MongoClient.client.findWithOptions("kdsDeviceList", new JsonObject().put("lockName", message.body().getString("devname"))
+                .put("uname", message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("infoList", 1)
+                .put("_id", 0)), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs);
+                message.reply(null);
+            } else {
+                if (Objects.nonNull(rs.result())) {
+                    message.reply(new JsonArray(rs.result()));
+                } else {
+                    message.reply(new JsonArray());
+                }
+            }
+        });
+    }
+
+
+    /**
+     * @Description 查询开锁记录
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    public void selectOpenLockRecord(Message<JsonObject> message) {
+
+        JsonObject jsonObject = message.body();
+        MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
+                        .put("adminuid", new JsonObject().put("$exists", true)).put("uid", jsonObject.getString("uid")),
+                new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1), ars -> {
+                    if (ars.failed()) {
+                        ars.cause().printStackTrace();
+                        message.reply(null);
+                    } else {
+                        JsonObject paramsJsonObject = new JsonObject()
+                                .put("versionType", message.body().getString("versionType"));
+                        // 根据不同权限查询记录
+                        if (Objects.nonNull(ars.result()) && ars.result().getString("adminuid").equals(jsonObject.getString("uid")))
+                            paramsJsonObject.put("lockName", jsonObject.getString("devname"))
+                                    .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
+                                            , message.body().getString("end_time"))).put("nickName", new JsonObject().put("$regex"
+                                    , message.body().getString("content")).put("$options", "i"));//不区分大小写
+                        else
+                            paramsJsonObject.put("lockName", jsonObject.getString("devname")).put("uname", ars.result().getString("uname"))
+                                    .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
+                                            , message.body().getString("end_time"))).put("nickName", new JsonObject().put("$regex"
+                                    , message.body().getString("content")).put("$options", "i"));//不区分大小写
+
+                        int page = message.body().getInteger("page");
+                        int pageNum = message.body().getInteger("pageNum");
+                        MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
+                                new FindOptions().setSort(new JsonObject().put("open_time", -1))
+                                        .setLimit(page * pageNum).setSkip((page - 1) * pageNum), rs -> {
+                                    if (rs.failed()) {
+                                        rs.cause().printStackTrace();
+                                        message.reply(null);
+                                    } else {
+                                        if (Objects.nonNull(rs.result())) {
+                                            message.reply(new JsonArray(rs.result()));
+                                        } else
+                                            message.reply(new JsonArray());
+                                    }
+                                });
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 通过网关开锁
+     * @author zhang bo
+     * @date 18-7-20
+     * @version 1.0
+     */
+    public void openLockByGateway(Message<JsonObject> message) {
+        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("userId"), as -> {
+            if (as.failed()) {
+                logger.error(as.cause().getMessage(), as);
+            } else {
+                if (Objects.nonNull(as.result())) {
+                    JsonObject userInfo = new JsonObject(as.result());
+                    MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+                                    .put("lockName", message.body().getString("deviceId")).put("uid", message.body().getString("userId"))
+                                    .put("medium", message.body().getString("gwId")).put("open_type"
+                                    , message.body().getJsonObject("params").getString("type")).put("open_time"
+                                    , message.body().getString("timestamp"))
+                            , new JsonObject().put("$set", new JsonObject()
+                                    .put("open_time", message.body().getString("timestamp"))
+                                    .put("open_type", message.body().getJsonObject("params").getString("type"))
+                                    .put("medium", message.body().getString("gwId"))
+                                    .put("lockName", message.body().getString("deviceId"))
+                                    .put("uid", message.body().getString("userId"))
+                                    .put("nickName", userInfo.getString("nickName")))
+                            , new UpdateOptions().setMulti(false).setUpsert(true), rs -> {
+                                if (rs.failed())
+                                    logger.error(rs.cause().getMessage(), rs);
+                            });
+                }
+            }
+        });
+
+    }
+
 }
 
 

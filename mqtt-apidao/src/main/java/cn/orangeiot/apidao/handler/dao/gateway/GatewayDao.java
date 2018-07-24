@@ -67,7 +67,7 @@ public class GatewayDao {
                             userResult.cause().printStackTrace();
                             message.reply(null);
                         } else {
-                            //todo 加入审批列表
+                            // 加入审批列表
                             if (Objects.nonNull(userResult.result())) {
                                 JsonObject jsonObject = new JsonObject(userResult.result());
                                 MongoClient.client.findOne("kdsApprovalList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
@@ -214,7 +214,7 @@ public class GatewayDao {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1).put("adminuid", 1)), rs -> {
+                .put("deviceNickName", 1).put("adminuid", 1).put("status", 1)), rs -> {
             if (rs.failed()) {
                 rs.cause().printStackTrace();
                 message.reply(null);
@@ -226,7 +226,7 @@ public class GatewayDao {
                         e.put("isAdmin", 2);//普通用户
                     e.remove("adminuid");
                     return e;
-                }).collect(Collectors.toList());
+                }).filter(e -> !Objects.nonNull(e.getValue("status")) || e.getInteger("status") != 2).collect(Collectors.toList());
                 message.reply(new JsonArray(resultList));
             }
         });
@@ -342,16 +342,18 @@ public class GatewayDao {
                 } else {
                     message.reply(new JsonArray(rs.result()));
 
-                    MongoClient.client.removeDocuments("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
+                    MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
                             , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
-                            , as -> {
+                            , new JsonObject().put("$set", new JsonObject().put("status", 2)),
+                            new UpdateOptions().setUpsert(false).setMulti(true), as -> {//status 2失效
                                 if (as.failed()) {
                                     as.cause().printStackTrace();
                                     message.reply(null);
                                 } else {
-                                    message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "true"));
+                                    message.reply(new JsonObject(), new DeliveryOptions().addHeader("mult", "false"));
                                 }
                             });
+
                     //未审批的列表失效
                     MongoClient.client.updateCollectionWithOptions("kdsApprovalList", new JsonObject().put("deviceSN"
                             , message.body().getString("devuuid")).put("type", 1)
@@ -503,7 +505,7 @@ public class GatewayDao {
                                 message.body().getString("clientId").split(":")[1]),
                                 new JsonObject().put("$addToSet", new JsonObject().put("deviceList"
                                         , message.body().getJsonObject("eventparams")))
-                                , new UpdateOptions().setUpsert(false), rs -> {
+                                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                                     if (rs.failed()) {
                                         rs.cause().printStackTrace();
                                     }
@@ -526,7 +528,7 @@ public class GatewayDao {
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.event_str"
                         , message.body().getJsonObject("eventparams").getString("event_str"))
                         .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//下线狀態
-                , new UpdateOptions().setUpsert(false), rs -> {
+                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
                     }
@@ -547,7 +549,7 @@ public class GatewayDao {
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.event_str"
                         , message.body().getJsonObject("eventparams").getString("event_str"))
                         .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//刪除狀態
-                , new UpdateOptions().setUpsert(false), rs -> {
+                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
                         rs.cause().printStackTrace();
                     }
@@ -580,6 +582,99 @@ public class GatewayDao {
                         } else {
                             message.reply(new JsonObject().put("deviceList", new JsonArray()));
                         }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 開門記錄
+     * @author zhang bo
+     * @date 18-7-20
+     * @version 1.0
+     */
+    public void EventOpenLock(Message<JsonObject> message) {
+        MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+                        .put("lockName", message.body().getString("deviceId")).put("user_num", message.body().getString("userID"))
+                        .put("medium", message.body().getString("gwId"))
+//                .put("open_type", message.body().getJsonObject("params").getString("type"))
+                        .put("open_time", message.body().getString("timestamp"))
+                , new JsonObject().put("$set", new JsonObject()
+                        .put("open_time", message.body().getString("timestamp"))
+                        .put("open_type", message.body().getJsonObject("params").getString("type"))
+                        .put("medium", message.body().getString("gwId"))
+                        .put("lockName", message.body().getString("deviceId"))
+                        .put("user_num", message.body().getString("userID")))
+                , new UpdateOptions().setMulti(false).setUpsert(true), rs -> {
+                    if (rs.failed())
+                        logger.error(rs.cause().getMessage(), rs);
+                });
+    }
+
+
+    /**
+     * @Description 查詢開鎖記錄
+     * @author zhang bo
+     * @date 18-7-20
+     * @version 1.0
+     */
+    public void selectOpenLock(Message<JsonObject> message) {
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("devuuid", message.body().getString("deviceSN"))
+                        .put("adminuid", new JsonObject().put("$exists", true)).put("uid", message.body().getString("uid")),
+                new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
+                        .put("deviceSN", 1)), ars -> {
+                    if (ars.failed()) {
+                        ars.cause().printStackTrace();
+                        message.reply(null);
+                    } else {
+                        JsonObject paramsJsonObject = new JsonObject();
+                        // 根据不同权限查询记录
+                        if (ars.result().size() > 0 && ars.result().get(0).getString("adminuid").equals(message.body().getString("uid"))) {
+
+                            MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject()
+                                            .put("deviceList.deviceId", message.body().getString("deviceId")),
+                                    new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
+                                            .put("deviceSN", 1)), rs -> {
+
+                                        List<String> deviceList = ars.result().stream().filter(e -> e.getString("adminuid").equals(message.body().getString("uid"))).map(e -> e.getString("deviceSN"))
+                                                .distinct().collect(Collectors.toList());
+
+                                        paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+                                                .put("medium", new JsonObject().put("$in", new JsonArray(deviceList)));
+                                        selectLockRecord(message, paramsJsonObject);
+                                    });
+                        } else {//普通用戶
+                            paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+                                    .put("uname", message.body().getString("uid"));
+                            selectLockRecord(message, paramsJsonObject);
+                        }
+
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 所記錄
+     * @author zhang bo
+     * @date 18-7-20
+     * @version 1.0
+     */
+    public void selectLockRecord(Message<JsonObject> message, JsonObject paramsJsonObject) {
+        int page = message.body().getInteger("page");
+        int pageNum = message.body().getInteger("pageNum");
+        MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
+                new FindOptions().setSort(new JsonObject().put("open_time", -1))
+                        .setLimit(page * pageNum).setSkip((page - 1) * pageNum)
+                        .setFields(new JsonObject().put("_id", 0).put("uid", 0).put("medium", 0)), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(rs.result())) {
+                            message.reply(new JsonArray(rs.result()));
+                        } else
+                            message.reply(new JsonArray());
                     }
                 });
     }

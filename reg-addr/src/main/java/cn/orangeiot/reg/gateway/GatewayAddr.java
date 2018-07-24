@@ -37,4 +37,8 @@ public interface GatewayAddr {
     String GET_DEVICE_List="getDeviceList";//獲取設備列表
 
     String GET_GW_DEVICE_List="getGWDeviceList";//獲取网关設備列表
+
+    String EVENT_OPEN_LOCK="eventOpenLock";//事件開鎖
+
+    String SELECT_OPEN_LOCK_RECORD="selectOpenLockRecord";//查詢開鎖記錄
 }

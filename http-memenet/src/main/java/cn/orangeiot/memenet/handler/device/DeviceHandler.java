@@ -48,7 +48,7 @@ public class DeviceHandler implements GatewayAddr {
     public void onBindDeviceByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onBindDeviceByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
@@ -121,7 +121,7 @@ public class DeviceHandler implements GatewayAddr {
     public void onRelieveDeviceByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onRelieveDeviceByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as.cause());
@@ -166,7 +166,7 @@ public class DeviceHandler implements GatewayAddr {
     public void onDelDevice(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onDelDevice===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as.cause());
@@ -201,7 +201,7 @@ public class DeviceHandler implements GatewayAddr {
     public void onDelGatewayByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onDelGatewayByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as.cause());

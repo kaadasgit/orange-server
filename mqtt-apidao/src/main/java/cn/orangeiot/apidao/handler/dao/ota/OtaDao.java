@@ -126,6 +126,7 @@ public class OtaDao {
      * @date 18-4-11
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void getUpgradeDevice(Message<JsonObject> message) {
         logger.info("==getUpgradeDevice==params -> {}", message.body());
 
@@ -163,11 +164,10 @@ public class OtaDao {
                                 .collect(Collectors.toList());
                         switch (message.body().getInteger("modelType")) {
                             case 1://网关
-                                pnJsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(_ids)));
-                                break;
+                                getDeviceByGateway(pnJsonObject, message,_ids);
+                                return;
                             case 2://挂载设备
-                                pnJsonObject.put("deviceList.deviceId"
-                                        , new JsonObject().put("$in", new JsonArray(_ids)));
+                                pnJsonObject.put("deviceList.deviceId", new JsonObject().put("$in", new JsonArray(_ids)));
                                 break;
                             case 3://蓝牙
                                 getDeviceByApp(rs.result(), message);
@@ -191,6 +191,45 @@ public class OtaDao {
                                 });
                     }
                 });
+    }
+
+
+    /**
+     * @Description 根据gateway获取相应设备
+     * @author zhang bo
+     * @date 18-7-16
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getDeviceByGateway(JsonObject jsonObject, Message<JsonObject> message,List<String> ids) {
+        if (message.body().getInteger("type")==1) {//用户确认升级
+            jsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(ids)));
+            MongoClient.client.findWithOptions("kdsGatewayDeviceList", jsonObject
+                    , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
+                            .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
+                            .put("adminuid", 1)), as -> {
+                        if (as.failed()) {
+                            as.cause().printStackTrace();
+                            message.reply(null);
+                        } else {
+                            message.reply(new JsonArray(
+                                    as.result().stream().distinct().collect(Collectors.toList())));
+                        }
+                    });
+        }else{
+            jsonObject.put("SN", new JsonObject().put("$in", new JsonArray(ids)));
+            MongoClient.client.findWithOptions("kdsProductInfoList", jsonObject
+                    , new FindOptions().setFields(new JsonObject().put("SN", 1)
+                            .put("_id", 0)), as -> {
+                        if (as.failed()) {
+                            as.cause().printStackTrace();
+                            message.reply(null);
+                        } else {
+                            message.reply(new JsonArray(
+                                    as.result().stream().distinct().collect(Collectors.toList())));
+                        }
+                    });
+        }
     }
 
 

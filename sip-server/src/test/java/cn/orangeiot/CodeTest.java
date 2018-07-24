@@ -79,7 +79,7 @@ public class CodeTest {
 
 
     public Buffer encodeToWire() {
-        int length = 1024; // TODO make this configurable
+        int length = 1024; //  make this configurable
         Buffer buffer = Buffer.buffer(length);
         buffer.appendInt(0);
 

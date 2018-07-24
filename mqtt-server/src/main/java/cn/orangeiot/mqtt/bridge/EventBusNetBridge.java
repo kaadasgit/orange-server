@@ -83,12 +83,12 @@ public class EventBusNetBridge {
         return isBridged;
     }
 
-    // TODO: this method is equal to MQTTSession.isTenantSession, need refactoring
+    // : this method is equal to MQTTSession.isTenantSession, need refactoring
     private boolean isTenantSession() {
         boolean isTenantSession = tenant!=null && tenant.trim().length()>0;
         return isTenantSession;
     }
-    // TODO: this method is equal to MQTTSession.tenantMatch, need refactoring
+    // : this method is equal to MQTTSession.tenantMatch, need refactoring
     private boolean tenantMatch(Message<Buffer> message) {
         boolean isTenantSession = isTenantSession();
         boolean tenantMatch;

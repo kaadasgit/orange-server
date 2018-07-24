@@ -18,7 +18,7 @@ public class MQTTNetSocket extends MQTTSocket {
     private NetSocket netSocket;
 
     public MQTTNetSocket(Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions) {
-        super(vertx, config,sessions,netSocket);
+        super(vertx, config, sessions, netSocket);
         this.netSocket = netSocket;
     }
 
@@ -47,9 +47,9 @@ public class MQTTNetSocket extends MQTTSocket {
             netSocket.write(bytes);
             if (netSocket.writeQueueFull()) {
                 netSocket.pause();
-                netSocket.drainHandler( done -> netSocket.resume() );
+                netSocket.drainHandler(done -> netSocket.resume());
             }
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             logger.error(e.getMessage());
         }
     }

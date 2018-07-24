@@ -612,7 +612,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
         logger.debug("Disconnect from " + clientID + " ...");
         /*
-         * TODO: implement this behaviour
+         * : implement this behaviour
          * On receipt of DISCONNECT the Server:
          * - MUST discard any Will Message associated with the current connection without publishing it, as described in Section 3.1.2.5 [MQTT-3.14.4-3].
          * - SHOULD close the Network Connection if the Client has not already done so.

@@ -7,6 +7,7 @@ import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -14,7 +15,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import scala.util.parsing.json.JSONArray;
 
+import javax.xml.crypto.Data;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -561,6 +565,171 @@ public class LockHandler implements AdminlockAddr {
                                 routingContext.fail(501);
                             } else {
                                 routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                            }
+                        });
+            }
+        });
+    }
+
+    /**
+     * @Description 修改锁的信息
+     * @author zhang bo
+     * @date 18-5-22
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    @Deprecated
+    public void updateLockInfo(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("lockNickName", DataType.STRING)
+                .put("devname", DataType.STRING).put("uid", DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_LOCK_INFO, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 上传无需鉴权的开门记录
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void openLockNoAuthRecord(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
+                .put("open_type", DataType.STRING).put("uid", DataType.STRING)
+                .put("open_purview",DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + OPEN_LOCK_NO_AUTH_SUCCESS, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+    /**
+     * @Description 查詢开门記錄
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void selectOpenLockRecord(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("content", DataType.STRING).put("start_time", DataType.STRING)
+                .put("end_time", DataType.STRING).put("devname", DataType.STRING)
+                .put("page", DataType.INTEGER).put("pageNum", DataType.INTEGER), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + SELECT_OPNELOCK_RECORD, asyncResult.result()
+                        , SendOptions.getInstance(), (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>()
+                                            .setData(rs.result().body())).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 修改锁编号信息
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void updateLockNumberInfo(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("num", DataType.STRING).put("devname", DataType.STRING)
+                .put("numNickname", DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_LOCK_NUM_INFO, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 獲取lock編號信息
+     * @author zhang bo
+     * @date 18-7-13
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getLockNumberInfo(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("devname", DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + GET_LOCK_NUM_INFO, asyncResult.result()
+                        , SendOptions.getInstance(), (AsyncResult<Message<JsonArray>> rs) -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>()
+                                            .setData(rs.result().body())).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                }
                             }
                         });
             }

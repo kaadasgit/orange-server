@@ -94,4 +94,15 @@ public class DeviceHandler implements EventbusAddr {
         });
     }
 
+
+    /**
+     * @Description 時間開鎖
+     * @author zhang bo
+     * @date 18-7-20
+     * @version 1.0
+     */
+    public void openLock(JsonObject jsonObject) {
+        vertx.eventBus().send(GatewayAddr.class.getName() + EVENT_OPEN_LOCK, jsonObject);
+    }
+
 }

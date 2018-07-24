@@ -4,6 +4,7 @@ import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.util.DataType;
 import cn.orangeiot.util.Result;
 import cn.orangeiot.util.VerifyParamsUtil;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -229,6 +230,9 @@ public class SockJSSocketAndMqttSocketImpl {
                 publishWebClient(JsonObject.mapFrom(new Result<JsonObject>().setErrorMessage(ErrorType.MQTT_CONNECT_FAIL.getKey()
                         , ErrorType.MQTT_CONNECT_FAIL.getValue())));
                 logger.error(connect.cause().getMessage(), connect.cause());
+                publishWebClient(JsonObject.mapFrom(new Result<JsonObject>().setErrorMessage(500, "CONNECTION_REFUSED_NOT_AUTHORIZED"))
+                );//连接成功
+                sockJSSocket.close();
             } else
                 client.subscribe(topics);
         }).subscribeCompletionHandler(ackMsg -> {

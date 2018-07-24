@@ -21,7 +21,7 @@ public class ThreadExiedTest {
                     System.out.println(index);
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
+                    //  Auto-generated catch block
 //                    logger.error(e.getMessage(), e);
                 }
             });

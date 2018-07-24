@@ -91,7 +91,7 @@ public class RtpVerticle extends AbstractVerticle {
         if (res.succeeded()) {
             Vertx vertx = res.result();
 
-            //todo 建立RTP实例
+            // 建立RTP实例
             RtpVertFactory.getInstance().createListeningPoint(vertx, jsonObject);
         }
     }

@@ -45,7 +45,7 @@ public class UserHandler implements UserAddr {
     public void onRegisterUser(Message<JsonObject> message) {
         logger.info("==UserHandler=onRegisterUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
@@ -83,7 +83,7 @@ public class UserHandler implements UserAddr {
     public void onUpdatePwd(Message<JsonObject> message) {
         logger.info("==UserHandler=onUpdatePwd===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
@@ -118,7 +118,7 @@ public class UserHandler implements UserAddr {
     public void onRegisterUserBulk(Message<JsonArray> message) {
         logger.info("==UserHandler=onRegisterUserBulk===");
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as.cause());

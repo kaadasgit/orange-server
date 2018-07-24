@@ -7,6 +7,7 @@ import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.EventbusAddr;
+import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
@@ -456,6 +457,7 @@ public class UserHandler implements EventbusAddr {
      * @date 18-5-22
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void sendPushNotify(RoutingContext routingContext) {
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
@@ -468,5 +470,4 @@ public class UserHandler implements EventbusAddr {
             }
         });
     }
-
 }

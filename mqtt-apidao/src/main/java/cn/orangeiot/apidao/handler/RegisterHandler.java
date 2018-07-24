@@ -91,24 +91,7 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(MessageAddr.class.getName() + GET_CODE_COUNT, messageHandler::onGetCodeCount);
 
             //连接处理
-            UserDao userDao = new UserDao(jwtAuth, vertx);
-            vertx.eventBus().consumer(config.getString("consumer_connect_dao"), userDao::getUser);
-            vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_TEL, userDao::telLogin);
-            vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_MAIL, userDao::mailLogin);
-            vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_LOGIN, userDao::verifyLogin);
-            vertx.eventBus().consumer(UserAddr.class.getName() + REGISTER_USER_TEL, userDao::registerTel);
-            vertx.eventBus().consumer(UserAddr.class.getName() + REGISTER_USER_MAIL, userDao::registerMail);
-            vertx.eventBus().consumer(UserAddr.class.getName() + GET_USER_NICKNAME, userDao::getNickname);
-            vertx.eventBus().consumer(UserAddr.class.getName() + UPDATE_USER_NICKNAME, userDao::updateNickname);
-            vertx.eventBus().consumer(UserAddr.class.getName() + UPDATE_USER_PWD, userDao::updateUserpwd);
-            vertx.eventBus().consumer(UserAddr.class.getName() + FORGET_USER_PWD, userDao::forgetUserpwd);
-            vertx.eventBus().consumer(UserAddr.class.getName() + SUGGEST_MSG, userDao::suggestMsg);
-            vertx.eventBus().consumer(UserAddr.class.getName() + USER_LOGOUT, userDao::logOut);
-            vertx.eventBus().consumer(UserAddr.class.getName() + MEME_USER, userDao::meMeUser);
-            vertx.eventBus().consumer(UserAddr.class.getName() + MEME_REGISTER_USER_BULK, userDao::meMeUserBulk);
-            vertx.eventBus().consumer(UserAddr.class.getName() + GET_GW_ADMIN, userDao::selectGWAdmin);
-            vertx.eventBus().consumer(UserAddr.class.getName() + UPLOAD_JPUSHID, userDao::uploadPushId);
-            vertx.eventBus().consumer(MessageAddr.class.getName() + GET_PUSHID, userDao::getPushId);
+            UserAboutEvent(jwtAuth, vertx);
 
             //文件处理
             FileDao fileDao = new FileDao();
@@ -120,78 +103,22 @@ public class RegisterHandler implements EventbusAddr {
             vertx.eventBus().consumer(config.getString("consumer_verifyCodeCron"), jobDao::onMsgVerifyCodeCount);
 
             //锁相关处理
-            AdminDevDao adminDevDao = new AdminDevDao(vertx);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + CREATE_ADMIN_DEV, adminDevDao::createAdminDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_EVEND_DEV, adminDevDao::deletevendorDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_ADMIN_DEV, adminDevDao::deleteAdminDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_NORMAL_DEV, adminDevDao::deleteNormalDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + CREATE_NORMAL_DEV, adminDevDao::createNormalDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_OPEN_LOCK_RECORD, adminDevDao::downloadOpenLocklist);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_USER_PREMISSON, adminDevDao::updateNormalDevlock);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + REQUEST_USER_OPEN_LOCK, adminDevDao::adminOpenLock);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + LOCK_AUTH, adminDevDao::openLockAuth);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_LIST, adminDevDao::getAdminDevlist);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_USER_LIST, adminDevDao::getNormalDevlist);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + EDIT_ADMIN_DEV, adminDevDao::editAdminDev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_LONGTITUDE, adminDevDao::getAdminDevlocklongtitude);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_ADMIN_DEV_AUTO_LOCK, adminDevDao::updateAdminDevAutolock);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_DEV_NICKNAME, adminDevDao::updateAdminlockNickName);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + CHECK_DEV, adminDevDao::checkAdmindev);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPLOAD_OPEN_LOCK_RECORD, adminDevDao::uploadOpenLockList);
+            lockAboutEvent(vertx);
 
             //生产相关
-            DeviceDao deviceDao = new DeviceDao(vertx);
-            vertx.eventBus().consumer(MemenetAddr.class.getName() + PRODUCTION_DEVICESN, deviceDao::productionDeviceSN);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_PRODUCT, deviceDao::productionModelSN);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MAC_IN, deviceDao::modelMacIn);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_MODEL_PASSWORD, deviceDao::getPwdByMac);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, deviceDao::modelManyMacIn);
-            vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, deviceDao::getWriteMacResult);
+            productAboutEvent(vertx);
 
             //网关相关
-            GatewayDao gatewayDao = new GatewayDao();
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + BIND_GATEWAY_USER, gatewayDao::onbindGatewayByUser);
-            vertx.eventBus().consumer(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, gatewayDao::onGetGatewayAdmin);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, gatewayDao::onApprovalBindGateway);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWAY_BIND_LIST, gatewayDao::onGetGatewayBindList);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWAY_APPROVAL_LIST, gatewayDao::onApprovalList);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_USERINFO, gatewayDao::onGetUserInfo);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, gatewayDao::onupdateGWDomain);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + UNBIND_GATEWAY, gatewayDao::onUnbindGateway);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWWAY_USERID_LIST, gatewayDao::onGetUserIdList);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEL_GW_USER, gatewayDao::onDelGatewayUser);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_USER_LIST, gatewayDao::onGetGatewayUserList);
-            vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_ONLINE, gatewayDao::deviceOnline);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_OFFLINE, gatewayDao::deviceOffline);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_DELETE, gatewayDao::deviceDelete);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_DEVICE_List, gatewayDao::getDeviceList);
-            vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_DEVICE_List, gatewayDao::getDeviceList);
+            gatewayAboutEvent(vertx);
 
             //stream 相關
-            RegisterDao registerDao = new RegisterDao();
-            vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_REGISTER_USER, registerDao::saveRegisterInfo);
-            vertx.eventBus().consumer(UserAddr.class.getName() + GET_REGISTER_USER, registerDao::getRegisterInfo);
-            vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
-            vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);
-            vertx.eventBus().consumer(UserAddr.class.getName() + GET_CALL_ID, registerDao::getCallIdAddr);
-
+            streamAboutEvent(vertx);
 
             //ota 升級相關
-            OtaDao otaDao = new OtaDao();
-            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_MODEL, otaDao::selectModelType);
-            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_DATE_RANGE, otaDao::selectDateRange);
-            vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_NUM_RANGE, otaDao::selectNumRange);
-            vertx.eventBus().consumer(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, otaDao::submitOTAUpgrade);
-            vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_SELECT_DATA, otaDao::getUpgradeDevice);
-            vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_APPROVATE_RECORD, otaDao::otaApprovateRecord);
+            oTaAboutEvent(vertx);
 
             //storage
-            StorageDao storageDao = new StorageDao(vertx);
-            vertx.eventBus().consumer(StorageAddr.class.getName() + PUT_STORAGE_DATA, storageDao::putStorageData);
-            vertx.eventBus().consumer(StorageAddr.class.getName() + DEL_STORAGE_DATA, storageDao::delStorageData);
-            vertx.eventBus().consumer(StorageAddr.class.getName() + GET_STORAGE_DATA, storageDao::getStorageData);
-            vertx.eventBus().consumer(StorageAddr.class.getName() + DELALL_STORAGE_DATA, storageDao::delAllStorageData);
+            storageAboutEvent(vertx);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
@@ -201,4 +128,160 @@ public class RegisterHandler implements EventbusAddr {
     }
 
 
+    /**
+     * @Description 鎖相關事件
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void lockAboutEvent(Vertx vertx) {
+        AdminDevDao adminDevDao = new AdminDevDao(vertx);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + CREATE_ADMIN_DEV, adminDevDao::createAdminDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_EVEND_DEV, adminDevDao::deletevendorDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_ADMIN_DEV, adminDevDao::deleteAdminDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + DELETE_NORMAL_DEV, adminDevDao::deleteNormalDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + CREATE_NORMAL_DEV, adminDevDao::createNormalDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_OPEN_LOCK_RECORD, adminDevDao::downloadOpenLocklist);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_USER_PREMISSON, adminDevDao::updateNormalDevlock);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + REQUEST_USER_OPEN_LOCK, adminDevDao::adminOpenLock);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + LOCK_AUTH, adminDevDao::openLockAuth);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_LIST, adminDevDao::getAdminDevlist);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_USER_LIST, adminDevDao::getNormalDevlist);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + EDIT_ADMIN_DEV, adminDevDao::editAdminDev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_DEV_LONGTITUDE, adminDevDao::getAdminDevlocklongtitude);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_ADMIN_DEV_AUTO_LOCK, adminDevDao::updateAdminDevAutolock);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_DEV_NICKNAME, adminDevDao::updateAdminlockNickName);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + CHECK_DEV, adminDevDao::checkAdmindev);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPLOAD_OPEN_LOCK_RECORD, adminDevDao::uploadOpenLockList);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_LOCK_INFO, adminDevDao::updateLockInfo);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + OPEN_LOCK_NO_AUTH_SUCCESS, adminDevDao::openLockNoAuth);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_LOCK_NUM_INFO, adminDevDao::updateLockNumInfo);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_LOCK_NUM_INFO, adminDevDao::getLockNumInfo);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + SELECT_OPNELOCK_RECORD, adminDevDao::selectOpenLockRecord);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + OPEN_LOCK_BY_GATEWAY, adminDevDao::openLockByGateway);
+    }
+
+
+    /**
+     * @Description 网关相关事件
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void gatewayAboutEvent(Vertx vertx) {
+        GatewayDao gatewayDao = new GatewayDao();
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + BIND_GATEWAY_USER, gatewayDao::onbindGatewayByUser);
+        vertx.eventBus().consumer(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, gatewayDao::onGetGatewayAdmin);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, gatewayDao::onApprovalBindGateway);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWAY_BIND_LIST, gatewayDao::onGetGatewayBindList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWAY_APPROVAL_LIST, gatewayDao::onApprovalList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_USERINFO, gatewayDao::onGetUserInfo);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, gatewayDao::onupdateGWDomain);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + UNBIND_GATEWAY, gatewayDao::onUnbindGateway);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATEWWAY_USERID_LIST, gatewayDao::onGetUserIdList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + DEL_GW_USER, gatewayDao::onDelGatewayUser);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_USER_LIST, gatewayDao::onGetGatewayUserList);
+        vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_ONLINE, gatewayDao::deviceOnline);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_OFFLINE, gatewayDao::deviceOffline);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_DELETE, gatewayDao::deviceDelete);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_DEVICE_List, gatewayDao::getDeviceList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_DEVICE_List, gatewayDao::getDeviceList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + EVENT_OPEN_LOCK, gatewayDao::EventOpenLock);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + EVENT_OPEN_LOCK, gatewayDao::EventOpenLock);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + SELECT_OPEN_LOCK_RECORD, gatewayDao::selectOpenLock);
+    }
+
+
+    /**
+     * @Description 用戶處理相關
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void UserAboutEvent(JWTAuth jwtAuth, Vertx vertx) {
+        UserDao userDao = new UserDao(jwtAuth, vertx);
+        vertx.eventBus().consumer(config.getString("consumer_connect_dao"), userDao::getUser);
+        vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_TEL, userDao::telLogin);
+        vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_MAIL, userDao::mailLogin);
+        vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_LOGIN, userDao::verifyLogin);
+        vertx.eventBus().consumer(UserAddr.class.getName() + REGISTER_USER_TEL, userDao::registerTel);
+        vertx.eventBus().consumer(UserAddr.class.getName() + REGISTER_USER_MAIL, userDao::registerMail);
+        vertx.eventBus().consumer(UserAddr.class.getName() + GET_USER_NICKNAME, userDao::getNickname);
+        vertx.eventBus().consumer(UserAddr.class.getName() + UPDATE_USER_NICKNAME, userDao::updateNickname);
+        vertx.eventBus().consumer(UserAddr.class.getName() + UPDATE_USER_PWD, userDao::updateUserpwd);
+        vertx.eventBus().consumer(UserAddr.class.getName() + FORGET_USER_PWD, userDao::forgetUserpwd);
+        vertx.eventBus().consumer(UserAddr.class.getName() + SUGGEST_MSG, userDao::suggestMsg);
+        vertx.eventBus().consumer(UserAddr.class.getName() + USER_LOGOUT, userDao::logOut);
+        vertx.eventBus().consumer(UserAddr.class.getName() + MEME_USER, userDao::meMeUser);
+        vertx.eventBus().consumer(UserAddr.class.getName() + MEME_REGISTER_USER_BULK, userDao::meMeUserBulk);
+        vertx.eventBus().consumer(UserAddr.class.getName() + GET_GW_ADMIN, userDao::selectGWAdmin);
+        vertx.eventBus().consumer(UserAddr.class.getName() + UPLOAD_JPUSHID, userDao::uploadPushId);
+        vertx.eventBus().consumer(MessageAddr.class.getName() + GET_PUSHID, userDao::getPushId);
+    }
+
+
+    /**
+     * @Description 生产相关的事件
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void productAboutEvent(Vertx vertx) {
+        DeviceDao deviceDao = new DeviceDao(vertx);
+        vertx.eventBus().consumer(MemenetAddr.class.getName() + PRODUCTION_DEVICESN, deviceDao::productionDeviceSN);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_PRODUCT, deviceDao::productionModelSN);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MAC_IN, deviceDao::modelMacIn);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_MODEL_PASSWORD, deviceDao::getPwdByMac);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, deviceDao::modelManyMacIn);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, deviceDao::getWriteMacResult);
+    }
+
+
+    /**
+     * @Description sip和流相关事件
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void streamAboutEvent(Vertx vertx){
+        RegisterDao registerDao = new RegisterDao();
+        vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_REGISTER_USER, registerDao::saveRegisterInfo);
+        vertx.eventBus().consumer(UserAddr.class.getName() + GET_REGISTER_USER, registerDao::getRegisterInfo);
+        vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
+        vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);
+        vertx.eventBus().consumer(UserAddr.class.getName() + GET_CALL_ID, registerDao::getCallIdAddr);
+    }
+
+
+    /**
+     * @Description ota 相关事件
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void oTaAboutEvent(Vertx vertx){
+        OtaDao otaDao = new OtaDao();
+        vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_MODEL, otaDao::selectModelType);
+        vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_DATE_RANGE, otaDao::selectDateRange);
+        vertx.eventBus().consumer(OtaAddr.class.getName() + SELECT_NUM_RANGE, otaDao::selectNumRange);
+        vertx.eventBus().consumer(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, otaDao::submitOTAUpgrade);
+        vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_SELECT_DATA, otaDao::getUpgradeDevice);
+        vertx.eventBus().consumer(OtaAddr.class.getName() + OTA_APPROVATE_RECORD, otaDao::otaApprovateRecord);
+    }
+
+
+    /**
+     * @Description 存儲相關
+     * @author zhang bo
+     * @date 18-7-11
+     * @version 1.0
+     */
+    public void storageAboutEvent(Vertx vertx){
+        StorageDao storageDao = new StorageDao(vertx);
+        vertx.eventBus().consumer(StorageAddr.class.getName() + PUT_STORAGE_DATA, storageDao::putStorageData);
+        vertx.eventBus().consumer(StorageAddr.class.getName() + DEL_STORAGE_DATA, storageDao::delStorageData);
+        vertx.eventBus().consumer(StorageAddr.class.getName() + GET_STORAGE_DATA, storageDao::getStorageData);
+        vertx.eventBus().consumer(StorageAddr.class.getName() + DELALL_STORAGE_DATA, storageDao::delAllStorageData);
+    }
 }

@@ -1068,6 +1068,129 @@
         }
       }
     },
+    "/adminlock/noAuth/upload": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "上传无需服务器鉴权的开门记录",
+        "description": "",
+        "operationId": "upload",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/upload"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/info/number/update": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "修改锁编号信息",
+        "description": "",
+        "operationId": "updateNum",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/updateNum"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/info/number/get": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "獲取锁编号信息(注:本地持久化,修改编号信息,重新拉取)",
+        "description": "",
+        "operationId": "getNum",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/getNum"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
     "/normallock/reg/deletenormaldev": {
       "post": {
         "tags": [
@@ -1301,6 +1424,47 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/uploadopenlocklist"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/openlock/record/select": {
+      "post": {
+        "tags": [
+          "openlock"
+        ],
+        "summary": "查詢开门記錄",
+        "description": "",
+        "operationId": "select",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/selectRecord"
             }
           }
         ],
@@ -2105,7 +2269,8 @@
       "required": [
         "open_time",
         "open_type",
-        "user_num"
+        "user_num",
+        "nickName"
       ],
       "properties": {
         "open_time": {
@@ -2119,6 +2284,10 @@
         "user_num": {
           "type": "string",
           "description": "开锁编号"
+        },
+        "nickName": {
+          "type": "string",
+          "description": "开锁编号昵称"
         }
       }
     },
@@ -2198,6 +2367,121 @@
         "user_id": {
           "type": "string",
           "description": "用户登录返回的uid"
+        }
+      }
+    },
+    "upload": {
+      "type": "object",
+      "required": [
+        "devname",
+        "open_type",
+        "uid",
+        "open_purview"
+      ],
+      "properties": {
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "open_type": {
+          "type": "string",
+          "description": "开锁类型"
+        },
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "open_purview": {
+          "type": "string",
+          "description": "open_purview 1表示1次  2表示多次 3表示永久"
+        }
+      }
+    },
+    "selectRecord": {
+      "type": "object",
+      "required": [
+        "start_time",
+        "content",
+        "uid",
+        "end_time",
+        "devname",
+        "page",
+        "pageNum"
+      ],
+      "properties": {
+        "start_time": {
+          "type": "string",
+          "description": "开始时间 (yyyy-MM-dd HH:mm:ss)"
+        },
+        "content": {
+          "type": "string",
+          "description": "查询的用户昵称"
+        },
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "end_time": {
+          "type": "string",
+          "description": "结束时间  (yyyy-MM-dd HH:mm:ss)"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32",
+          "description": "请求页数"
+        },
+        "pageNum": {
+          "type": "integer",
+          "format": "int32",
+          "description": "每页条数"
+        }
+      }
+    },
+    "updateNum": {
+      "type": "object",
+      "required": [
+        "uid",
+        "devname",
+        "num",
+        "numNickname"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "num": {
+          "type": "string",
+          "description": "编号"
+        },
+        "numNickname": {
+          "type": "string",
+          "description": "编号昵称"
+        }
+      }
+    },
+    "getNum": {
+      "type": "object",
+      "required": [
+        "uid",
+        "devname"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
         }
       }
     }
