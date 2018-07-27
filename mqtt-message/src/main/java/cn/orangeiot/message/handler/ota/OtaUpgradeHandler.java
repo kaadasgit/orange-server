@@ -131,7 +131,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
         if (message.body().getInteger("modelType") == 2) {//掛載設備
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
-                JsonArray matIds=new JsonArray(rs.result().headers().get("matchIds"));
+                JsonArray matIds = new JsonArray(rs.result().headers().get("matchIds"));
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
@@ -141,24 +141,30 @@ public class OtaUpgradeHandler implements EventbusAddr {
                             else
                                 return null;
                         }).collect(Collectors.toList());
-                List<String> newDevIds= devIds.stream().filter(id->id!=null).collect(Collectors.toList());
-                return new JsonObject().put("func", "otaApprovate").put("gwId", jsonObject.getString("deviceSN"))
-                        .put("deviceId", jsonObject.getString("deviceSN"))
-                        .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
-                        .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
-                                .put("childCode", message.body().getString("childCode")).put("fileUrl"
-                                        , message.body().getString("filePathUrl")).put("SW"
-                                        , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray(newDevIds))
-                                .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
-                                        , message.body().getInteger("fileLen")))
-                        .put("otaType", 2);//掛載設備
+                List<String> newDevIds = devIds.stream().filter(id -> id != null).collect(Collectors.toList());
+                if (newDevIds.size() > 0) {
+                    return new JsonObject().put("func", "otaApprovate").put("gwId", jsonObject.getString("deviceSN"))
+                            .put("deviceId", jsonObject.getString("deviceSN"))
+                            .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
+                            .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
+                                    .put("childCode", message.body().getString("childCode")).put("fileUrl"
+                                            , message.body().getString("filePathUrl")).put("SW"
+                                            , message.body().getString("SW")).put("deviceList"
+                                            , new JsonArray(newDevIds))
+                                    .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
+                                            , message.body().getInteger("fileLen")))
+                            .put("otaType", 2);//掛載設備
+                } else {
+                    return null;
+                }
             }).forEach(e -> {
-                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
-                        , "app:" + e.getString("userId")).addHeader("qos", "1")
-                        .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", e.getString("userId")));
-                vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
-                        , deliveryOptions);
+                if (Objects.nonNull(e)) {
+                    DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
+                            , "app:" + e.getString("userId")).addHeader("qos", "1")
+                            .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", e.getString("userId")));
+                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
+                            , deliveryOptions);
+                }
             });
         } else {//網關升級
             String finalModelDevice = modelDevice;
@@ -197,7 +203,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
         if (message.body().getInteger("modelType") == 2) {//掛載設備
             rs.result().body().stream().map(e -> {
                 JsonObject jsonObject = new JsonObject(e.toString());
-                JsonArray matIds=new JsonArray(rs.result().headers().get("matchIds"));
+                JsonArray matIds = new JsonArray(rs.result().headers().get("matchIds"));
                 List<String> devIds = jsonObject.getJsonArray("deviceList")
                         .stream().map(ids -> {
                             JsonObject dataJsonObject = new JsonObject(ids.toString());
@@ -207,26 +213,32 @@ public class OtaUpgradeHandler implements EventbusAddr {
                             else
                                 return null;
                         }).collect(Collectors.toList());
-                List<String> newDevIds= devIds.stream().filter(id->id!=null).collect(Collectors.toList());
-                return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("deviceSN"))
-                        .put("deviceId", jsonObject.getString("deviceSN"))
-                        .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
-                        .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
-                                .put("childCode", message.body().getString("childCode")).put("fileUrl"
-                                        , message.body().getString("filePathUrl")).put("SW"
-                                        , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray(newDevIds))
-                                .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
-                                        , message.body().getInteger("fileLen")));
+                List<String> newDevIds = devIds.stream().filter(id -> id != null).collect(Collectors.toList());
+                if (newDevIds.size() > 0) {
+                    return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("deviceSN"))
+                            .put("deviceId", jsonObject.getString("deviceSN"))
+                            .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", jsonObject.getString("adminuid"))
+                            .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
+                                    .put("childCode", message.body().getString("childCode")).put("fileUrl"
+                                            , message.body().getString("filePathUrl")).put("SW"
+                                            , message.body().getString("SW")).put("deviceList"
+                                            , new JsonArray(newDevIds))
+                                    .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
+                                            , message.body().getInteger("fileLen")));
+                } else {
+                    return null;
+                }
             }).forEach(e -> {
-                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
-                        , "gw:" + e.getString("gwId")).addHeader("qos", "1")
-                        .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
-                vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
-                        , deliveryOptions);
+                if (Objects.nonNull(e)) {
+                    DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
+                            , "gw:" + e.getString("gwId")).addHeader("qos", "1")
+                            .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
+                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
+                            , deliveryOptions);
 
-                JsonObject final_JsonObject = new JsonObject(e.toString());
-                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
+                    JsonObject final_JsonObject = new JsonObject(e.toString());
+                    recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
+                }
             });
         } else {//網關升級
             rs.result().body().stream().map(e -> {

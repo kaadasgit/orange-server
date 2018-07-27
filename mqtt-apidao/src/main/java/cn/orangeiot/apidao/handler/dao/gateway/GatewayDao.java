@@ -618,20 +618,34 @@ public class GatewayDao {
      * @version 1.0
      */
     public void EventOpenLock(Message<JsonObject> message) {
-        MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
-                        .put("lockName", message.body().getString("deviceId")).put("user_num", message.body().getString("userID"))
-                        .put("medium", message.body().getString("gwId"))
-//                .put("open_type", message.body().getJsonObject("params").getString("type"))
-                        .put("open_time", message.body().getString("timestamp"))
-                , new JsonObject().put("$set", new JsonObject()
-                        .put("open_time", message.body().getString("timestamp"))
-                        .put("open_type", message.body().getJsonObject("params").getString("type"))
-                        .put("medium", message.body().getString("gwId"))
-                        .put("lockName", message.body().getString("deviceId"))
-                        .put("user_num", message.body().getString("userID")))
-                , new UpdateOptions().setMulti(false).setUpsert(true), rs -> {
-                    if (rs.failed())
+        MongoClient.client.findOne("kdsDeviceList", new JsonObject().put("lockName", message.body().getString("deviceId"))
+                , new JsonObject().put("infoList", 1).put("_id", 0), rs -> {//獲取鎖映射打昵稱
+                    if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
+                    } else {
+                        String nickName = "";
+                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("infoList")) && rs.result().getJsonArray("infoList").size() > 0) //鎖編號名稱
+                            nickName = rs.result().getJsonArray("infoList").stream().filter(e -> new JsonObject(e.toString()).getString("num").equals(
+                                    String.valueOf(message.body().getInteger("userID")))).map(e -> new JsonObject(e.toString()).getString("numNickname")).findFirst().orElse("");
+                        else
+                            nickName = String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID"));
+                        MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+                                        .put("lockName", message.body().getString("deviceId")).put("user_num", String.valueOf(message.body()
+                                                .getJsonObject("eventparams").getInteger("userID"))).put("medium", message.body().getString("gwId"))
+                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+                                        .put("open_time", message.body().getString("timestamp"))
+                                , new JsonObject().put("$set", new JsonObject()
+                                        .put("open_time", message.body().getString("timestamp"))
+                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+                                        .put("medium", message.body().getString("gwId"))
+                                        .put("lockName", message.body().getString("deviceId"))
+                                        .put("user_num", String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID")))
+                                        .put("nickName", nickName))
+                                , new UpdateOptions().setMulti(false).setUpsert(true), res -> {
+                                    if (res.failed())
+                                        logger.error(res.cause().getMessage(), res);
+                                });
+                    }
                 });
     }
 
@@ -643,7 +657,7 @@ public class GatewayDao {
      * @version 1.0
      */
     public void selectOpenLock(Message<JsonObject> message) {
-        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("devuuid", message.body().getString("deviceSN"))
                         .put("adminuid", new JsonObject().put("$exists", true)).put("uid", message.body().getString("uid")),
                 new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
                         .put("deviceSN", 1)), ars -> {
