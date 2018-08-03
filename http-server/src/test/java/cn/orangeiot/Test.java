@@ -4,15 +4,15 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.*;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zhang bo
@@ -23,6 +23,7 @@ import java.io.InputStream;
 public class Test extends AbstractVerticle {
 
 
+    @SuppressWarnings("Duplicates")
     public static void main(String[] args) {
 
 //        System.out.println(LocalDate.now().get(ChronoField.ALIGNED_WEEK_OF_YEAR));//获取当前年的第几周
@@ -68,23 +69,39 @@ public class Test extends AbstractVerticle {
 //            }
 //        });
 
+        Vertx vertx = Vertx.vertx();
         Buffer buffer = Test.loadConf();
-        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
-                .setMaxPoolSize(100)
-                .setSsl(true).setTrustAll(true)
-                .setPfxTrustOptions(new PfxOptions().setValue(buffer).setPassword("123456"))
-                .setVerifyHost(false));
+//        WebClient webClient = WebClient.create(vertx, new WebClientOptions()
+//                .setMaxPoolSize(5000).setKeepAlive(true).setDefaultHost("47.106.87.6").setDefaultPort(8090));
 
-        webClient.post(8090, "121.201.57.214", "/user/login/getuserbytel")
-                .putHeader("Content-Type", "application/json")
-                .sendJsonObject(new JsonObject().put("tel", "13510513746").put("password", "zb123456"), rs -> {
-                    if (rs.failed()) {
-                        rs.cause().printStackTrace();
-                    } else {
-                        System.out.println(rs.result().body().toString());
-                    }
+        for (int i = 0; i <= 10000; i++) {
+            WebClient webClient = WebClient.create(vertx, new WebClientOptions()
+                    .setMaxPoolSize(1).setKeepAlive(true));
+//            webClient.post(8090, "47.106.87.6", "/user/login/getuserbytel")
+//                    .putHeader("Content-Type", "application/json")
+//                    .sendJsonObject(new JsonObject().put("tel", "13510513746").put("password", "zb123456"), rs -> {
+//                        if (rs.failed()) {
+//                            rs.cause().printStackTrace();
+//                        } else {
+//                            System.out.println(rs.result().body().toString());
+//                        }
+//                    });
+            webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
+                if (Objects.nonNull(rs.result()))
+                    System.out.println(rs.result().body());
+            });
+        }
+
+        vertx.setPeriodic(100000,id->{
+            for (int i = 0; i <= 10000; i++) {
+                WebClient webClient = WebClient.create(vertx, new WebClientOptions()
+                        .setMaxPoolSize(1).setKeepAlive(true));
+                webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
+                    if (Objects.nonNull(rs.result()))
+                        System.out.println(rs.result().body());
                 });
-
+            }
+        });
 
 //        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
 //                .setMaxPoolSize(100).setDefaultPort(443)

@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.persistence.StoreManager;
@@ -7,12 +8,10 @@ import cn.orangeiot.mqtt.persistence.Subscription;
 import cn.orangeiot.mqtt.security.AuthorizationClient;
 import cn.orangeiot.mqtt.util.QOSConvertUtils;
 import cn.orangeiot.reg.EventbusAddr;
+import cn.orangeiot.reg.log.LogAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -20,6 +19,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
+import jdk.internal.org.objectweb.asm.Handle;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Giovanni Baleani on 07/05/2014.
@@ -41,6 +42,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
+
+    private final int DEFAULT_SENDMSG_TIMES = 5;//发送次数
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -67,6 +70,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private boolean keepAliveTimeEnded;
     private Handler<String> keepaliveErrorHandler;
     private NetSocket netSocket;
+    private int sendTimes;
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
@@ -82,6 +86,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.qosUtils = new QOSUtils();
         this.publish = config.getPublish();
         this.netSocket = netSocket;
+        this.sendTimes = DEFAULT_SENDMSG_TIMES;
 
         PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<String, List<Subscription>>
                 expirePeriod = new PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<>(
@@ -323,13 +328,64 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             } else {
                 opt = new DeliveryOptions().addHeader(TENANT_HEADER, publishTenant);
             }
-            vertx.eventBus().publish(ADDRESS, msg, opt);
 
             if (publishMessage.getMessageID() != 0)
-                flushStorage(publishMessage, publishTenant);
+                writeLog(publishMessage, opt, msg, rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                    } else {
+                        if (rs.result()) {
+                            vertx.eventBus().publish(ADDRESS, msg, opt);
+                        }
+                    }
+                });
+            else
+                vertx.eventBus().publish(ADDRESS, msg, opt);
+
+
+//            if (publishMessage.getMessageID() != 0)
+//                flushStorage(publishMessage, publishTenant);
         } catch (Throwable e) {
             logger.error(e.getMessage());
         }
+    }
+
+
+    /**
+     * @Description 写入log
+     * @author zhang bo
+     * @date 18-7-30
+     * @version 1.0
+     */
+    public void writeLog(PublishMessage publishMessage, DeliveryOptions opt, Buffer msg, Handler<AsyncResult<Boolean>> handler) {
+        //周期发送
+        AtomicInteger atomicInteger = new AtomicInteger(0);
+        Long timeId = vertx.setPeriodic(2000, id -> {
+            logger.info("periodic send -> " + msg);
+            vertx.eventBus().publish(ADDRESS, msg, opt);
+            atomicInteger.incrementAndGet();
+            if (atomicInteger.get() == sendTimes) {
+                vertx.cancelTimer(id);
+            }
+        });
+        //持久化数据
+        String[] arr = opt.getHeaders().get(TENANT_HEADER).split(":");
+        JsonObject request = new JsonObject().put("msg", new JsonObject()
+                .put("message", publishMessage.getPayloadAsString())
+                .put("qos", QOSConvertUtils.toStr(publishMessage.getQos()))
+                .put("msgId", publishMessage.getMessageID())
+                .put("dst", arr[0]))
+                .put("msgId", publishMessage.getMessageID())
+                .put("topic", arr[1]).put("timeId", timeId);
+
+        vertx.eventBus().send(LogAddr.class.getName() + WRITE_LOG, request, SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
+            if (rs.failed()) {
+                handler.handle(Future.failedFuture(rs.cause()));
+                vertx.cancelTimer(timeId);
+            } else {
+                handler.handle(Future.succeededFuture(rs.result().body()));
+            }
+        });
     }
 
 
@@ -351,12 +407,12 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                         , publishTenant).addHeader("msgId", publishMessage.getMessageID().toString()));
         if (publishTenant.indexOf(":") < 0) {
             String clientId = publishTenant.length() == 13 ? "gw:" + publishTenant : "app:" + publishTenant;
-            vertx.eventBus().publish(StorageAddr.class.getName() + PUT_STORAGE_DATA
+            vertx.eventBus().send(StorageAddr.class.getName() + PUT_STORAGE_DATA
                     , request, new DeliveryOptions().addHeader("clientId"
                             , clientId)
                             .addHeader("msgId", publishMessage.getMessageID().toString()));
         } else {
-            vertx.eventBus().publish(StorageAddr.class.getName() + PUT_STORAGE_DATA, request
+            vertx.eventBus().send(StorageAddr.class.getName() + PUT_STORAGE_DATA, request
                     , new DeliveryOptions().addHeader("clientId"
                             , publishTenant).addHeader("msgId", publishMessage.getMessageID().toString()));
         }
@@ -630,6 +686,21 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             messageConsumer = null;
         }
 //        vertx = null;
+    }
+
+
+    public void sendMessageToClient(AbstractMessage message) {
+        try {
+            logger.debug(">>> " + message);
+            Buffer b1 = encoder.enc(message);
+            netSocket.write(b1);
+            if (netSocket.writeQueueFull()) {
+                netSocket.pause();
+                netSocket.drainHandler(done -> netSocket.resume());
+            }
+        } catch (Throwable e) {
+            logger.error(e.getMessage());
+        }
     }
 
     public void handleWillMessage() {

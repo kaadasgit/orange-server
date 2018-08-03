@@ -30,6 +30,8 @@ public interface MessageAddr {
 
     String SEND_STORAGE_MSG = "sendStorageMsg";//發送存儲消息
 
+    String SEND_PUBREL_MSG = "sendPubRelMsg";//發送REL釋放消息
+
     String SEND_APPLICATION_NOTIFY = "sendAppNotify";//發送應用通知
 
     String GET_PUSHID = "getPushId";//获取应用id

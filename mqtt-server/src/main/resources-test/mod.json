@@ -1,0 +1,14 @@
+{
+  "main":"io.github.giovibal.mqtt.MQTTBroker",
+  "worker": false,
+
+  "description":"An MQTT Broker module for vert.x",
+  "licenses": ["The Apache Software License Version 2.0"],
+  "author": "Giovanni Baleani",
+
+  "developers": ["Giovanni Baleani", "Paolo Iddas"],
+  "keywords": ["mqtt", "vertx", "netty", "broker", "iot", "sensors"],
+  "homepage": "http://github.com/giovibal/vertx-mqtt-broker-mod",
+
+  "auto-redeploy": true
+}

@@ -39,6 +39,19 @@
     </repositories>
 
     <dependencies>
+        <!--kafka配置和log4j2同步日志-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-kafka-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <!--vertx redisclient配置-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-redis-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>cn.orangeiot</groupId>
             <artifactId>reg-addr</artifactId>
@@ -217,6 +230,8 @@
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.json</include>
                 </includes>
                 <excludes>
                     <exclude>log4j2.xml</exclude>
@@ -226,6 +241,8 @@
                 <filtering>true</filtering>
                 <directory>src/main/${package.target}</directory>
                 <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.json</include>
                     <include>*.xml</include>
                 </includes>
             </resource>
@@ -331,6 +348,8 @@
                                             <directory>${basedir}/target</directory>
                                             <includes>
                                                 <include>*-fat.jar</include>
+                                                <include>**/*.properties</include>
+                                                <include>**/*.json</include>
                                             </includes>
                                             <filtering>false</filtering>
                                         </resource>

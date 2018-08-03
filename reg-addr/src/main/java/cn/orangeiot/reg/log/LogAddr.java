@@ -14,4 +14,11 @@ public interface LogAddr {
 
     String CONSUME_LOG="consumeLog";//消费日志
 
+    String MSG_EXISTS="msgExists";//消息是否存在
+
+    String SAVE_PUBREL="savePubRel";//存储pubrel消息id
+
+    String SEND_PUBREL="sendPubRel";//推送pubrel包
+
+    String CONSUME_PUBREL="consumPubRel";//消费释放包
 }

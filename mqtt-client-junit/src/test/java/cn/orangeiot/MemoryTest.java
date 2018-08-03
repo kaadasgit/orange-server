@@ -1,5 +1,9 @@
 package cn.orangeiot;
 
+import io.vertx.mqtt.messages.MqttMessage;
+
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,22 +19,21 @@ public class MemoryTest {
     public static Map<String, String> map = new ConcurrentHashMap();
 
     public static void main(String[] args) {
-        Long startTime = System.currentTimeMillis();
-
-        for (int i = 0; i < 10000000; i++) {
-            map.put("1" + i, "zhang==" + i);
-        }
-
-
-
-
-        System.out.println("process time -> " + (System.currentTimeMillis() - startTime) + " , size ->" + map.size());
-
-
-        while (true) {
-
-        }
-
+//        Long startTime = System.currentTimeMillis();
+//
+//        for (int i = 0; i < 10000000; i++) {
+//            map.put("1" + i, "zhang==" + i);
+//        }
+//
+//
+//
+//
+//        System.out.println("process time -> " + (System.currentTimeMillis() - startTime) + " , size ->" + map.size());
+//
+//
+//        while (true) {
+//
+//        }
 
     }
 }

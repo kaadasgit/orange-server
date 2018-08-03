@@ -710,7 +710,7 @@ public class GatewayDao {
         int pageNum = message.body().getInteger("pageNum");
         MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
                 new FindOptions().setSort(new JsonObject().put("open_time", -1))
-                        .setLimit(page * pageNum).setSkip((page - 1) * pageNum)
+                        .setLimit(pageNum).setSkip((page - 1) * pageNum)
                         .setFields(new JsonObject().put("_id", 0).put("uid", 0).put("medium", 0)), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);

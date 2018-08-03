@@ -364,7 +364,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                             paramsJsonObject.put("lockName", jsonObject.getString("device_name")).put("uname", ars.result().getString("uname"));
 
                         MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
-                                new FindOptions().setLimit(pageNum * 20).setSkip((pageNum - 1) * 20).setSort(
+                                new FindOptions().setLimit(20).setSkip((pageNum - 1) * 20).setSort(
                                         new JsonObject().put("open_time", -1)), rs -> {
                                     if (rs.failed()) {
                                         rs.cause().printStackTrace();
@@ -984,7 +984,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         int pageNum = message.body().getInteger("pageNum");
                         MongoClient.client.findWithOptions("kdsOpenLockList", paramsJsonObject,
                                 new FindOptions().setSort(new JsonObject().put("open_time", -1))
-                                        .setLimit(page * pageNum).setSkip((page - 1) * pageNum), rs -> {
+                                        .setLimit(pageNum).setSkip((page - 1) * pageNum), rs -> {
                                     if (rs.failed()) {
                                         rs.cause().printStackTrace();
                                         message.reply(null);

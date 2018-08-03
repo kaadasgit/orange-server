@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.mqtt.log.LogVerticle;
 import cn.orangeiot.mqtt.prometheus.PromMetricsExporter;
 import cn.orangeiot.mqtt.rest.RestApiVerticle;
 import cn.orangeiot.mqtt.verticle.PublishVerticle;
@@ -130,6 +131,7 @@ public class MqttServerStart {
 
                             vertx.deployVerticle(SubscibeVerticle.class.getName(), deploymentOptions);
                             vertx.deployVerticle(PublishVerticle.class.getName(), deploymentOptions);
+                            vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
 
                         } else {
                             // failed!
