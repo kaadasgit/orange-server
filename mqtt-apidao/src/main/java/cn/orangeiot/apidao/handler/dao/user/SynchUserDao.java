@@ -26,7 +26,7 @@ public abstract class SynchUserDao {
      */
     public void onSynchUser(JsonObject message) {
         logger.info("==UserHandler=onSynchUser" + message);
-        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT, message.getString("username")
+        RedisClient.client.set(RedisKeyConf.USER_ACCOUNT+message.getString("username")
                 , message.getString("userPwd"), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
                 });

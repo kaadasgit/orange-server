@@ -1,5 +1,6 @@
 {
   "host":"127.0.0.1",
+  "liveTime":604800,
   "connectAuth":"mqtt.authenticator.oauth2.apifest",
   "consumer_connect_dao":"cn.orangeiot.apidao.getuser",
   "consumer_saveTopic":"cn.orangeiot.topic.cache.saveTopic",

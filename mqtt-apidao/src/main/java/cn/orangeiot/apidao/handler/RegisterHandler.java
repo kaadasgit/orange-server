@@ -199,7 +199,7 @@ public class RegisterHandler implements EventbusAddr {
      * @version 1.0
      */
     public void UserAboutEvent(JWTAuth jwtAuth, Vertx vertx) {
-        UserDao userDao = new UserDao(jwtAuth, vertx);
+        UserDao userDao = new UserDao(jwtAuth, vertx,config);
         vertx.eventBus().consumer(config.getString("consumer_connect_dao"), userDao::getUser);
         vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_TEL, userDao::telLogin);
         vertx.eventBus().consumer(UserAddr.class.getName() + VERIFY_MAIL, userDao::mailLogin);
