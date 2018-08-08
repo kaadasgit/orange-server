@@ -320,11 +320,11 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             if (tenant == null)
                 tenant = "";
             DeliveryOptions opt;
-            if (publishTenant.indexOf(":") < 0) {
+            if (clientID.indexOf(":") < 0) {
                 opt = new DeliveryOptions().addHeader(TENANT_HEADER
-                        , publishTenant.length() == 13 ? "gw:" + publishTenant : "app:" + publishTenant);
+                        , publishTenant.length() == 13 ? "gw:" + clientID : "app:" + clientID);
             } else {
-                opt = new DeliveryOptions().addHeader(TENANT_HEADER, publishTenant);
+                opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientID);
             }
 
             if (publishMessage.getMessageID() != 0)
