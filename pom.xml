@@ -47,6 +47,7 @@
         <ssh.scp.directory>/home/zhangbo/file</ssh.scp.directory>
         <ssh.exec.command>sh /home/zhangbo/file/run.sh restart
         </ssh.exec.command>
+        <disruptor.version>3.4.1</disruptor.version>
     </properties>
 
     <dependencies>
@@ -117,7 +118,7 @@
             <version>${log4j2.version}</version>
         </dependency>
 
-        <!--kafka配置和log4j2同步日志-->
+        <!--kafka client-->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-kafka-client</artifactId>
@@ -132,6 +133,13 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!--disruptor日志队列 async-->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>${disruptor.version}</version>
         </dependency>
     </dependencies>
 
