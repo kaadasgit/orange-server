@@ -18,7 +18,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vertx.version>3.5.0</vertx.version>
-        <wso2.scope>provided</wso2.scope>
     </properties>
 
     <repositories>
@@ -93,7 +92,6 @@
             <groupId>org.wso2.carbon.commons</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
             <version>4.4.7</version>
-            <scope>${wso2.scope}</scope>
         </dependency>
 
         <!-- prometheus.io metrics -->
