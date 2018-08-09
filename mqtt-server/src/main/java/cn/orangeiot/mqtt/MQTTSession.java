@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.dna.mqtt.moquette.proto.messages.*;
 
+import javax.mail.Session;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -319,13 +320,17 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             Buffer msg = encoder.enc(publishMessage);
             if (tenant == null)
                 tenant = "";
-            DeliveryOptions opt;
-            if (clientID.indexOf(":") < 0) {
-                opt = new DeliveryOptions().addHeader(TENANT_HEADER
-                        , publishTenant.length() == 13 ? "gw:" + clientID : "app:" + clientID);
-            } else {
-                opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientID);
-            }
+
+//             opt;
+//            if (publishTenant.indexOf("orangeiot") < 0) {
+//                opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientID);
+//            } else {
+//                String[] topics = publishMessage.getTopicName().split("/");
+//                opt = new DeliveryOptions().addHeader(TENANT_HEADER, "gw:" + topics[2]);
+//            }
+
+            String clientId = getClienId(publishMessage.getTopicName());
+            DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientId);
 
             if (publishMessage.getMessageID() != 0)
                 writeLog(publishMessage, opt, msg, rs -> {
@@ -346,6 +351,32 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         } catch (Throwable e) {
             logger.error(e.getMessage());
         }
+    }
+
+
+    /**
+     * @Description
+     * @author zhang bo
+     * @date 18-8-8
+     * @version 1.0
+     */
+    public String getClienId(String topic) {
+        String clientId = "";
+        if (Objects.nonNull(topic)) {
+            String arr[] = topic.split("/");
+            if (topic.indexOf("/orangeiot") >= 0 && topic.indexOf("/call") >= 0) {
+                clientId = "gw:" + arr[2];
+            } else if (topic.indexOf("/orangeiot") >= 0 && topic.indexOf("/reply") >= 0) {
+                clientId = "app:" + arr[1];
+            } else {//user
+                if (topic.indexOf("/request/app/func") < 0) {
+                    clientId = "app:" + arr[1];
+                } else {
+                    clientId = clientID;
+                }
+            }
+        }
+        return clientId;
     }
 
 

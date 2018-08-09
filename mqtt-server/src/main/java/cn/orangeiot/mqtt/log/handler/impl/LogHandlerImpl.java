@@ -106,10 +106,11 @@ public class LogHandlerImpl implements LogHandler {
                 redisClient.hset(RedisKey.LOG_RECODR + topic, String.valueOf(msgId), val, as -> {
                     if (as.failed())
                         logger.error(as.cause().getMessage(), as);
-                });
-                //设置存活时间
-                redisClient.expire(RedisKey.LOG_RECODR + topic, expire, as -> {
-                    if (as.failed()) logger.error(as.cause().getMessage(), as);
+                    else
+                        //设置存活时间
+                        redisClient.expire(RedisKey.LOG_RECODR + topic, expire, time -> {
+                            if (time.failed()) logger.error(time.cause().getMessage(), time);
+                        });
                 });
             }
         });
@@ -137,16 +138,17 @@ public class LogHandlerImpl implements LogHandler {
                     if (as.failed()) {
                         handler.handle(Future.failedFuture("write log offset fail"));
                     } else {
-                        if (as.result() == 1)
+                        if (as.result() == 1) {
                             handler.handle(Future.succeededFuture(true));
-                        else
+                            //设置存活时间
+                            redisClient.expire(RedisKey.LOG_RECODR + topic, expire, time -> {
+                                if (time.failed()) logger.error(time.cause().getMessage(), time);
+                            });
+                        } else
                             handler.handle(Future.succeededFuture(false));
                     }
                 });
-                //设置存活时间
-                redisClient.expire(RedisKey.LOG_RECODR + topic, expire, as -> {
-                    if (as.failed()) logger.error(as.cause().getMessage(), as);
-                });
+
             }
         });
     }
@@ -446,7 +448,6 @@ public class LogHandlerImpl implements LogHandler {
                                 logger.error(as.cause().getMessage(), as);
                                 message.reply(false);
                             } else {
-                                logger.info("\n\n\n" + as.result() + "\n\n\n");
                                 if (as.result() > 0)
                                     message.reply(true);
                                 else
@@ -499,7 +500,6 @@ public class LogHandlerImpl implements LogHandler {
                             if (as.failed()) {
                                 message.reply(null);
                             } else {
-                                logger.info("\n\n\n" + as.result() + "\n\n\n");
                                 message.reply(as.result());
                                 redisClient.hdel(RedisKey.LOG_PUBREL + rs.result().getString("topic"), rs.result().getInteger("relId").toString(), res -> {
                                     if (res.failed()) logger.error(res.cause().getMessage(), res);
