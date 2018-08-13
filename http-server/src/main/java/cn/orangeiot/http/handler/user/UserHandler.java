@@ -66,12 +66,12 @@ public class UserHandler implements EventbusAddr {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
-                                    logger.info("==UserHandler=getUserByTel==login success==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                    logger.info("==UserHandler=getUserByTel==login success==data-> {}, IP -> {}",rs.result().body().getValue("uid"),
                                             routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
-                                    logger.info("==UserHandler=getUserByTel==login fail==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                    logger.info("==UserHandler=getUserByTel==login fail==data-> {}, IP -> {}", routingContext.getBodyAsJson().getValue("tel"),
                                             routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
@@ -107,12 +107,12 @@ public class UserHandler implements EventbusAddr {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
-                                    logger.info("==UserHandler=getUserByEmail==login success==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                    logger.info("==UserHandler=getUserByEmail==login success==data-> {}, IP -> {}",rs.result().body().getValue("uid"),
                                             routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
-                                    logger.info("==UserHandler=getUserByEmail==login fail==params-> {}, IP -> {}", routingContext.getBodyAsString(),
+                                    logger.info("==UserHandler=getUserByEmail==login fail==data-> {}, IP -> {}", routingContext.getBodyAsJson().getValue("mail"),
                                             routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
