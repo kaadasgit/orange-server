@@ -299,7 +299,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.getMessageFromQueue();
                 session.resetKeepAliveTimer();
                 PubAckMessage pubAckMessage = (PubAckMessage) msg;
-                System.out.println("clienId -> " + session.getClientID() + " , messageId -> " + pubAckMessage.getMessageID());
 
                 //接收确认
 //                vertx.eventBus().send(StorageAddr.class.getName() + DEL_STORAGE_DATA, null, new DeliveryOptions()
