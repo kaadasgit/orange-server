@@ -1,24 +1,18 @@
 package cn.orangeiot.sip.handler;
 
-import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
-import cn.orangeiot.sip.timer.RePlayCallTime;
-import com.sun.prism.impl.Disposer;
 import gov.nist.core.NameValueList;
 import gov.nist.javax.sip.Utils;
 import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.parsetools.RecordParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,8 +26,6 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zhang bo
@@ -65,7 +57,7 @@ public class PorcessHandler {
 
     public PorcessHandler(MessageFactory msgFactory, HeaderFactory headerFactory, JsonObject jsonObject
             , AddressFactory addressFactory, Vertx vertx) {
-        this.registerHandler = new RegisterHandler(msgFactory, headerFactory);
+        this.registerHandler = new RegisterHandler(msgFactory);
         this.inviteHandler = new InviteHandler(msgFactory, headerFactory, jsonObject, addressFactory);
         this.responseHandler = new ResponseHandler(msgFactory, headerFactory, addressFactory, jsonObject);
         this.msgFactory = msgFactory;
@@ -175,10 +167,10 @@ public class PorcessHandler {
         logger.info("==PorcessHandler==redirectSwitch===request method====" + sipMessage.getMethod());
         switch (sipMessage.getMethod()) {
             case Request.REGISTER://注冊處理
-                registerHandler.processRegister(sipMessage, netSocket, sipOptions, socketAddress, vertx);
+                registerHandler.processRegister(sipMessage, sipOptions, socketAddress, vertx);
                 break;
             case Request.INVITE://invite請求
-                inviteHandler.processInvite(sipMessage, sipOptions, socketAddress);
+                inviteHandler.processInvite(sipMessage, sipOptions, vertx);
                 break;
             case Request.ACK://ACK
                 this.processAck(sipMessage, sipOptions);

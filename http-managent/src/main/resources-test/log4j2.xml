@@ -2,29 +2,65 @@
 
 <Configuration status="warn" name="MyApp" packages="">
     <Appenders>
-        <!--控制台输出-->
-        <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
-        </Console>
-        <!--按天分日志文件-->
-        <!--<RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"-->
-                     <!--filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-            <!--<Policies>-->
-                <!--<TimeBasedTriggeringPolicy modulate="true" interval="1"/>-->
-            <!--</Policies>-->
-        <!--</RollingFile>-->
-        <!--按天分日志文件-->
-        <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
-        <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">-->
+        <!--&lt;!&ndash;控制台输出&ndash;&gt;-->
+        <!--<Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">-->
         <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-        <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
-        <!--</RollingFile>-->
+        <!--</Console>-->
+        <!--&lt;!&ndash;按天分日志文件&ndash;&gt;-->
+        <!--&lt;!&ndash;<RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"&ndash;&gt;-->
+        <!--&lt;!&ndash;filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">&ndash;&gt;-->
+        <!--&lt;!&ndash;<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>&ndash;&gt;-->
+        <!--&lt;!&ndash;<Policies>&ndash;&gt;-->
+        <!--&lt;!&ndash;<TimeBasedTriggeringPolicy modulate="true" interval="1"/>&ndash;&gt;-->
+        <!--&lt;!&ndash;</Policies>&ndash;&gt;-->
+        <!--&lt;!&ndash;</RollingFile>&ndash;&gt;-->
+        <!--&lt;!&ndash;按天分日志文件&ndash;&gt;-->
+        <!--&lt;!&ndash;<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"&ndash;&gt;-->
+        <!--&lt;!&ndash;filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">&ndash;&gt;-->
+        <!--&lt;!&ndash;<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>&ndash;&gt;-->
+        <!--&lt;!&ndash;<SizeBasedTriggeringPolicy size="1 MB"/>&ndash;&gt;-->
+        <!--&lt;!&ndash;</RollingFile>&ndash;&gt;-->
+        <!--</Appenders>-->
+        <!--<Loggers>-->
+        <!--&lt;!&ndash;异步写入log&ndash;&gt;-->
+        <!--<Root level="info">-->
+        <!--<AppenderRef ref="Console"/>-->
+        <!--</Root>-->
+        <!--</Loggers>-->
+
+        <!--写入kafka   topic订阅的主题-->
+        <Kafka name="kafkaAppender" topic="orangelog" ignoreExceptions="false">
+            <PatternLayout
+                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [httpmanagent] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/><!--显示信息格式-->
+            <Property name="bootstrap.servers">localhost:9092</Property><!--kafka地址-->
+            <Property name="timeout.ms">2000</Property><!--写入超时时间-->
+        </Kafka>
+
+        <RollingFile name="failoverKafkaLog" fileName="./logs/http-managent.log"
+                     filePattern="./logs/http-managent/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz" immediateFlush="false"
+                     ignoreExceptions="false">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [httpmanagent] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n
+                </Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+        </RollingFile>
+
+        <!--kafka写入失败触发写入本地日志-->
+        <Failover name="Failover" primary="kafkaAppender" retryIntervalSeconds="600">
+            <Failovers>
+                <AppenderRef ref="failoverKafkaLog"/>
+            </Failovers>
+        </Failover>
     </Appenders>
+
+
     <Loggers>
-        <!--异步写入log-->
+        <!--配置日志的根节点-->
         <Root level="info">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Failover"/>
         </Root>
     </Loggers>
 </Configuration>

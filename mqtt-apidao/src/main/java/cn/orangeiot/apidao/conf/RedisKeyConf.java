@@ -19,7 +19,7 @@ public class RedisKeyConf {
 
     public final static String USER_INFO = "user:info";//用户信息
 
-    public final static String REGISTER_USER = "register:user";//保存用户注册信息
+    public final static String REGISTER_USER = "sipAcc:";//保存用户注册信息
 
     public final static String CALLIDADDR = "addr:callIdAddr";//保存用户注册信息
 

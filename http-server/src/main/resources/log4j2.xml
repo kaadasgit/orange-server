@@ -8,7 +8,7 @@
         </Console>
 
         <!--写入kafka   topic订阅的主题-->
-        <Kafka name="kafkaAppender" topic="my-log" ignoreExceptions="false">
+        <Kafka name="kafkaAppender" topic="orangelog" ignoreExceptions="false">
             <PatternLayout
                     pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [httpserver] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/><!--显示信息格式-->
             <Property name="bootstrap.servers">localhost:9092</Property><!--kafka地址-->

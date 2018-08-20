@@ -21,9 +21,14 @@ public class RegisterDao {
      * @version 1.0
      */
     public void saveRegisterInfo(Message<JsonObject> message) {
-        RedisClient.client.hset(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), message.body().getString("socketAddress"), rs -> {
+        RedisClient.client.set(RedisKeyConf.REGISTER_USER + message.body().getString("uri"), message.body().getString("socketAddress"), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
+            } else {
+                RedisClient.client.expire(RedisKeyConf.REGISTER_USER + message.body().getString("uri")
+                        , message.body().getInteger("expires").longValue(), as -> {
+                            if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                        });
             }
         });
     }
@@ -37,7 +42,7 @@ public class RegisterDao {
      */
     @SuppressWarnings("Duplicates")
     public void getRegisterInfo(Message<String> message) {
-        RedisClient.client.hget(RedisKeyConf.REGISTER_USER, message.body(), rs -> {
+        RedisClient.client.get(RedisKeyConf.REGISTER_USER + message.body(), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
@@ -57,7 +62,7 @@ public class RegisterDao {
      * @version 1.0
      */
     public void delRegisterInfo(Message<JsonObject> message) {
-        RedisClient.client.hdel(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), rs -> {
+        RedisClient.client.del(RedisKeyConf.REGISTER_USER + message.body().getString("uri"), rs -> {
             if (rs.failed())
                 logger.error(rs.cause().getMessage(), rs.cause());
         });

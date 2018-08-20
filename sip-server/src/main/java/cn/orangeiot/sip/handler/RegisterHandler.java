@@ -37,11 +37,8 @@ public class RegisterHandler implements UserAddr {
 
     private MessageFactory msgFactory;
 
-    private HeaderFactory headerFactory;
-
-    public RegisterHandler(MessageFactory msgFactory, HeaderFactory headerFactory) {
+    public RegisterHandler(MessageFactory msgFactory) {
         this.msgFactory = msgFactory;
-        this.headerFactory = headerFactory;
     }
 
     /**
@@ -50,7 +47,7 @@ public class RegisterHandler implements UserAddr {
      * @date 18-2-2
      * @version 1.0
      */
-    public void processRegister(SIPRequest request, NetSocket netSocket, SipOptions sipOptions, SocketAddress socketAddress, Vertx vertx) {
+    public void processRegister(SIPRequest request, SipOptions sipOptions, SocketAddress socketAddress, Vertx vertx) {
         Response response = null;
         To to = (To) request.getHeader(To.NAME);
         Address toAddress = to.getAddress();
@@ -68,7 +65,7 @@ public class RegisterHandler implements UserAddr {
 //            else
             vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
                     new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
-                            .put("Expires", contactHeader.getExpires()));
+                            .put("expires", expires));
             logger.info("register user " + toURI);
         } else {
             flag = false;
