@@ -820,11 +820,12 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                     .put("open_type", openLockLists.getString("open_type")).put("lockName", jsonObject.getString("device_name")))
                             .put("document", new JsonObject().put("$set", openLockLists.put("uname", uname)
                                     .put("versionType", message.body().getString("versionType"))
-                                    .put("nickName", userInfo.getString("nickName"))
+//                                    .put("nickName", userInfo.getString("nickName"))
                                     .put("lockName", jsonObject.getString("device_name")).put("lockNickName", jsonObject.getString("device_nickname"))
                                     .put("open_purview", "0"))).put("upsert", true).put("multi", false);
+                    if (!Objects.nonNull(openLockLists.getValue("nickName")))
+                        params.getJsonObject("document").getJsonObject("$set").put("nickName", userInfo.getString("nickName"));
                     bulkOperations.add(new BulkOperation(params));
-
                 });
                 MongoClient.client.bulkWrite("kdsOpenLockList", bulkOperations, ars -> {
                     if (ars.failed()) ars.cause().printStackTrace();
