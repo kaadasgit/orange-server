@@ -825,6 +825,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                     .put("open_purview", "0"))).put("upsert", true).put("multi", false);
                     if (!Objects.nonNull(openLockLists.getValue("nickName")))
                         params.getJsonObject("document").getJsonObject("$set").put("nickName", userInfo.getString("nickName"));
+                    else
+                        params.getJsonObject("document").getJsonObject("$set").put("status", 1);//标志是锁编号昵称映射
                     bulkOperations.add(new BulkOperation(params));
                 });
                 MongoClient.client.bulkWrite("kdsOpenLockList", bulkOperations, ars -> {
