@@ -824,7 +824,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                     .put("lockName", jsonObject.getString("device_name")).put("lockNickName", jsonObject.getString("device_nickname"))
                                     .put("open_purview", "0"))).put("upsert", true).put("multi", false);
                     if (!Objects.nonNull(openLockLists.getValue("nickName")))
-                        params.getJsonObject("document").getJsonObject("$set").put("nickName", userInfo.getString("nickName"));
+                        params.getJsonObject("document").getJsonObject("$set").put("nickName", openLockLists.getString("user_num"));
                     else
                         params.getJsonObject("document").getJsonObject("$set").put("status", 1);//标志是锁编号昵称映射
                     bulkOperations.add(new BulkOperation(params));
