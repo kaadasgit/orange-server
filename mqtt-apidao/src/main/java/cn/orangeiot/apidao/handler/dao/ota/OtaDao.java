@@ -1,7 +1,6 @@
 package cn.orangeiot.apidao.handler.dao.ota;
 
 import cn.orangeiot.apidao.client.MongoClient;
-import com.sun.org.apache.bcel.internal.generic.PUTFIELD;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
