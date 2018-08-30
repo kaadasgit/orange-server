@@ -16,4 +16,6 @@ public final class DataType {
     public final static String JSONARRAY = "io.vertx.core.json.JsonArray";//JSON数组类型
 
     public final static String JSONOBJECT = "io.vertx.core.json.JsonObject";//jsonObject类型
+
+    public final static String BOOLEAN = "java.lang.Boolean";//bool类型
 }

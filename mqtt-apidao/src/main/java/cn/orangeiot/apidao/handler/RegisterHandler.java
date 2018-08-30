@@ -10,11 +10,13 @@ import cn.orangeiot.apidao.handler.dao.gateway.GatewayDao;
 import cn.orangeiot.apidao.handler.dao.job.JobDao;
 import cn.orangeiot.apidao.handler.dao.message.MessageDao;
 import cn.orangeiot.apidao.handler.dao.ota.OtaDao;
+import cn.orangeiot.apidao.handler.dao.rateLimit.RateLimitDao;
 import cn.orangeiot.apidao.handler.dao.register.RegisterDao;
 import cn.orangeiot.apidao.handler.dao.storage.StorageDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
 import cn.orangeiot.apidao.jwt.JwtFactory;
+import cn.orangeiot.common.limit.RateLimit;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import cn.orangeiot.reg.event.EventAddr;
@@ -23,6 +25,7 @@ import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.ota.OtaAddr;
+import cn.orangeiot.reg.rateLimit.RateLimitAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
@@ -119,6 +122,9 @@ public class RegisterHandler implements EventbusAddr {
 
             //storage
             storageAboutEvent(vertx);
+
+            //限流相关
+            rateLimitAboutEvent(vertx);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
@@ -282,5 +288,17 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(StorageAddr.class.getName() + DEL_STORAGE_DATA, storageDao::delStorageData);
         vertx.eventBus().consumer(StorageAddr.class.getName() + GET_STORAGE_DATA, storageDao::getStorageData);
         vertx.eventBus().consumer(StorageAddr.class.getName() + DELALL_STORAGE_DATA, storageDao::delAllStorageData);
+    }
+
+
+    /**
+     * @Description 限流相關事件
+     * @author zhang bo
+     * @date 18-8-27
+     * @version 1.0
+     */
+    public void rateLimitAboutEvent(Vertx vertx){
+        RateLimitDao rateLimitDao=new RateLimitDao();
+        vertx.eventBus().consumer(RateLimitAddr.class.getName() + USER_RUST_REQUEST_ADD, rateLimitDao::rustRequestAdd);
     }
 }

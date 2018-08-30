@@ -110,7 +110,7 @@ public class InviteHandler implements UserAddr {
 
                         //根据Request uri来路由，后续的响应消息通过VIA来路由
                         URI contactURI = contactAddr.getURI();
-                        logger.info("processInvite contact=" + contactURI);
+                        logger.debug("processInvite contact=" + contactURI);
                         request.setRequestURI(contactURI);
 
 //            Via callerVia = (Via) request.getHeader(Via.NAME);

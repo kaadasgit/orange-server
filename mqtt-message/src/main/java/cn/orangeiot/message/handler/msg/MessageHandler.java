@@ -42,7 +42,6 @@ public class MessageHandler implements MessageAddr {
      * @version 1.0
      */
     public void SMSCode(Message<JsonObject> message) {
-        logger.info("params -> {}", message.body());
         vertx.eventBus().send(MessageAddr.class.getName() + GET_CODE_COUNT, new JsonObject().put("tel",
                 message.body().getString("versionType") + ":" + message.body().getString("code") + message.body().getString("tel"))
                 .put("count", config.getInteger("codeCount")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> ars) -> {//查找手机验证码次数上限
@@ -80,8 +79,7 @@ public class MessageHandler implements MessageAddr {
                             logger.error(ars.cause().getMessage(), ars.cause());
                         } else {
                             JsonObject jsonObject = new JsonObject();
-                            logger.info("====MessageHandler=SMSCode==sendResult==params ->tel= {},nationcode = {}", message.body().getString("tel")
-                                    , message.body().getString("code"));
+
                             jsonObject.put("tel", new JsonObject().put("nationcode", message.body().getString("code")).put("mobile", message.body().getString("tel")))
                                     .put("tpl_id", tpl_id).put("params", new JsonArray().add(tokens))
                                     .put("sig", rs.result()).put("time", time).put("extend", "").put("ext", "");
@@ -92,7 +90,8 @@ public class MessageHandler implements MessageAddr {
                                         if (qrs.failed()) {
                                             logger.error(qrs.cause().getMessage(), qrs.cause());
                                         } else {
-                                            logger.info("====MessageHandler=SMSCode==sendResult==return -> " + qrs.result().body());
+                                            logger.info("params tel -> {} , nationcode -> {} , return -> ", message.body().getString("tel")
+                                                    , message.body().getString("code"), qrs.result().body());
                                         }
                                     });
                         }
@@ -137,7 +136,8 @@ public class MessageHandler implements MessageAddr {
                                 .setText(text)
                                 .setSubject(config.getString(message.body().getString("versionType") + "email_subject")), rs -> {
                             if (rs.failed())
-                                logger.error(rs.cause().getMessage(), rs.cause());
+                                logger.error("philip send fail email -> {} , exception -> {} ",
+                                        message.body().getString("mail"), rs.cause().getMessage());
                             else
                                 logger.info(">>>>philip send email success emailAddr -> " + message.body().getString("mail"));
                         });
@@ -148,7 +148,8 @@ public class MessageHandler implements MessageAddr {
                                 .setText(text)
                                 .setSubject(config.getString("kaadasemail_subject")), rs -> {
                             if (rs.failed())
-                                logger.error(rs.cause().getMessage(), rs.cause());
+                                logger.error("kaadas send fail email -> {} , exception -> {} ",
+                                        message.body().getString("mail"), rs.cause().getMessage());
                             else
                                 logger.info(">>>>kaadas send email success emailAddr -> " + message.body().getString("mail"));
                         });

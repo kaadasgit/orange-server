@@ -34,7 +34,7 @@ public class MessageDao {
             int shards = DJBHashUtil.Time33(message.headers().get("uid")) % Constant.HASH_SHARD_NUMS;
             RedisClient.client.hset(RedisKeyConf.SAVE_PUBLISH_MSG + shards
                     , message.headers().get("uid"), message.body().toString(), rs -> {
-                        if (rs.failed()) rs.cause().printStackTrace();
+                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                     });
         }
     }
@@ -51,7 +51,7 @@ public class MessageDao {
         if (Objects.nonNull(message)) {
             RedisClient.client.lrange(RedisKeyConf.USER_OFFLINE_MESSAGE + message.headers().get("uid"),
                     0, -1, rs -> {
-                        if (rs.failed()) rs.cause().printStackTrace();
+                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                         else message.reply(rs.result());
                     });
         }
@@ -68,11 +68,11 @@ public class MessageDao {
         logger.info("==MessageHandler=onSaveVerityCode==parmas:" + message.body());
         RedisClient.client.setex(message.body().getString("tel"), Constant.VERITY_CODE_TIME,
                 message.body().getString("verifyCode"), rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
         RedisClient.client.hincrby(RedisKeyConf.VERIFY_CODE_COUNT, message.body().getString("tel"),
                 1, rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
     }
 
@@ -87,7 +87,7 @@ public class MessageDao {
         logger.info("==MessageHandler=onGetCodeCount==params:" + message.body());
         RedisClient.client.hget(RedisKeyConf.VERIFY_CODE_COUNT, message.body().getString("tel"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
             } else {
                 if (Objects.nonNull(rs.result()) && Integer.parseInt(rs.result()) > message.body().getInteger("count")) {
                     message.reply(false);

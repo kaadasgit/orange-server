@@ -55,7 +55,7 @@ public class RegisterHandler implements UserAddr {
         ContactHeader contactHeader = (ContactHeader) request.getHeader("Contact");
         Address contactAddr = contactHeader.getAddress();
         SipUri contactURI = (SipUri) contactAddr.getURI();
-        logger.info("processRegister from: " + toURI + " request str: " + contactURI);
+        logger.debug("processRegister from: " + toURI + " request str: " + contactURI);
         int expires = Objects.nonNull(request.getExpires()) ? request.getExpires().getExpires() : 0;
         // 如果expires不等于0,则为注册，否则为注销。
         boolean flag = true;//注冊
@@ -66,7 +66,7 @@ public class RegisterHandler implements UserAddr {
             vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
                     new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
                             .put("expires", expires));
-            logger.info("register user " + toURI);
+            logger.debug("register user " + toURI);
         } else {
             flag = false;
         }

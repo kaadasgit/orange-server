@@ -1,6 +1,7 @@
 package cn.orangeiot.http.spi;
 
 import cn.orangeiot.common.constant.HttpAttrType;
+import cn.orangeiot.http.constant.UserRequestRateLimitConf;
 import cn.orangeiot.http.handler.BaseHandler;
 import cn.orangeiot.http.handler.file.FileHandler;
 import cn.orangeiot.http.handler.lock.LockHandler;
@@ -15,18 +16,18 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
-//import io.vertx.ext.hawkular.AuthenticationOptions;
-//import io.vertx.ext.hawkular.VertxHawkularOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.omg.CORBA.INTERNAL;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+
+//import io.vertx.ext.hawkular.AuthenticationOptions;
+//import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
  * @author zhang bo
@@ -49,6 +50,7 @@ public class SpiConf {
         this.vertxConfig = vertxConfig;
     }
 
+
     /**
      * 加载api
      */
@@ -56,6 +58,8 @@ public class SpiConf {
         if (res.succeeded()) {
             vertx = res.result();
             router = Router.router(vertx);
+
+            new UserRequestRateLimitConf(vertx).loadRateLimitConf();
             /**
              * 通用配置
              */
@@ -64,7 +68,7 @@ public class SpiConf {
             baseHandler.enableCorsSupport(router);
             baseHandler.ExceptionAndTimeout(router);
             baseHandler.staticResource(router);
-            baseHandler.requestlog(router);
+//            baseHandler.requestlog(router);
             baseHandler.loadFilterUrl();
             baseHandler.produces(router);
             baseHandler.globalIntercept(router);
@@ -152,7 +156,7 @@ public class SpiConf {
                             .setCompressionSupported(true).setSsl(true)
                             .setKeyStoreOptions(new JksOptions().setValue(buffer)
                                     .setPassword(configJson.getString("pwd")))
-            .setIdleTimeout(configJson.getInteger("IdleTimeout")))
+                            .setIdleTimeout(configJson.getInteger("IdleTimeout")))
                     .requestHandler(router::accept).listen(vertxConfig.getInteger("http-port",
                     configJson.getInteger("port")),
                     vertxConfig.getString("host-name", configJson.getString("host")));
@@ -179,9 +183,10 @@ public class SpiConf {
 
             String versionType = System.getProperty("HTTP.SERVER.TYPE");//系統区分
             String port = System.getProperty("HTTP.SERVER.PORT");//系統区分
+            String rateLimit = System.getProperty("RATELIMITPATH");//系統区分
 
-            if (!Objects.nonNull(versionType) || !Objects.nonNull(port)) {
-                logger.fatal("env system params << -DHTTP.SERVER.TYPE >> or << -DHTTP.SERVER.PORT >> is null ");
+            if (!Objects.nonNull(versionType) || !Objects.nonNull(port) || !Objects.nonNull(rateLimit)) {
+                logger.fatal("env system params << -DHTTP.SERVER.TYPE >> or << -DHTTP.SERVER.PORT >> or << -RATELIMIT >> is null ");
                 System.exit(1);//程序異常
                 return;
             } else {

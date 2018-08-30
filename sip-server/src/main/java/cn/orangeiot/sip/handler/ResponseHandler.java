@@ -62,14 +62,14 @@ public class ResponseHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void processResponse(SIPResponse response, SipOptions sipOptions, SocketAddress socketAddress) {
         int code = response.getStatusCode();
-        logger.info("==PorcessHandler==processResponse===request content====" + response.getContent());
-        logger.info("==PorcessHandler==processResponse===request method====" + code);
+//        logger.debug("==PorcessHandler==processResponse===request content====" + response.getContent());
+        logger.debug("==PorcessHandler==processResponse===request method====" + code);
 
         Response callerResp = null;
         String uri = "";
         Via via = null;
         if (code == Response.TRYING) {
-            logger.info("The response is 100 response.");
+            logger.debug("The response is 100 response.");
             return;
         } else if (code == Response.OK && response.getCSeq().getMethod() == Request.BYE) {
             From from = (From) response.getHeader(From.NAME);
@@ -107,7 +107,7 @@ public class ResponseHandler implements UserAddr {
         ContentLength contentLen = (ContentLength) response.getContentLength();
         if (contentLen != null && contentLen.getContentLength() != 0) {
             ContentType contentType = (ContentType) response.getHeader(ContentType.NAME);
-            logger.info("the sdp contenttype is " + contentType);
+            logger.debug("the sdp contenttype is " + contentType);
 
             callerResp.setContentLength(contentLen);
             try {
@@ -150,22 +150,16 @@ public class ResponseHandler implements UserAddr {
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-        } else
-
-        {
-            logger.info("sdp is null.");
+        } else {
+            logger.warn("sdp is null.");
         }
 
-        if (Objects.nonNull(uri))
-
-        {
+        if (Objects.nonNull(uri)) {
             ResponseMsgUtil.sendMessage(uri, callerResp.toString(), sipOptions);
-        } else
-
-        {
-            logger.error("uri is null.");
+        } else {
+            logger.warn("uri is null.");
         }
 
-        logger.info("send response to caller : " + callerResp.toString());
+//        logger.info("send response to caller : " + callerResp.toString());
     }
 }

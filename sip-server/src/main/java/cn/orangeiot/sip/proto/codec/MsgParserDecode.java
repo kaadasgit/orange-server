@@ -137,7 +137,8 @@ public class MsgParserDecode {
                 }
                 handler.handle(Future.succeededFuture(message));
             } else {
-                handler.handle(Future.failedFuture("=========The heartbeat packets"));
+                return;
+//                handler.handle(Future.failedFuture("=========The heartbeat packets"));
             }
         } else {
             handler.handle(Future.failedFuture("=========data msgBuffer is null"));

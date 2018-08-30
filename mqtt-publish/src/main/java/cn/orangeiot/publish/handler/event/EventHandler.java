@@ -62,7 +62,7 @@ public class EventHandler implements EventAddr {
                             vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, rs.result(), SendOptions.getInstance()
                                     , (AsyncResult<Message<JsonObject>> as) -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as);
                                         } else {
                                             if (Objects.nonNull(as.result().body()))
                                                 handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
@@ -87,7 +87,7 @@ public class EventHandler implements EventAddr {
      * @version 1.0
      */
     public void redirectProcess(JsonObject message) throws Exception {
-        logger.info("==EventHandler=redirectProcess params -> " + message.toString());
+        logger.debug("==EventHandler=redirectProcess params -> " + message.toString());
         if (Objects.nonNull(message.getValue("func"))) {
             switch (message.getString("func")) {
                 case "gwevent":
@@ -119,7 +119,7 @@ public class EventHandler implements EventAddr {
                     break;
             }
         } else {
-            logger.info("==EventHandler=redirectProcess func is null -> " + message.getValue("func"));
+            logger.warn("==EventHandler=redirectProcess func is null -> " + message.getValue("func"));
         }
     }
 

@@ -36,7 +36,6 @@ public class OffMessageHandler {
      * @version 1.0
      */
     public void productMsg(Message<JsonObject> message) {
-        logger.info("====MessageHandler=SMSCode==sendResult==params -> params = {}", message);
         // 生產離線消息
         KafkaProducerRecord<String, String> records =
                 KafkaProducerRecord.create(MQTopicConf.OFF_MESSAGE + message.body().getString("clientid")
@@ -44,11 +43,11 @@ public class OffMessageHandler {
 
         KafkaClient.producer.write(records, done -> {
             if (done.succeeded())
-                logger.info("Message " + records.value() + " written on topic=" + done.result().getTopic() +
+                logger.debug("Message " + records.value() + " written on topic=" + done.result().getTopic() +
                         ", partition=" + done.result().getPartition() +
                         ", offset=" + done.result().getOffset());
             else
-                done.cause().printStackTrace();
+                logger.error(done.cause().getMessage(), done);
 
         });
     }

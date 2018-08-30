@@ -47,7 +47,7 @@ public class PublishHandler implements MessageAddr {
      */
     @SuppressWarnings("Duplicates")
     public void onMessage(Message<JsonObject> message) {
-        logger.info("==PublishHandler=onMessage==params -> " + message.body().toString());
+        logger.debug("==PublishHandler=onMessage==params -> " + message.body().toString());
         VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("userId", DataType.STRING)
                 .put("deviceId", DataType.STRING).put("gwId", DataType.STRING).put("topicName", DataType.STRING)
                 .put("clientId", DataType.STRING), (AsyncResult<JsonObject> rs) -> {

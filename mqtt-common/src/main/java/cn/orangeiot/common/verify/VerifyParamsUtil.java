@@ -26,7 +26,7 @@ public class VerifyParamsUtil {
      */
     @SuppressWarnings("Duplicates")
     public static void verifyParams(JsonObject dataJsonObject, JsonObject params, Handler<AsyncResult<JsonObject>> handler) {
-        logger.info("VerifyParamsUtil==verifyParams==params = " + params);
+        logger.debug("VerifyParamsUtil==verifyParams==params = " + params);
         if (null != params && params.size() > 0 && Objects.nonNull(dataJsonObject)) {
             Boolean isFlag = true;
             Map<String, Object> map = params.getMap();
@@ -44,18 +44,18 @@ public class VerifyParamsUtil {
                         break;
                     }
                 } catch (Exception e) {
-                    logger.info("VerifyParamsUtil==verifyParams==params cast type is Fail");
+                    logger.warn("VerifyParamsUtil==verifyParams==params cast type is Fail");
                     handler.handle(Future.failedFuture(e));
                 }
             }
             if (isFlag) {
                 handler.handle(Future.succeededFuture(dataJsonObject));
             } else {
-                logger.info("VerifyParamsUtil==verifyParams==params type is Fail");
+                logger.warn("VerifyParamsUtil==verifyParams==params type is Fail");
                 handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params type is Fail"));
             }
         } else {
-            logger.info("VerifyParamsUtil==verifyParams==params is null");
+            logger.warn("VerifyParamsUtil==verifyParams==params is null");
             handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params is null"));
         }
     }

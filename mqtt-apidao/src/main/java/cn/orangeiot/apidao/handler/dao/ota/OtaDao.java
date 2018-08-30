@@ -43,7 +43,7 @@ public class OtaDao {
                         , new JsonObject().put("modelCode", "$modelCode").put("childCode", "$childCode")
                                 .put("time", "$time")))).add(new JsonObject().put("$sort", new JsonObject().put("_id.time", 1)))), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
             } else {
                 logger.info("selectModelType==mongo== result -> {}", rs.result());
                 message.reply(rs.result());
@@ -67,7 +67,7 @@ public class OtaDao {
                 , new FindOptions().setFields(new JsonObject().put("yearCode", 1).put("weekCode", 1).put("_id", 0))
                         .setSort(new JsonObject().put("weekCode", 1)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         logger.info("selectModelType==mongo== result -> {}", rs.result());
                         message.reply(new JsonArray(rs.result()));
@@ -91,7 +91,7 @@ public class OtaDao {
                         .put("weekCode", message.body().getString("weekCode"))
                 , new FindOptions().setFields(new JsonObject().put("count", 1).put("_id", 0)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         logger.info("selectModelType==mongo== result -> {}", rs.result());
                         int sum = 0;
@@ -115,7 +115,7 @@ public class OtaDao {
 
         MongoClient.client.insert("kdsOtaUpgrade", message.body().put("time",
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
-            if (rs.failed()) rs.cause().printStackTrace();
+            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
         });
 
     }
@@ -157,7 +157,7 @@ public class OtaDao {
         MongoClient.client.findWithOptions("kdsProductInfoList", paramsJsonObject,
                 new FindOptions().setFields(new JsonObject().put("SN", 1).put("_id", 0).put("mac", 1)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         JsonObject pnJsonObject = new JsonObject();
@@ -183,7 +183,7 @@ public class OtaDao {
                                         .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
                                         .put("adminuid", 1)), as -> {
                                     if (as.failed()) {
-                                        as.cause().printStackTrace();
+                                        logger.error(as.cause().getMessage(), as);
                                         message.reply(null);
                                     } else {
                                         message.reply(new JsonArray(
@@ -211,7 +211,7 @@ public class OtaDao {
                             .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
                             .put("adminuid", 1)), as -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as);
                             message.reply(null);
                         } else {
                             message.reply(new JsonArray(
@@ -224,7 +224,7 @@ public class OtaDao {
                     , new FindOptions().setFields(new JsonObject().put("SN", 1)
                             .put("_id", 0)), as -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as);
                             message.reply(null);
                         } else {
                             message.reply(new JsonArray(
@@ -248,7 +248,7 @@ public class OtaDao {
                 , new JsonObject().put("$in", new JsonArray(_ids))), new FindOptions().setFields(new JsonObject().put("lockName", 1)
                 .put("uid", 1).put("_id", 0).put("macLock", 1)), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 message.reply(new JsonArray(
@@ -266,7 +266,7 @@ public class OtaDao {
     public void otaApprovateRecord(Message<JsonObject> message) {
         logger.info("params -> {}", message.body());
         MongoClient.client.insert("kdsOTARecord", message.body(), rs -> {
-            if (rs.failed()) rs.cause().printStackTrace();
+            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
         });
     }
 }

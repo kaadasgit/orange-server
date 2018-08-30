@@ -69,7 +69,7 @@ public class DeviceDao {
 
         MongoClient.client.bulkWrite("kdsGatewayList", bulkOperations, ars -> {//导入gatewaysn
             if (ars.failed()) {
-                ars.cause().printStackTrace();
+                logger.error(ars.cause().getMessage(), ars);
                 message.reply(null);
             } else {
                 if (ars.result().getInsertedCount() != 0) {//生产成功
@@ -83,7 +83,7 @@ public class DeviceDao {
                     });
                     MongoClient.client.bulkWrite("kdsUser", bulkOperations, urs -> {//导入账户列表
                         if (urs.failed()) {
-                            urs.cause().printStackTrace();
+                            logger.error(urs.cause().getMessage(), urs);
                             message.reply(null);
                         } else {
                             if (urs.result().getInsertedCount() != 0) {
@@ -115,7 +115,7 @@ public class DeviceDao {
                         .put("weekCode", 1).put("count", 1).put("batch", 1).put("childCode", 1)
                         .put("modelCode", 1)).setSort(new JsonObject().put("time", -1)).setLimit(1), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         int dayWeek = LocalDate.now().get(ChronoField.ALIGNED_WEEK_OF_YEAR);//获取周代码
@@ -181,7 +181,7 @@ public class DeviceDao {
                         if (GWbulkOperations.size() > 0) {
                             MongoClient.client.bulkWrite("kdsUser", GWbulkOperations, urs -> {//导入账户列表
                                 if (urs.failed()) {
-                                    urs.cause().printStackTrace();
+                                    logger.error(urs.cause().getMessage(), urs);
                                     message.reply(null);
                                 } else {
                                     if (urs.result().getInsertedCount() != 0) {
@@ -195,7 +195,7 @@ public class DeviceDao {
 
                         //產品生产信息
                         MongoClient.client.bulkWrite("kdsProductInfoList", bulkOperations, ars -> {
-                            if (ars.failed()) ars.cause().printStackTrace();
+                            if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
                         });
 
                         //插入產品信息
@@ -205,7 +205,7 @@ public class DeviceDao {
                                         .put("childCode", message.body().getString("child"))
                                         .put("count", message.body().getInteger("count"))
                                         .put("time", insert_time), ars -> {
-                                    if (ars.failed()) ars.cause().printStackTrace();
+                                    if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
                                 });//產品相關
                         message.reply(jsonArray);
                     }
@@ -225,7 +225,7 @@ public class DeviceDao {
                 message.body().getString("SN")).put("password1", message.body().getString("password1")),
                 new JsonObject().put("_id", 1), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result())) {
@@ -234,7 +234,7 @@ public class DeviceDao {
                                             .put("password1", message.body().getString("password1")), new JsonObject().put("$set",
                                             new JsonObject().put("mac", message.body().getString("mac"))), new UpdateOptions().setUpsert(true), as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as);
                                             message.reply(null);
                                         } else {
                                             message.reply(new JsonObject());
@@ -300,7 +300,7 @@ public class DeviceDao {
                     for (int i = 0; i < future.length; i++) {
                         future[i].setHandler((AsyncResult<JsonObject> rs) -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs);
                             } else {
                                 list.add(rs.result());
                                 if (atomicInteger.get() == batch - 1) {//最后一次
@@ -335,7 +335,7 @@ public class DeviceDao {
             MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
                     , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
                         if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars);
                             rs.fail(ars.cause());
                         } else {
                             JsonObject resultJson = JsonObject.mapFrom(ars.result());
@@ -360,7 +360,7 @@ public class DeviceDao {
                         .put("mac", new JsonObject().put("$exists", false))
                 , new FindOptions().setFields(new JsonObject().put("_id", 0).put("SN", 1)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (rs.result().size() > 0) {
                             message.reply(new JsonArray(rs.result()));
@@ -383,7 +383,7 @@ public class DeviceDao {
                 message.body().getString("SN")),
                 new JsonObject().put("_id", 0).put("password1", 1), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result())) {

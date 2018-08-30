@@ -15,6 +15,8 @@ public class RedisKeyConf {
 
     public final static String USER_ACCOUNT = "user:";//用户
 
+    public final static String RATE_LIMIT = "limit:";//限流
+
     public final static String VERIFY_CODE_COUNT = "code:count";//验证码次数
 
     public final static String USER_INFO = "user:info";//用户信息
@@ -26,4 +28,10 @@ public class RedisKeyConf {
     public final static String SAVE_PUBLISH_MSG = "msg:publish";//保存用户注册信息
 
     public final static String MSG_MODEL_CONF = "msg:conf:";//保存用户注册信息
+
+    public final static String USER_VAL_TOKEN = "token";//token字段
+
+    public final static String USER_VAL_TIMES = "limit";//limit 限流次数字段
+
+    public final static String USER_VAL_INFO = "info";//信息
 }

@@ -26,8 +26,8 @@ public abstract class SynchUserDao {
      */
     public void onSynchUser(JsonObject message) {
         logger.info("==UserHandler=onSynchUser" + message);
-        RedisClient.client.set(RedisKeyConf.USER_ACCOUNT+message.getString("username")
-                , message.getString("userPwd"), rs -> {
+        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.getString("username")
+                , RedisKeyConf.USER_VAL_TOKEN, message.getString("userPwd"), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
                 });
     }
@@ -41,7 +41,7 @@ public abstract class SynchUserDao {
      */
     public void onSynchUserInfo(JsonObject message) {
         logger.info("==UserHandler=onSynchUserInfo" + message);
-        RedisClient.client.hset(RedisKeyConf.USER_INFO, message.getString("_id")
+        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"), RedisKeyConf.USER_VAL_INFO
                 , message.toString(), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
                 });
@@ -56,13 +56,13 @@ public abstract class SynchUserDao {
      */
     public void onSynchUpdateUserInfo(JsonObject message) {
         logger.info("==UserHandler=onSynchUpdateUserInfo" + message);
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.getString("uid"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     JsonObject jsonObject = new JsonObject(rs.result()).put("userPwd", message.getString("userPwd"));
-                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.getString("uid")
+                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.getString("uid"), RedisKeyConf.USER_VAL_INFO
                             , jsonObject.toString(), as -> {
                                 if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
                             });

@@ -27,7 +27,7 @@ public class VerifyParamsUtil {
      */
     @SuppressWarnings("Duplicates")
     public static void verifyParams(RoutingContext routingContext, JsonObject params, Handler<AsyncResult<JsonObject>> handler) {
-        logger.info("VerifyParamsUtil==verifyParams==params = " + params);
+        logger.debug("VerifyParamsUtil==verifyParams==params = " + params);
         if (null != params && params.size() > 0 && Objects.nonNull(routingContext.get("params"))) {
             Boolean isFlag = true;
             JsonObject jsonObject = new JsonObject(routingContext.get("params").toString());
@@ -46,7 +46,7 @@ public class VerifyParamsUtil {
                         break;
                     }
                 } catch (Exception e) {
-                    logger.warn("VerifyParamsUtil==verifyParams==params cast type is Fail");
+//                    logger.warn("VerifyParamsUtil==verifyParams==params cast type is Fail");
                     handler.handle(Future.failedFuture(e));
                 }
             }
@@ -56,11 +56,11 @@ public class VerifyParamsUtil {
                             , SpiConf.getConfigJson().getString("versionType"));//加入类型参数
                 handler.handle(Future.succeededFuture(jsonObject));
             } else {
-                logger.warn("VerifyParamsUtil==verifyParams==params type is Fail");
+//                logger.warn("VerifyParamsUtil==verifyParams==params type is Fail");
                 handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params type is Fail"));
             }
         } else {
-            logger.warn("VerifyParamsUtil==verifyParams==params is null");
+//            logger.warn("VerifyParamsUtil==verifyParams==params is null");
             handler.handle(Future.failedFuture("VerifyParamsUtil==verifyParams==params is null"));
         }
     }

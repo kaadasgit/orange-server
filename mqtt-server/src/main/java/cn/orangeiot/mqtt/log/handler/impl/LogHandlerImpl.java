@@ -93,7 +93,7 @@ public class LogHandlerImpl implements LogHandler {
      */
     @Override
     public void writeLog(String msg, int msgId, long timeId, String topic, int partition) {
-        logger.info("params  msg -> {} , msgId -> {} , timeId -> {} , topic -> {} , partition -> {}"
+        logger.debug("params  msg -> {} , msgId -> {} , timeId -> {} , topic -> {} , partition -> {}"
                 , msg, msgId, timeId, topic, partition);
         KafkaProducerRecord<String, String> record = wrapLog(msg, topic, partition);
         //write block
@@ -124,7 +124,7 @@ public class LogHandlerImpl implements LogHandler {
      * @version 1.0
      */
     public void writeLog(String msg, int msgId, long timeId, String topic, int partition, Handler<AsyncResult<Boolean>> handler) {
-        logger.info("params  msg -> {} , msgId -> {} , timeId -> {} , topic -> {} , partition -> {}"
+        logger.debug("params  msg -> {} , msgId -> {} , timeId -> {} , topic -> {} , partition -> {}"
                 , msg, msgId, timeId, topic, partition);
         KafkaProducerRecord<String, String> record = wrapLog(msg, topic, partition);
         //write block
@@ -290,7 +290,7 @@ public class LogHandlerImpl implements LogHandler {
     @SuppressWarnings("Duplicates")
     @Override
     public void readLog(String topic, String custor) {
-        logger.info("params  custor -> {} , topic -> {}", custor, topic);
+        logger.debug("params  custor -> {} , topic -> {}", custor, topic);
         //取出信息条数,防止一次取出数据过大,阻塞
         vertx.executeBlocking(e -> {
             String index;
@@ -396,7 +396,7 @@ public class LogHandlerImpl implements LogHandler {
      */
     @Override
     public void consumeLog(int msgId, String topic, Message<JsonObject> message) {
-        logger.info("params  msg -> {} , topic -> {}", msgId, topic);
+        logger.debug("params  msg -> {} , topic -> {}", msgId, topic);
         redisClient.hget(RedisKey.LOG_RECODR + topic, String.valueOf(msgId), res -> {
             if (res.failed()) {
                 res.cause().printStackTrace();
@@ -530,7 +530,7 @@ public class LogHandlerImpl implements LogHandler {
      */
     @SuppressWarnings("Duplicates")
     public void readRelMsgId(String topic, String custor) {
-        logger.info("params  custor -> {} , topic -> {}", custor, topic);
+        logger.debug("params  custor -> {} , topic -> {}", custor, topic);
         //取出信息条数,防止一次取出数据过大,阻塞
         vertx.executeBlocking(e -> {
             String index;

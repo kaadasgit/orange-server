@@ -47,7 +47,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
      * @version 1.0
      */
     public void UpgradeProcess(Message<JsonObject> message) {
-        logger.info("==UPgradeProcess==params -> {}", message.body());
+        logger.debug("==UPgradeProcess==params -> {}", message.body());
 
         //獲取升級數據
         vertx.eventBus().send(OtaAddr.class.getName() + OTA_SELECT_DATA, message.body(), (AsyncResult<Message<JsonArray>> rs) -> {

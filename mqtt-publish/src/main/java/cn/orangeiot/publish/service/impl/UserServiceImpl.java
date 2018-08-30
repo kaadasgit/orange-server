@@ -43,10 +43,10 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void selectGWAdmin(JsonObject jsonObject) {
-        logger.info("params -> {}", jsonObject);
+        logger.debug("params -> {}", jsonObject);
         vertx.eventBus().send(UserAddr.class.getName() + GET_GW_ADMIN, jsonObject, rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
             } else {
                 DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                         , "gw:" + jsonObject.getString("gwId")).addHeader("qos", "1")

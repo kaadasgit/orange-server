@@ -47,7 +47,7 @@ public class ApprovateServiceImpl extends BaseService implements ApprovateServic
      */
     @Override
     public void approvateOTA(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
-        logger.info("params -> {}", jsonObject);
+        logger.debug("params -> {}", jsonObject);
         //数据校验
         if (Objects.nonNull(jsonObject.getValue("userId")) && Objects.nonNull(jsonObject.getValue("params")) &&
                 Objects.nonNull(jsonObject.getJsonObject("params").getValue("type"))

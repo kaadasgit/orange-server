@@ -64,7 +64,9 @@ public enum ErrorType {
     UOLOAD_VERIFY_DATA_MAC_FIAL(592, "SN和password1与mac映射不对"),
     UPDATE_API_FAIL(539, "api接口更新失敗"),
     MQTT_CONNECT_FAIL(407, "mqtt server connect fail"),
-    MEMENET_USER_NO_REGISTER(414, "don't register user ,memenet");
+    MEMENET_USER_NO_REGISTER(414, "don't register user ,memenet"),
+    DEVICE_NOT_FOUND(404, "device not found"),
+    REQUEST_COUNT_LOT(499, "too many requests");
 
     private int key;
 

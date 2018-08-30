@@ -39,7 +39,7 @@ public class NotifyHandler implements MessageAddr {
      * @version 1.0
      */
     public void notifyGatewayAdmin(Message<JsonObject> message) {
-        logger.info("==NotifyHandler=NotifyGatewayAdmin===params -> " + message.body());
+        logger.debug("==NotifyHandler=NotifyGatewayAdmin===params -> " + message.body());
         //获取网关管理员信息
         vertx.eventBus().send(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, message.body(), (AsyncResult<Message<JsonObject>> rs) -> {
             if (rs.failed()) {
@@ -62,7 +62,7 @@ public class NotifyHandler implements MessageAddr {
      * @version 1.0
      */
     public void replyGatewayUser(Message<JsonObject> message) {
-        logger.info("==NotifyHandler=replyGatewayUser===params -> " + message.body());
+        logger.debug("==NotifyHandler=replyGatewayUser===params -> " + message.body());
         vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body().put("func", "replyApprovalBindGW"),
                 SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
                         .addHeader("uid", "app:" + message.body().getString("requestuid")));

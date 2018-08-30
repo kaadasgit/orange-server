@@ -46,11 +46,10 @@ public class ResponseMsgUtil implements UserAddr {
                     } else {
                         if (Objects.nonNull(as.result().body())) {
                             logger.info("==ResponseMsgUtil==sendMessage send  username->\n" + username);
-                            logger.info("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
+                            logger.debug("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
                             if (sipOptions == SipOptions.UDP) {
                                 String[] address = as.result().body().split(":");
                                 SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
-                                logger.info("==ResponseMsgUtil==sendMessage send  UDP host -> {},port -> {}->\n", socket.host(), socket.port());
                                 SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(), rs -> {
                                     if (rs.failed()) {
                                         logger.error(rs.cause().getMessage(), rs.cause());
@@ -89,7 +88,7 @@ public class ResponseMsgUtil implements UserAddr {
                     } else {
                         if (Objects.nonNull(as.result().body())) {
                             logger.info("==ResponseMsgUtil==sendMessage send  username->\n" + username);
-                            logger.info("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
+                            logger.debug("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
                             if (sipOptions == SipOptions.UDP) {
                                 String[] address = as.result().body().split(":");
                                 SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
@@ -104,7 +103,7 @@ public class ResponseMsgUtil implements UserAddr {
                                         else {
                                             vertx.eventBus().send(UserAddr.class.getName() + DEL_REGISTER_USER,
                                                     new JsonObject().put("uri", username));
-                                            logger.info("unregister user " + username);
+                                            logger.warn("unregister user " + username);
                                         }
                                     }
                                 });
@@ -132,7 +131,6 @@ public class ResponseMsgUtil implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public static void reSendAndClean(Vertx vertx, String msg, String username) {
-        logger.info("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
         // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
@@ -174,7 +172,7 @@ public class ResponseMsgUtil implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public static void reSend(String msg, String username) {
-        logger.info("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
+        logger.debug("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
         // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {

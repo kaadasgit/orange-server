@@ -8,10 +8,14 @@ import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.UpdateOptions;
 import io.vertx.ext.mongo.WriteOption;
@@ -50,7 +54,7 @@ public class GatewayDao {
                 .put("isAdmin", 1), new JsonObject().put("_id", 1).put("uid", 1).put("adminuid", 1).put("adminName", 1)
                 .put("adminNickname", 1), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as);
                 message.reply(null);
             } else {
                 if (Objects.nonNull(as.result())) {//存在管理员
@@ -62,9 +66,9 @@ public class GatewayDao {
                     }
                     message.reply(new JsonObject(), new DeliveryOptions().addHeader("code",
                             String.valueOf(ErrorType.NOTIFY_ADMIN_BY_GATEWAY.getKey())).addHeader("msg", ErrorType.NOTIFY_ADMIN_BY_GATEWAY.getValue()));
-                    RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), userResult -> {
+                    RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, userResult -> {
                         if (userResult.failed()) {
-                            userResult.cause().printStackTrace();
+                            logger.error(userResult.cause().getMessage(), userResult);
                             message.reply(null);
                         } else {
                             // 加入审批列表
@@ -74,7 +78,7 @@ public class GatewayDao {
                                         .put("uid", message.body().getString("uid")).put("type", 1)
                                         .put("status", 1), new JsonObject().put("_id", 1), approvalResult -> {
                                     if (approvalResult.failed()) {
-                                        approvalResult.cause().printStackTrace();
+                                        logger.error(approvalResult.cause().getMessage(), approvalResult);
                                     } else {
                                         //处理是否是催促
                                         if (!Objects.nonNull(approvalResult.result())) {
@@ -86,7 +90,7 @@ public class GatewayDao {
                                                     .put("approvalName", as.result().getString("adminName")).put("approvalNickname", as.result().getString("adminNickname"))
                                                     .put("requestTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                                                     .put("type", 1).put("approvalTime", time).put("status", 1), rs -> {//status 1 有效
-                                                if (rs.failed()) rs.cause().printStackTrace();
+                                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                             });
                                         }
                                     }
@@ -96,9 +100,9 @@ public class GatewayDao {
                         }
                     });
                 } else {//绑定网关(角色管理员)
-                    RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), userResult -> {
+                    RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, userResult -> {
                         if (userResult.failed()) {
-                            userResult.cause().printStackTrace();
+                            logger.error(userResult.cause().getMessage(), userResult);
                             message.reply(null);
                         } else {
                             if (Objects.nonNull(userResult.result())) {
@@ -138,12 +142,12 @@ public class GatewayDao {
                 .put("isAdmin", 1), new JsonObject().put("_id", 1).put("deviceNickName", 1).put("deviceSN", 1)
                 .put("adminuid", 1), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as);
             } else {
                 if (Objects.nonNull(as.result())) {
-                    RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+                    RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
                         if (rs.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(rs.cause().getMessage(), rs);
                         } else {
                             if (Objects.nonNull(rs.result()))
                                 message.reply(as.result().put("requestNickName", new JsonObject(rs.result()).getString("nickName")));
@@ -172,21 +176,29 @@ public class GatewayDao {
                 .put("type", message.body().getInteger("type")).put("approvalTime"
                         , LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
+                message.reply(null);
             } else {
                 message.reply(new JsonObject().put("type", message.body().getInteger("type")));//审批状态
             }
         });
         if (message.body().getInteger("type") == 2) {//审批通过
-            RedisClient.client.hmget(RedisKeyConf.USER_INFO, new ArrayList<String>() {{
-                add(message.body().getString("requestuid"));
-                add(message.body().getString("uid"));
-            }}, as -> {
-                if (as.failed()) {
-                    as.cause().printStackTrace();
+            //取用戶信息
+            Future.<String>future(f -> RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("requestuid"), RedisKeyConf.USER_VAL_INFO, f)
+            ).compose(f ->
+                    Future.<JsonArray>future(fu ->
+                            RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
+                                if (rs.failed())
+                                    fu.fail(rs.cause());
+                                else
+                                    fu.complete(new JsonArray().add(f).add(rs.result()));
+                            })
+                    )).setHandler(res -> {
+                if (res.failed()) {
+                    logger.error(res.cause().getMessage(), res);
                 } else {
-                    JsonObject reqUser = new JsonObject(as.result().getList().get(0).toString());//请求用户
-                    JsonObject adminUser = new JsonObject(as.result().getList().get(1).toString());//管理员用户
+                    JsonObject reqUser = new JsonObject(res.result().getList().get(0).toString());//请求用户
+                    JsonObject adminUser = new JsonObject(res.result().getList().get(1).toString());//管理员用户
                     MongoClient.client.save("kdsGatewayDeviceList", new JsonObject()
                             .put("deviceSN", message.body().getString("devuuid")).put("uid", reqUser.getString("_id"))
                             .put("deviceNickName", message.body().getString("devuuid")).put("username", reqUser.getString("username"))
@@ -194,13 +206,13 @@ public class GatewayDao {
                             .put("adminName", adminUser.getString("username")).put("adminNickname", adminUser.getString("nickName")).put("isAdmin", 2)
                             .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                             .put("userid", reqUser.getLong("userid")), rs -> {
-                        if (rs.failed()) rs.cause().printStackTrace();
+                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                     });
-
-
                 }
             });
+
         }
+
     }
 
 
@@ -216,7 +228,7 @@ public class GatewayDao {
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
                 .put("deviceNickName", 1).put("adminuid", 1)), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 List<JsonObject> resultList = rs.result().stream().map(e -> {
@@ -245,7 +257,7 @@ public class GatewayDao {
                 .put("deviceNickName", 1).put("username", 1).put("userNickname", 1)
                 .put("uid", 1).put("requestTime", 1)), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 message.reply(new JsonArray(rs.result()));
@@ -260,9 +272,9 @@ public class GatewayDao {
      * @version 1.0
      */
     public void onGetUserInfo(Message<JsonObject> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 message.reply(new JsonObject(rs.result()));
@@ -281,7 +293,7 @@ public class GatewayDao {
         MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devicesn"))
                 , new JsonObject().put("$set", new JsonObject().put("domain", message.body().getString("domain")))
                 , new UpdateOptions().setUpsert(false), rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
 
         if (Objects.nonNull(message.body().getValue("type"))) {//綁定網關失敗
@@ -289,13 +301,13 @@ public class GatewayDao {
                 MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
                         .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
                     if (rs.failed())
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                 });
             else
                 MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
                         .put("deviceSN", message.body().getString("devicesn")).put("uid", message.body().getString("uid")), rs -> {
                     if (rs.failed())
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                 });
         }
     }
@@ -311,7 +323,7 @@ public class GatewayDao {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
                 .put("adminuid", message.body().getString("uid")), new JsonObject().put("_id", 1), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 if (Objects.nonNull(rs.result())) {//管理员解绑
@@ -337,7 +349,7 @@ public class GatewayDao {
                     , message.body().getString("devuuid")), new FindOptions().setFields(new JsonObject()
                     .put("userid", 1).put("_id", 0)), rs -> {
                 if (rs.failed()) {
-                    rs.cause().printStackTrace();
+                    logger.error(rs.cause().getMessage(), rs);
                     message.reply(null);
                 } else {
                     message.reply(new JsonArray(rs.result()));
@@ -399,7 +411,7 @@ public class GatewayDao {
                     , new FindOptions().setFields(new JsonObject()
                             .put("userid", 1).put("_id", 0)), rs -> {
                         if (rs.failed()) {
-                            rs.cause().printStackTrace();
+                            logger.error(rs.cause().getMessage(), rs);
                             message.reply(null);
                         } else {
                             message.reply(new JsonArray(rs.result()));
@@ -427,17 +439,17 @@ public class GatewayDao {
                         .put("adminuid", message.body().getString("uid")).put("uid", message.body().getString("uid"))
                 , new JsonObject().put("_id", 0).put("userid", 1), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result())) {//是否是设备管理员
                             MongoClient.client.removeDocument("kdsGatewayDeviceList",
                                     new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("_id"))), as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as);
                                             message.reply(null);
                                         } else {
-                                            message.reply(rs.result());
+                                            message.reply(as.result());
                                         }
                                     });
                         } else {
@@ -459,7 +471,7 @@ public class GatewayDao {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
                 .put("adminuid", message.body().getString("uid")), new JsonObject().put("_id", 0), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 if (Objects.nonNull(rs.result())) {
@@ -467,7 +479,7 @@ public class GatewayDao {
                             , message.body().getString("devuuid")), new FindOptions().setFields(new JsonObject()
                             .put("uid", 1).put("username", 1).put("userNickname", 1).put("_id", 1)), as -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as);
                             message.reply(null);
                         } else {
                             message.reply(new JsonArray(as.result().stream().filter(
@@ -495,7 +507,7 @@ public class GatewayDao {
                 message.body().getString("gwId")).put("isAdmin", 1), new JsonObject().put("uid", 1)
                 .put("_id", 0), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 if (Objects.nonNull(rs.result()))
@@ -531,7 +543,7 @@ public class GatewayDao {
                                         , message.body().getJsonObject("eventparams")))
                                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                                     if (rs.failed()) {
-                                        rs.cause().printStackTrace();
+                                        logger.error(rs.cause().getMessage(), rs);
                                     }
                                 });
                     }
@@ -554,7 +566,7 @@ public class GatewayDao {
                         .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//下线狀態
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     }
                 });
     }
@@ -575,7 +587,7 @@ public class GatewayDao {
                         .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//刪除狀態
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     }
                 });
     }
@@ -594,7 +606,7 @@ public class GatewayDao {
                                 .add("online").add("offline"))), new JsonObject().put("deviceList", 1).put("_id", 0),
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (Objects.nonNull(rs.result().getValue("deviceList"))) {
                             message.reply(new JsonObject().put("deviceList",
@@ -662,7 +674,7 @@ public class GatewayDao {
                 new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
                         .put("deviceSN", 1)), ars -> {
                     if (ars.failed()) {
-                        ars.cause().printStackTrace();
+                        logger.error(ars.cause().getMessage(), ars);
                         message.reply(null);
                     } else {
                         JsonObject paramsJsonObject = new JsonObject();

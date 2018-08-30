@@ -209,6 +209,7 @@ public class ApiGateway extends AbstractVerticle {
                         response.end(JsonObject.mapFrom(result).toString());
                         break;
                     case 500:
+                        result.setErrorMessage(ErrorType.RESULT_LOGIN_EVIL.getKey(), ErrorType.RESULT_LOGIN_EVIL.getValue());
                         result.setErrorMessage(ErrorType.RESULT_SERVER_FIAL.getKey(), ErrorType.RESULT_SERVER_FIAL.getValue());
                         response.end(JsonObject.mapFrom(result).toString());
                         break;

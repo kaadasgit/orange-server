@@ -94,9 +94,8 @@ public class PorcessHandler {
     public void processTcp(NetSocket netSocket) {
 
         netSocket.handler(buffer -> {
-            logger.info("SERVER received remoteAddress: " + netSocket.remoteAddress());
-            logger.info("SERVER I received some bytes: " + buffer.length());
-            logger.info("SERVER body(string):\n " + new String(buffer.getBytes()));
+            logger.info("SERVER received remoteAddress -> {} , bytes -> {}", netSocket.remoteAddress(), buffer.length());
+            logger.debug("SERVER body(string):\n " + new String(buffer.getBytes()));
 
             // 消息协议解析
             MsgParserDecode.parseSIPMessage(buffer.getBytes(), true, false, rs -> {
@@ -133,9 +132,9 @@ public class PorcessHandler {
      */
     @SuppressWarnings("Duplicates")
     public void processUdp(DatagramPacket datagramPacket) {
-        logger.info("SERVER received remoteAddress: " + datagramPacket.sender().toString());
-        logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
-        logger.info("SERVER body(string):\n " + new String(datagramPacket.data().getBytes()));
+        logger.info("SERVER received remoteAddress -> {} , bytes -> {}", datagramPacket.sender().host()
+                , datagramPacket.data().length());
+        logger.debug("SERVER body(string):\n " + new String(datagramPacket.data().getBytes()));
 
         // 消息协议解析
         MsgParserDecode.parseSIPMessage(datagramPacket.data().getBytes(), true, false, rs -> {
@@ -163,8 +162,7 @@ public class PorcessHandler {
             logger.error("processRequest request is null.");
             return;
         }
-        logger.info("==PorcessHandler==redirectSwitch===request fristline====" + sipMessage.getFirstLine());
-        logger.info("==PorcessHandler==redirectSwitch===request method====" + sipMessage.getMethod());
+        logger.info("request fristline -> {} , method -> {}", sipMessage.getFirstLine(), sipMessage.getMethod());
         switch (sipMessage.getMethod()) {
             case Request.REGISTER://注冊處理
                 registerHandler.processRegister(sipMessage, sipOptions, socketAddress, vertx);
@@ -248,7 +246,6 @@ public class PorcessHandler {
             ContentLength contentLen = (ContentLength) request.getContentLength();
             if (contentLen != null && contentLen.getContentLength() != 0) {
                 ContentType contentType = (ContentType) request.getHeader(ContentType.NAME);
-                System.out.println("the sdp contenttype is " + contentType);
                 byeReq.setContentLength(contentLen);
                 try {
                     byeReq.setContent(request.getContent(), contentType);
@@ -289,7 +286,6 @@ public class PorcessHandler {
                 ExpiresHeader expireHeader = headerFactory.createExpiresHeader(30);
                 response.setExpires(expireHeader);
             }
-            logger.info("response : " + response.toString());
             ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
 
         } catch (ParseException e) {

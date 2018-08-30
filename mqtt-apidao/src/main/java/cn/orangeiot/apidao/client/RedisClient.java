@@ -38,6 +38,7 @@ public class RedisClient {
      * @date 17-11-23
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void redisConf(Vertx vertx) {
         InputStream redisIn = RedisClient.class.getResourceAsStream("/redis-conf.json");
         String redisConf = "";//jdbc连接配置

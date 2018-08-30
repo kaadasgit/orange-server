@@ -54,7 +54,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 .put("uname", jsonObject.getString("user_id")).put("model"
                         , Objects.nonNull(jsonObject.getValue("model")) ? jsonObject.getString("model") : ""), ars -> {
             if (ars.failed()) {
-                ars.cause().printStackTrace();
+                logger.error(ars.cause().getMessage(), ars);
                 message.reply(null);
             } else {
                 String macLock = "";
@@ -63,9 +63,9 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 else
                     macLock = jsonObject.getString("devname");
                 String finalMacLock = macLock;
-                RedisClient.client.hget(RedisKeyConf.USER_INFO, jsonObject.getString("user_id"), rrs -> {
+                RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("user_id"), RedisKeyConf.USER_VAL_INFO, rrs -> {
                     if (rrs.failed()) {
-                        rrs.failed();
+                        logger.error(rrs.cause().getMessage(), rrs);
                     } else {
                         JsonObject userInfo = new JsonObject(rrs.result());
                         String adminname = userInfo.getString("username");
@@ -73,7 +73,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                 , new JsonObject().put("_id", 1), flag -> {
                                     if (flag.failed()) {
-                                        flag.failed();
+                                        logger.error(flag.cause().getMessage(), flag);
                                     } else {
                                         if (!Objects.nonNull(flag.result())) {
                                             MongoClient.client.insert("kdsNormalLock", new JsonObject().put("lockName"
@@ -90,7 +90,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                             .put("model", Objects.nonNull(jsonObject.getValue("model")) ? jsonObject.getString("model") : "")
                                                     , res -> {
                                                         if (res.failed()) {
-                                                            res.cause().printStackTrace();
+                                                            logger.error(res.cause().getMessage(), res);
                                                             message.reply(null);
                                                         } else {
                                                             if (Objects.nonNull(res.result())) {
@@ -125,15 +125,15 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         JsonObject jsonObject = message.body();
         MongoClient.client.removeDocuments("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                 , rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
         MongoClient.client.removeDocuments("kdsDeviceList", new JsonObject().put("lockName", jsonObject.getString("devname"))
                 , rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
         MongoClient.client.removeDocuments("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("devname"))
                 , rs -> {
-                    if (rs.failed()) rs.cause().printStackTrace();
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
         message.reply(new JsonObject());
     }
@@ -152,7 +152,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("adminuid", new JsonObject().put("$exists", true)),
                 new JsonObject().put("adminuid", 1), ars -> {
                     if (ars.failed()) {
-                        ars.cause().printStackTrace();
+                        logger.error(ars.cause().getMessage(), ars);
+                        message.reply(null);
                     } else {
                         if (Objects.nonNull(ars.result().getValue("adminuid"))) {
                             message.reply(new JsonObject());
@@ -160,22 +161,22 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                     .equals(jsonObject.getString("adminid"))) {//管理员删除设备
                                 MongoClient.client.removeDocuments("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                         , rs -> {
-                                            if (rs.failed()) rs.cause().printStackTrace();
+                                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                                 MongoClient.client.removeDocuments("kdsDeviceList", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                         , rs -> {
-                                            if (rs.failed()) rs.cause().printStackTrace();
+                                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                                 MongoClient.client.removeDocuments("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("devname"))
 //                                                .put("versionType", message.body().getString("versionType"))
                                         , rs -> {
-                                            if (rs.failed()) rs.cause().printStackTrace();
+                                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                             } else {//普通用户删除设备
                                 MongoClient.client.removeDocument("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                                 .put("uid", jsonObject.getString("adminid"))
                                         , rs -> {
-                                            if (rs.failed()) rs.cause().printStackTrace();
+                                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                             }
                         }
@@ -197,11 +198,11 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 jsonObject.getString("dev_username"))).add(new JsonObject().put("userMail", jsonObject.getString("dev_username")))),
                 new JsonObject().put("_id", 1), ars -> {//获取device_username的用户信息
                     if (ars.failed()) {
-                        ars.cause().printStackTrace();
+                        logger.error(ars.cause().getMessage(), ars);
                     } else {
                         MongoClient.client.removeDocument("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                 .put("uid", ars.result().getString("_id")), rs -> {
-                            if (rs.failed()) rs.cause().printStackTrace();
+                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                             else
                                 message.reply(new JsonObject());
                         });
@@ -236,13 +237,13 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 , jsonObject.getString("device_username"))).add(new JsonObject().put("userMail", jsonObject.getString("device_username")))),
                 new JsonObject().put("nickName", 1).put("userMail", 1).put("userTel", 1), ars -> {//获取device_username的用户信息
                     if (ars.failed()) {
-                        ars.failed();
+                        logger.error(ars.cause().getMessage(), ars);
                     } else {
                         if (Objects.nonNull(ars.result())) {
                             MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("adminuid", jsonObject.getString("admin_id")).put("lockName", jsonObject.getString("devname"))
                                     , new JsonObject(), returnData -> {
                                         if (returnData.failed()) {
-                                            returnData.failed();
+                                            logger.error(returnData.cause().getMessage(), returnData);
                                         } else {
                                             if (Objects.nonNull(returnData.result())) {//是否是锁的管理员
                                                 String adminname = returnData.result().getString("adminname");
@@ -267,7 +268,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                 MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                                         .put("uname", jsonObject.getString("device_username")), new JsonObject().put("_id", 1), drs -> {
                                                     if (drs.failed()) {
-                                                        drs.failed();
+                                                        logger.error(drs.cause().getMessage(), drs);
                                                     } else {
                                                         if (!Objects.nonNull(drs.result())) {
                                                             if (jsonObject.getString("open_purview").equals("3")) {//查詢設備信息
@@ -275,14 +276,14 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                                         .put("uid", jsonObject.getString("admin_id")), new JsonObject().put("center_latitude", 1)
                                                                         .put("center_longitude", 1).put("edge_latitude", 1).put("edge_longitude", 1).put("circle_radius", 1), rs -> {
                                                                     if (rs.failed()) {
-                                                                        rs.failed();
+                                                                        logger.error(rs.cause().getMessage(), rs);
                                                                     } else {
                                                                         paramsJsonObject.put("center_latitude", rs.result().getString("center_latitude"))
                                                                                 .put("center_longitude", rs.result().getString("center_longitude")).put("edge_latitude", rs.result().getString("edge_latitude"))
                                                                                 .put("edge_longitude", rs.result().getString("edge_longitude")).put("circle_radius", rs.result().getString("circle_radius"));
                                                                         MongoClient.client.insert("kdsNormalLock", paramsJsonObject, res -> {
                                                                             if (res.failed()) {
-                                                                                res.cause().printStackTrace();
+                                                                                logger.error(res.cause().getMessage(), res);
                                                                                 message.reply(null, new DeliveryOptions().addHeader("code",
                                                                                         String.valueOf(ErrorType.DEV_REQUEST_FAIL.getKey())).addHeader("msg", ErrorType.DEV_REQUEST_FAIL.getValue()));
 
@@ -304,7 +305,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                                         .put("center_longitude", "0").put("edge_latitude", "0").put("edge_longitude", "0").put("circle_radius", "0");
                                                                 MongoClient.client.insert("kdsNormalLock", paramsJsonObject, res -> {
                                                                     if (res.failed()) {
-                                                                        res.cause().printStackTrace();
+                                                                        logger.error(res.cause().getMessage(), res);
                                                                         message.reply(null, new DeliveryOptions().addHeader("code",
                                                                                 String.valueOf(ErrorType.DEV_REQUEST_FAIL.getKey())).addHeader("msg", ErrorType.DEV_REQUEST_FAIL.getValue()));
                                                                     } else {
@@ -352,7 +353,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("adminuid", new JsonObject().put("$exists", true)).put("uid", jsonObject.getString("user_id")),
                 new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1), ars -> {
                     if (ars.failed()) {
-                        ars.cause().printStackTrace();
+                        logger.error(ars.cause().getMessage(), ars);
                         message.reply(null);
                     } else {
                         JsonObject paramsJsonObject = new JsonObject()
@@ -367,7 +368,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 new FindOptions().setLimit(20).setSkip((pageNum - 1) * 20).setSort(
                                         new JsonObject().put("open_time", -1)), rs -> {
                                     if (rs.failed()) {
-                                        rs.cause().printStackTrace();
+                                        logger.error(rs.cause().getMessage(), rs);
                                         message.reply(null);
                                     } else {
                                         message.reply(new JsonArray(rs.result()));
@@ -395,7 +396,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         MongoClient.client.updateCollection("kdsNormalLock", new JsonObject().put("uname", jsonObject.getString("dev_username"))
                 .put("lockName", jsonObject.getString("devname")), paramsJsonObject, rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
                 message.reply(new JsonObject());
@@ -417,7 +418,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                             .put("adminuid", new JsonObject().put("$exists", true)),
                     new JsonObject().put("adminname", 1).put("lockNickName", 1).put("adminnickname", 1), ars -> {
                         if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars);
                         } else {
                             if (Objects.nonNull(ars.result())) {
                                 if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
@@ -426,8 +427,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                             .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("adminnickname"))
                                             .put("uname", ars.result().getString("adminname")).put("open_purview", "3").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
                                             .put("open_type", jsonObject.getString("open_type")), rs -> {
-                                        if (ars.failed()) {
-                                            ars.cause().printStackTrace();
+                                        if (rs.failed()) {
+                                            logger.error(rs.cause().getMessage(), rs);
                                         } else {
                                             message.reply(new JsonObject());
                                         }
@@ -446,7 +447,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                     , new JsonObject().put("uname", 1).put("lockNickName", 1).put("unickname", 1).put("open_purview", 1)
                             .put("datestart", 1).put("dateend", 1).put("items", 1), ars -> {
                         if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars);
                         } else {
                             JsonObject paramsJsoNObject = new JsonObject().put("lockName", jsonObject.getString("devname"))
                                     .put("versionType", message.body().getString("versionType"))
@@ -462,13 +463,13 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                             paramsJsoNObject.put("open_purview", "1").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                                             if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
                                                 MongoClient.client.insert("kdsOpenLockList", paramsJsoNObject, rs -> {
-                                                    if (rs.failed()) rs.cause().printStackTrace();
+                                                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                                 });
                                             }
                                             MongoClient.client.updateCollection("kdsNormalLock", new JsonObject().put("uid", jsonObject.getString("user_id"))
                                                             .put("lockName", jsonObject.getString("devname")), new JsonObject().put("$set", new JsonObject().put("open_purview", "4"))
                                                     , rs -> {
-                                                        if (rs.failed()) rs.cause().printStackTrace();
+                                                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                                         else
                                                             message.reply(new JsonObject());
                                                     });
@@ -500,7 +501,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                                 paramsJsoNObject.put("open_purview", "2").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                                                 if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
                                                     MongoClient.client.insert("kdsOpenLockList", paramsJsoNObject, rs -> {
-                                                        if (rs.failed()) rs.cause().printStackTrace();
+                                                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                                     });
                                                 }
                                                 message.reply(new JsonObject());
@@ -531,7 +532,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                     paramsJsoNObject.put("open_purview", "3").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                                     if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
                                         MongoClient.client.insert("kdsOpenLockList", paramsJsoNObject, rs -> {
-                                            if (rs.failed()) rs.cause().printStackTrace();
+                                            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                                     }
 //                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid", jsonObject.getString("user_id")));
@@ -557,7 +558,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                             .put("adminuid", new JsonObject().put("$exists", true)),
                     new JsonObject().put("adminname", 1).put("lockNickName", 1).put("adminnickname", 1), ars -> {
                         if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars);
                         } else {
                             if (Objects.nonNull(ars.result())) {
                                 message.reply(new JsonObject());
@@ -573,7 +574,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                     , new JsonObject().put("uname", 1).put("lockNickName", 1).put("unickname", 1).put("open_purview", 1)
                             .put("datestart", 1).put("dateend", 1).put("items", 1), ars -> {
                         if (ars.failed()) {
-                            ars.cause().printStackTrace();
+                            logger.error(ars.cause().getMessage(), ars);
                         } else {
                             switch (ars.result().getString("open_purview")) {
                                 case "1":
@@ -651,7 +652,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("open_purview", 1).put("auto_lock", 1).put("macLock", 1).put("circle_radius", 1).put("center_latitude", 1)
                         .put("center_longitude", 1).put("password1", 1).put("password2", 1).put("model", 1)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (Objects.nonNull(rs.result()))
                             message.reply(new JsonArray(rs.result()));
@@ -674,7 +675,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 new FindOptions().setFields(new JsonObject().put("unickname", 1).put("uname", 1).put("datestart", 1)
                         .put("dateend", 1).put("open_purview", 1).put("items", 1).put("adminname", 1)), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (Objects.nonNull(rs.result()))
                             message.reply(new JsonArray(rs.result().stream().filter(e -> !e.getString("uname").equals(e.getString("adminname")))
@@ -700,7 +701,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("edge_latitude", jsonObject.getString("edge_latitude")).put("edge_longitude", jsonObject.getString("edge_longitude"))
                         .put("circle_radius", jsonObject.getString("circle_radius"))), new UpdateOptions().setMulti(true), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         message.reply(new JsonObject());
                     }
@@ -721,7 +722,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 .put("uid", jsonObject.getString("user_id")), new JsonObject().put("center_latitude", 1).put("center_longitude", 1)
                 .put("circle_radius", 1).put("edge_latitude", 1).put("edge_longitude", 1).put("auto_lock", 1).put("open_purview", 1), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs);
             } else {
                 message.reply(rs.result());
             }
@@ -741,7 +742,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("uid", jsonObject.getString("user_id"))
                 , new JsonObject().put("$set", new JsonObject().put("auto_lock", jsonObject.getString("auto_lock"))), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         message.reply(new JsonObject());
                     }
@@ -762,7 +763,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         .put("uid", jsonObject.getString("user_id"))
                 , new JsonObject().put("$set", new JsonObject().put("lockNickName", jsonObject.getString("lockNickName"))), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         message.reply(new JsonObject());
                     }
@@ -781,7 +782,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
         MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                 , new JsonObject().put("_id", 1), rs -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (Objects.nonNull(rs.result())) {
                             message.reply(rs.result().getString("_id"), new DeliveryOptions()
@@ -805,7 +806,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
      */
     public void uploadOpenLockList(Message<JsonObject> message) {
         JsonObject jsonObject = message.body();
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, jsonObject.getString("user_id"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("user_id"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
             } else {
@@ -830,7 +831,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                     bulkOperations.add(new BulkOperation(params));
                 });
                 MongoClient.client.bulkWrite("kdsOpenLockList", bulkOperations, ars -> {
-                    if (ars.failed()) ars.cause().printStackTrace();
+                    if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
                 });
                 message.reply(new JsonObject());
             }
@@ -914,7 +915,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 , message.body().getString("devname")).put("uname", message.body().getString("uid")),
                                 new JsonObject().put("$addToSet", new JsonObject().put("infoList"
                                         , new JsonObject().put("num", message.body().getString("num"))
-                                                .put("numNickname", message.body().getString("numNickname"))
+                                                .put("numNickname", Objects.nonNull(message.body().getValue("numNickname")) ?
+                                                        message.body().getString("numNickname") : "")
                                                 .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))))
                                 , new UpdateOptions().setUpsert(false), rs -> {
                                     if (rs.failed()) {
@@ -959,29 +961,38 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
      * @date 18-7-13
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void selectOpenLockRecord(Message<JsonObject> message) {
-
         JsonObject jsonObject = message.body();
         MongoClient.client.findOne("kdsNormalLock", new JsonObject().put("lockName", jsonObject.getString("devname"))
                         .put("adminuid", new JsonObject().put("$exists", true)).put("uid", jsonObject.getString("uid")),
                 new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1), ars -> {
                     if (ars.failed()) {
-                        ars.cause().printStackTrace();
+                        logger.error(ars.cause().getMessage(), ars);
                         message.reply(null);
                     } else {
+                        if (!Objects.nonNull(ars.result())) {
+                            message.reply(null,new DeliveryOptions().addHeader("code",
+                                    String.valueOf(ErrorType.DEVICE_NOT_FOUND.getKey())).addHeader("msg", ErrorType.DEVICE_NOT_FOUND.getValue()));
+                            return;
+                        }
                         JsonObject paramsJsonObject = new JsonObject()
                                 .put("versionType", message.body().getString("versionType"));
                         // 根据不同权限查询记录
                         if (Objects.nonNull(ars.result()) && ars.result().getString("adminuid").equals(jsonObject.getString("uid")))
                             paramsJsonObject.put("lockName", jsonObject.getString("devname"))
                                     .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
-                                            , message.body().getString("end_time"))).put("nickName", new JsonObject().put("$regex"
-                                    , message.body().getString("content")).put("$options", "i"));//不区分大小写
+                                            , message.body().getString("end_time"))).put("$or", new JsonArray().add(
+                                    new JsonObject().put("nickName", new JsonObject().put("$regex"
+                                            , message.body().getString("content")).put("$options", "i")))
+                                    .add(new JsonObject().put("user_num", message.body().getString("content"))));//不区分大小写
                         else
                             paramsJsonObject.put("lockName", jsonObject.getString("devname")).put("uname", ars.result().getString("uname"))
                                     .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
-                                            , message.body().getString("end_time"))).put("nickName", new JsonObject().put("$regex"
-                                    , message.body().getString("content")).put("$options", "i"));//不区分大小写
+                                            , message.body().getString("end_time"))).put("$or", new JsonArray().add(
+                                    new JsonObject().put("nickName", new JsonObject().put("$regex"
+                                            , message.body().getString("content")).put("$options", "i")))
+                                    .add(new JsonObject().put("user_num", message.body().getString("content"))));//不区分大小写
 
                         int page = message.body().getInteger("page");
                         int pageNum = message.body().getInteger("pageNum");
@@ -989,7 +1000,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 new FindOptions().setSort(new JsonObject().put("open_time", -1))
                                         .setLimit(pageNum).setSkip((page - 1) * pageNum), rs -> {
                                     if (rs.failed()) {
-                                        rs.cause().printStackTrace();
+                                        logger.error(rs.cause().getMessage(), rs);
                                         message.reply(null);
                                     } else {
                                         if (Objects.nonNull(rs.result())) {
@@ -1010,7 +1021,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
      * @version 1.0
      */
     public void openLockByGateway(Message<JsonObject> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("userId"), as -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("userId"), RedisKeyConf.USER_VAL_INFO, as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as);
             } else {

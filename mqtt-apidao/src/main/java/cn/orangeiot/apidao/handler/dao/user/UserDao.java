@@ -62,9 +62,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUser(Message<JsonObject> message) {
-        logger.info("==UserDao=getUser" + message.body());
         //查找缓存
-        RedisClient.client.get(RedisKeyConf.USER_ACCOUNT + message.body().getString("username"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("username"), RedisKeyConf.USER_VAL_TOKEN, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 message.reply(false);
@@ -141,15 +140,24 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             JsonObject jsonObject = new JsonObject(new String(Base64.decodeBase64(message.body())));
             String uid = jsonObject.getString("_id");
             if (null != uid) {
-                RedisClient.client.get(RedisKeyConf.USER_ACCOUNT + uid, res -> {
+                RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + uid, RedisKeyConf.USER_VAL_TOKEN, res -> {
                     if (res.failed()) {
                         message.reply(false);
-                    } else if (Objects.nonNull(res.result()) && res.result().toString().equals(message.body())) {
-                        message.reply(true, new DeliveryOptions().addHeader("uid", uid));
-                        RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + uid
-                                , config.getLong("liveTime"), times -> {
-                                    if (times.failed())
-                                        logger.error(times.cause().getMessage(), times.cause());
+                    } else if (Objects.nonNull(res.result()) && res.result().equals(message.body())) {
+                        Future.<String>future(f -> RedisClient.client.get(RedisKeyConf.RATE_LIMIT + uid, f))
+                                .setHandler(rs -> {
+                                    if (rs.failed()) {
+                                        logger.error(rs.cause().getMessage(), rs);
+                                        message.reply(false);
+                                    } else {
+                                        message.reply(true, new DeliveryOptions().addHeader("uid", uid)
+                                                .addHeader("times", Objects.nonNull(rs.result()) ? rs.result() : "0"));
+                                        RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + uid
+                                                , config.getLong("liveTime"), times -> {
+                                                    if (times.failed())
+                                                        logger.error(times.cause().getMessage(), times.cause());
+                                                });
+                                    }
                                 });
                     } else {
                         message.reply(false);
@@ -169,7 +177,6 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void telLogin(Message<JsonObject> message) {
-        logger.info("params -> {}", message.body());
         //查找DB
         MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel"))
                 .put("versionType", message.body().getString("versionType")), new JsonObject()
@@ -178,7 +185,6 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             if (res.failed()) {
                 logger.error(res.cause().getMessage(), res.cause());
             } else {
-                logger.info("params -> ok");
                 if (Objects.nonNull(res.result())) {
                     if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
                         encyPwd(res.result().put("username", message.body().getString("tel"))
@@ -282,9 +288,9 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                         String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", uid).put("username", message.body().getString("name")),
                                                 new JWTOptions());//jwt加密
                                         String[] jwts = StringUtils.split(jwtStr, ".");
-                                        RedisClient.client.set(RedisKeyConf.USER_ACCOUNT + uid,
-                                                jwts[1], jwtrs -> {
-                                                    if (jwtrs.failed()) jwtrs.cause().printStackTrace();
+                                        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + uid, RedisKeyConf.USER_VAL_TOKEN
+                                                , jwts[1], jwtrs -> {
+                                                    if (jwtrs.failed()) logger.error(jwtrs.cause().getMessage(), jwtrs);
                                                     else {
                                                         RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + uid
                                                                 , config.getLong("liveTime"), times -> {
@@ -327,9 +333,9 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", jsonObject.getString("_id"))
                     .put("username", jsonObject.getString("username")), new JWTOptions());//jwt加密
             String[] jwts = StringUtils.split(jwtStr, ".");
-            RedisClient.client.set(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("_id"),
-                    jwts[1], rs -> {
-                        if (rs.failed()) rs.cause().printStackTrace();
+            RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("_id"), RedisKeyConf.USER_VAL_TOKEN
+                    , jwts[1], rs -> {
+                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                         else {
                             RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("_id")
                                     , config.getLong("liveTime"), times -> {
@@ -369,8 +375,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getNickname(Message<JsonObject> message) {
-        logger.info("==UserDao=getNickname==params->" + message.body().toString());
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), ars -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, ars -> {
             if (ars.failed()) {
                 logger.error(ars.cause().getMessage(), ars.cause());
             } else {
@@ -404,12 +409,12 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void updateNickname(Message<JsonObject> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), ars -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, ars -> {
             if (ars.failed()) {
                 logger.error(ars.cause().getMessage(), ars.cause());
             } else {
                 if (Objects.nonNull(ars.result())) {
-                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid")
+                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
                             , new JsonObject(ars.result()).put("nickName", message.body().getString("nickname")).toString(), rs -> {
                                 if (rs.failed()) {
                                     logger.error(rs.cause().getMessage(), rs.cause());
@@ -447,7 +452,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void updateUserpwd(Message<JsonObject> message) {
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), as -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, as -> {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as.cause());
             } else {
@@ -594,9 +599,6 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
         RedisClient.client.del(RedisKeyConf.USER_ACCOUNT + uid, rs -> {
             if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
         });//清除token
-        RedisClient.client.hdel(RedisKeyConf.USER_INFO, uid, rs -> {
-            if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
-        });//清除缓存打用户信息
         message.reply(new JsonObject());
     }
 
@@ -609,13 +611,13 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     public void meMeUser(Message<JsonObject> message) {
         //同步緩存
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()))
-                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid"),
-                            new JsonObject(rs.result()).put("meUsername", message.body().getString("username"))
+                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
+                            , new JsonObject(rs.result()).put("meUsername", message.body().getString("username"))
                                     .put("mePwd", message.body().getString("password"))
                                     .put("userid", message.body().getLong("userid")).toString(), as -> {
                                 if (as.failed()) logger.error(rs.cause().getMessage(), rs.cause());
@@ -730,7 +732,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                             }))
             ).setHandler(f -> {//接口返回处理
                 if (f.failed()) {
-                    f.cause().printStackTrace();
+                    logger.error(f.cause().getMessage(), f);
                 } else {
                     //修改用户数据
                     MongoClient.client.bulkWrite("kdsUser", f.result(), ars -> {
@@ -782,13 +784,13 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void uploadPushId(Message<JsonObject> message) {
         logger.info("==params -> " + message.body());
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 message.reply(null);
             } else {
                 if (Objects.nonNull(rs.result())) {
-                    RedisClient.client.hset(RedisKeyConf.USER_INFO, message.body().getString("uid"),
+                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO,
                             new JsonObject(rs.result()).put("JPushId", message.body().getString("JPushId"))
                                     .put("type", message.body().getInteger("type")).toString(),
                             as -> {
@@ -813,7 +815,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void getPushId(Message<JsonObject> message) {
         logger.info("==params -> " + message.body());
-        RedisClient.client.hget(RedisKeyConf.USER_INFO, message.body().getString("uid"), rs -> {
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 message.reply(null);

@@ -76,7 +76,8 @@ public class DeviceHandler implements GatewayAddr {
                                                     vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
                                                             .put("type", 0)
                                                             .put("userid", ers.result().body().getLong("userid").toString())
-                                                            .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
+                                                            .put("devicesn", message.body().getString("devicesn"))
+                                                            .put("uid", rs.result().body().getString("_id")), SendOptions.getInstance());
                                                 } else {
                                                     logger.info("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result -> " + rs.result().body());
                                                     if (rs.result().body().getInteger("result") == 0) {
@@ -89,7 +90,8 @@ public class DeviceHandler implements GatewayAddr {
                                                         vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
                                                                 .put("type", 0)
                                                                 .put("userid", ers.result().body().getLong("userid").toString())
-                                                                .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
+                                                                .put("devicesn", message.body().getString("devicesn"))
+                                                                .put("uid", rs.result().body().getString("_id")), SendOptions.getInstance());
                                                         message.reply(null);
                                                     }
 
@@ -99,7 +101,7 @@ public class DeviceHandler implements GatewayAddr {
                                     vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
                                             .put("type", 0)
                                             .put("userid", "")
-                                            .put("uid",message.body().getString("uid"))
+                                            .put("uid", message.body().getString("uid"))
                                             .put("devicesn", message.body().getString("devicesn")), SendOptions.getInstance());
                                     message.reply(null, new DeliveryOptions().addHeader("code", String.valueOf(ErrorType.MEMENET_USER_NO_REGISTER.getKey()))
                                             .addHeader("msg", ErrorType.MEMENET_USER_NO_REGISTER.getValue()));

@@ -126,7 +126,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                         if (as.result().getInteger("type") == 2) {
                             //同步绑定关系到第三方
                             vertx.eventBus().send(MemenetAddr.class.getName() + BIND_DEVICE_USER,
-                                    new JsonObject().put("uid", as.result().getString("uid"))
+                                    new JsonObject().put("uid", as.result().getString("requestuid"))
                                             .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
                                     , mimiResult -> {
                                         if (!Objects.nonNull(mimiResult.result().body())) {

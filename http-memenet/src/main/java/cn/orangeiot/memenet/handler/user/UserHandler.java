@@ -48,7 +48,7 @@ public class UserHandler implements UserAddr {
         // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as);
                 logger.error("==UserHandler==onRegister Usersha256 encrypt is fail");
             } else {
                 //注册用户请求
@@ -86,7 +86,7 @@ public class UserHandler implements UserAddr {
         // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as);
                 logger.error("==UserHandler==onUpdatePwd Usersha256 encrypt is fail");
             } else {
                 //修改用户密码请求

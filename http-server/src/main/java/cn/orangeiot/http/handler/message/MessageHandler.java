@@ -44,7 +44,6 @@ public class MessageHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void sendSMS(RoutingContext routingContext) {
-        logger.info("==UserHandler=sendSMS==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
                 .put("code", DataType.STRING), asyncResult -> {
@@ -82,7 +81,6 @@ public class MessageHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void sendMail(RoutingContext routingContext) {
-        logger.info("==UserHandler=sendMail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
                 , asyncResult -> {

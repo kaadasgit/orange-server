@@ -7,19 +7,17 @@ import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.EventbusAddr;
-import cn.orangeiot.reg.adminlock.AdminlockAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
@@ -51,7 +49,6 @@ public class UserHandler implements EventbusAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUserByTel(RoutingContext routingContext) {
-        logger.info("==UserHandler=getUserByTel==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
                 .put("password", DataType.STRING), asyncResult -> {
@@ -66,7 +63,7 @@ public class UserHandler implements EventbusAddr {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
-                                    logger.info("==UserHandler=getUserByTel==login success==data-> {}, IP -> {}",rs.result().body().getValue("uid"),
+                                    logger.info("==UserHandler=getUserByTel==login success==data-> {}, IP -> {}", rs.result().body().getValue("uid"),
                                             routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
@@ -92,7 +89,6 @@ public class UserHandler implements EventbusAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUserByEmail(RoutingContext routingContext) {
-        logger.info("==UserHandler=getUserByEmail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
                 .put("password", DataType.STRING), asyncResult -> {
@@ -107,7 +103,7 @@ public class UserHandler implements EventbusAddr {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
-                                    logger.info("==UserHandler=getUserByEmail==login success==data-> {}, IP -> {}",rs.result().body().getValue("uid"),
+                                    logger.info("==UserHandler=getUserByEmail==login success==data-> {}, IP -> {}", rs.result().body().getValue("uid"),
                                             routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
@@ -220,7 +216,6 @@ public class UserHandler implements EventbusAddr {
      * @version 1.0
      */
     public void getNickName(RoutingContext routingContext) {
-        logger.info("==UserHandler=getNickName==");
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
                 , asyncResult -> {

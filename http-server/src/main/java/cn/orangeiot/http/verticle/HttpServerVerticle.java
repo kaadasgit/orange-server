@@ -3,6 +3,7 @@ package cn.orangeiot.http.verticle;
 import cn.orangeiot.http.spi.SpiConf;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -30,4 +31,5 @@ public class HttpServerVerticle extends AbstractVerticle {
     public void stop(Future<Void> stopFuture) throws Exception {
         super.stop(stopFuture);
     }
+
 }

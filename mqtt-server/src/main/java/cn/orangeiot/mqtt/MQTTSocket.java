@@ -151,7 +151,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     PromMetrics.mqtt_sessions_total.inc();
                     connAck.setSessionPresent(false);
                 } else {
-                    logger.warn("Session alredy allocated ...");
+                    logger.debug("Session alredy allocated ...");
                     /*
                      The Server MUST process a second CONCT Packet sent from a Client as a protocol violation and disconnect the Client
                       */
@@ -176,7 +176,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     if (session != null) {
                         cinfo = session.getClientInfo();
                     }
-                    logger.info("keep alive exausted! closing connection for client[" + cinfo + "] ...");
+                    logger.debug("keep alive exausted! closing connection for client[" + cinfo + "] ...");
                     closeConnection();
                 });
                 session.handleConnectMessage(connect, authenticated -> {
@@ -189,7 +189,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         }
 
                     } else {
-                        logger.error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
+                        logger.warn("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
 //                        closeConnection();
                         connAck.setReturnCode(ConnAckMessage.BAD_USERNAME_OR_PASSWORD);
                         sendMessageToClient(connAck);
@@ -246,7 +246,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
                 PublishMessage publish = (PublishMessage) msg;
 
-                logger.info("==client publish topic:" + publish.getTopicName() + "==payload:" + publish.getPayloadAsString());
+                logger.info("client publish topic -> {}", publish.getTopicName());
 
                 session.handlerPublishMessage(publish, session.getClientID(), rs -> {
                     if (rs.failed()) {

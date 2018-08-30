@@ -49,7 +49,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void createAdminDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=createAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devmac", DataType.STRING)
                 .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
@@ -88,7 +87,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void deletevendorDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=deletevendorDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("adminid", DataType.STRING)
                 .put("devname", DataType.STRING), asyncResult -> {
@@ -116,7 +114,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void deleteAdminDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=deleteAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
                 .put("adminid", DataType.STRING), asyncResult -> {
@@ -144,7 +141,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void deleteNormalDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=deleteNormalDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("dev_username", DataType.STRING)
                 .put("adminid", DataType.STRING).put("devname", DataType.STRING), asyncResult -> {
@@ -172,7 +168,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void createNormalDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=createNormalDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("admin_id", DataType.STRING).put("device_username", DataType.STRING)
@@ -212,7 +207,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void downloadOpenLocklist(RoutingContext routingContext) {
-        logger.info("==LockHandler=downloadOpenLocklist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("pagenum", DataType.STRING)
                 .put("device_name", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
@@ -239,7 +233,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void updateNormalDevlock(RoutingContext routingContext) {
-        logger.info("==LockHandler=updateNormalDevlock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("admin_id", DataType.STRING)
                 .put("dateend", DataType.STRING).put("datestart", DataType.STRING)
@@ -277,7 +270,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void adminOpenLock(RoutingContext routingContext) {
-        logger.info("==LockHandler=adminOpenLock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
                 .put("is_admin", DataType.STRING).put("open_type", DataType.STRING)
@@ -313,7 +305,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getAdminDevlist(RoutingContext routingContext) {
-        logger.info("==LockHandler=getAdminDevlist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("user_id", DataType.STRING), asyncResult -> {
@@ -344,7 +335,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void openLockAuth(RoutingContext routingContext) {
-        logger.info("==LockHandler=getAdminDevlist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
                 .put("is_admin", DataType.STRING).put("open_type", DataType.STRING)
@@ -380,7 +370,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getNormalDevlist(RoutingContext routingContext) {
-        logger.info("==LockHandler=getNormalDevlist==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
@@ -408,7 +397,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void editAdminDev(RoutingContext routingContext) {
-        logger.info("==LockHandler=editAdminDev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("center_latitude", DataType.STRING).put("center_longitude", DataType.STRING)
@@ -438,7 +426,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getAdminDevlocklongtitude(RoutingContext routingContext) {
-        logger.info("==LockHandler=getAdminDevlocklongtitude==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("devname", DataType.STRING).put("user_id", DataType.STRING), asyncResult -> {
@@ -465,7 +452,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void updateAdminDevAutolock(RoutingContext routingContext) {
-        logger.info("==LockHandler=updateAdminDevAutolock==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("auto_lock", DataType.STRING).put("user_id", DataType.STRING)
@@ -494,7 +480,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void updateAdminlockNickName(RoutingContext routingContext) {
-        logger.info("==LockHandler=updateAdminlockNickName==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("lockNickName", DataType.STRING).put("user_id", DataType.STRING)
@@ -522,7 +507,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void checkAdmindev(RoutingContext routingContext) {
-        logger.info("==LockHandler=checkAdmindev==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("user_id", DataType.STRING).put("devname", DataType.STRING), asyncResult -> {
@@ -551,7 +535,6 @@ public class LockHandler implements AdminlockAddr {
      */
     @SuppressWarnings("Duplicates")
     public void uploadOpenLockList(RoutingContext routingContext) {
-        logger.info("==LockHandler=uploadOpenLockList==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject()
                 .put("device_name", DataType.STRING).put("device_nickname", DataType.STRING)
@@ -615,7 +598,7 @@ public class LockHandler implements AdminlockAddr {
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("devname", DataType.STRING)
                 .put("open_type", DataType.STRING).put("uid", DataType.STRING)
-                .put("open_purview",DataType.STRING), asyncResult -> {
+                .put("open_purview", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
@@ -661,8 +644,12 @@ public class LockHandler implements AdminlockAddr {
                                     routingContext.response().end(JsonObject.mapFrom(new Result<JsonArray>()
                                             .setData(rs.result().body())).toString());
                                 } else {
-                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
-                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                    if (!rs.result().headers().isEmpty())
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                                .setErrorMessage(Integer.parseInt(rs.result().headers().get("code")), rs.result().headers().get("msg"))).toString());
+                                    else
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                                .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
                                 }
                             }
                         });
@@ -681,8 +668,7 @@ public class LockHandler implements AdminlockAddr {
     public void updateLockNumberInfo(RoutingContext routingContext) {
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
-                .put("num", DataType.STRING).put("devname", DataType.STRING)
-                .put("numNickname", DataType.STRING), asyncResult -> {
+                .put("num", DataType.STRING).put("devname", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
