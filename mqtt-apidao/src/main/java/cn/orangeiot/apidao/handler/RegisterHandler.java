@@ -62,7 +62,7 @@ public class RegisterHandler implements EventbusAddr {
      * @version 1.0
      */
     public void consumer(AsyncResult<Vertx> res) {
-        if (res.succeeded() && Objects.nonNull(System.getProperty("STORAGEPATH"))) {
+        if (res.succeeded()) {
             Vertx vertx = res.result();
 
             //注册mongoclient
@@ -74,8 +74,8 @@ public class RegisterHandler implements EventbusAddr {
             redisClient.redisConf(vertx);
 
             //注冊storage
-            StorageClient storageClient = new StorageClient();
-            storageClient.loadConf(System.getProperty("STORAGEPATH"));
+//            StorageClient storageClient = new StorageClient();
+//            storageClient.loadConf(System.getProperty("STORAGEPATH"));
 
             //jwt配置
             JwtFactory jwtFactory = new JwtFactory();
@@ -126,8 +126,7 @@ public class RegisterHandler implements EventbusAddr {
             rateLimitAboutEvent(vertx);
         } else {
             // failed!
-            logger.error(res.cause().getMessage(), res.cause());
-            logger.fatal("-DSTORAGEPATH  IS NULL");
+            logger.fatal(res.cause().getMessage(), res.cause());
             System.exit(1);
         }
     }
