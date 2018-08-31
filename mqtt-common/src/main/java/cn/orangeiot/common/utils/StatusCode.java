@@ -27,4 +27,7 @@ public interface StatusCode {
 
     //暂时不存在的异常
     int NO_EXISTS_EX = 599;
+
+    //成功
+    int SUCCESSS = 200;
 }

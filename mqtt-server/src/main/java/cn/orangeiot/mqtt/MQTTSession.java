@@ -386,6 +386,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @date 18-7-30
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void writeLog(PublishMessage publishMessage, DeliveryOptions opt, Buffer msg, Handler<AsyncResult<Boolean>> handler) {
         //周期发送
         AtomicInteger atomicInteger = new AtomicInteger(0);

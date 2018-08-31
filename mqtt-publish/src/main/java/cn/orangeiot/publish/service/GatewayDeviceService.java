@@ -23,7 +23,7 @@ public interface GatewayDeviceService extends GatewayAddr, MessageAddr, MemenetA
 
     void approvalList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
-    void unbindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+    void unbindGateway(JsonObject jsonObject, String qos, String msgId, Handler<AsyncResult<JsonObject>> handler);
 
     void delGatewayUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 

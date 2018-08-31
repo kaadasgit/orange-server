@@ -3,17 +3,17 @@ package cn.orangeiot.publish.handler.event.device;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.DataType;
+import cn.orangeiot.common.utils.StatusCode;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.handler.event.EventHandler;
 import cn.orangeiot.publish.model.ResultInfo;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.gateway.GatewayAddr;
+import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,6 +103,45 @@ public class DeviceHandler implements EventbusAddr {
      */
     public void openLock(JsonObject jsonObject) {
         vertx.eventBus().send(GatewayAddr.class.getName() + EVENT_OPEN_LOCK, jsonObject);
+    }
+
+
+    /**
+     * @Description 重置設備
+     * @author zhang bo
+     * @date 18-8-31
+     * @version 1.0
+     */
+    public void resetDevice(JsonObject jsonObject, MultiMap headers, JsonObject conf) {
+        //配置数据
+        JsonObject dataObject = new JsonObject()
+                .put("userId", jsonObject.getString("userId")).put("deviceId", "EMPTY").put("gwId", jsonObject.getString("gwId"))
+                .put("func", "cleanDevAll").put("msgId", 1).put("timestamp", System.currentTimeMillis());
+        DeliveryOptions deliveryOptions = SendOptions.getInstance().addHeader("topic", conf.getString("repeat_message").replace("gwId", jsonObject.getString("gwId")))
+                .addHeader("qos", headers.get("qos")).addHeader("messageId", headers.get("messageId"))
+                .addHeader("uid", jsonObject.getString("gwId")).addHeader("redict", "1");
+
+        vertx.eventBus().send(GatewayAddr.class.getName() + RESET_DEVICE, jsonObject,
+                SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
+                    if (rs.failed()) {
+                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG
+                                , dataObject.put("returnCode", StatusCode.SERVER_ERROR), deliveryOptions);
+                    } else {
+                        if (Objects.nonNull(rs.result().body())) {//数据是否存在
+                            //同步第三方信息
+                            vertx.eventBus().send(MemenetAddr.class.getName() + RELIEVE_DEVICE_USER, rs.result().body()
+                                            .put("uid",rs.result().body().getString("adminuid"))
+                                            .put("devuuid",jsonObject.getString("gwId")).put("mult", rs.result().headers().get("mult"))
+                                    , SendOptions.getInstance());
+
+                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG
+                                    , dataObject.put("returnCode", StatusCode.SUCCESSS), deliveryOptions);
+                        } else {
+                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG
+                                    , dataObject.put("returnCode", StatusCode.Not_FOUND), deliveryOptions);
+                        }
+                    }
+                });
     }
 
 }

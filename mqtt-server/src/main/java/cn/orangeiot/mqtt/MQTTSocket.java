@@ -4,11 +4,13 @@ import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.prometheus.PromMetrics;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
+import cn.orangeiot.mqtt.util.QOSConvertUtils;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.log.LogAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -246,7 +248,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
                 PublishMessage publish = (PublishMessage) msg;
 
-                logger.info("client publish topic -> {}", publish.getTopicName());
+                logger.debug("client publish topic -> {}", publish.getTopicName());
 
                 session.handlerPublishMessage(publish, session.getClientID(), rs -> {
                     if (rs.failed()) {
@@ -415,6 +417,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     public void publishMsg(PublishMessage publish, JsonObject rs, boolean flag) {
         if (Objects.nonNull(rs)) {
+            String tempTopic = publish.getTopicName();
             QOSType qos = publish.getQos();
             publish.setTopicName(rs.getString("topicName"));
             if (flag)
@@ -424,7 +427,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
-            String topic = publish.getTopicName();
+            String topic = Objects.nonNull(publish.getTopicName()) ? publish.getTopicName() : tempTopic;
             PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
             switch (publish.getQos()) {
                 case RESERVED:
@@ -513,7 +516,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         }
         switch (Integer.parseInt(rs.headers().get("qos"))) {
             case 0:
-                if (Objects.nonNull(session)) {
+                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
                     session.handlePublishMessage(publish, null);
                 } else {
                     publish.setQos(MOST_ONE);
@@ -528,7 +531,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case 1:
                 publish.setQos(LEAST_ONE);
-                if (Objects.nonNull(session)) {
+                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
                     if (!Objects.nonNull(publish.getMessageID()))
                         publish.setMessageID(1);
                     session.handlePublishMessage(publish, permitted -> {
@@ -546,24 +549,39 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         publish.setMessageID(1);
                     }
                     if (rs.headers().get("uid").indexOf(":") >= 0) {
-                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                            PubAckMessage pubAck = new PubAckMessage();
-                            pubAck.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubAck);
-                        });
+                        if (Objects.nonNull(rs.headers().get("uid"))) {
+                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
+                                PubAckMessage pubAck = new PubAckMessage();
+                                pubAck.setMessageID(publish.getMessageID());
+                                sendMessageToClient(pubAck);
+                            });
+                        } else
+                            try {
+                                writeLog(rs.headers().get("uid"), publish);
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
                     } else {
-                        sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                                : "app:" + rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                            PubAckMessage pubAck = new PubAckMessage();
-                            pubAck.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubAck);
-                        });
+                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
+                                : "app:" + rs.headers().get("uid");
+                        if (Objects.nonNull(sessions.get(clientId))) {
+                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
+                                PubAckMessage pubAck = new PubAckMessage();
+                                pubAck.setMessageID(publish.getMessageID());
+                                sendMessageToClient(pubAck);
+                            });
+                        } else
+                            try {
+                                writeLog(rs.headers().get("uid"), publish);
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
                     }
                 }
                 break;
             case 2:
                 publish.setQos(EXACTLY_ONCE);
-                if (Objects.nonNull(session)) {
+                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
                     if (Objects.nonNull(rs.headers().get("messageId"))) {
                         publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
                     } else {
@@ -585,18 +603,33 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         publish.setMessageID(1);
                     }
                     if (rs.headers().get("uid").indexOf(":") >= 0) {
-                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                            PubRecMessage pubRec = new PubRecMessage();
-                            pubRec.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubRec);
-                        });
+                        if (Objects.nonNull(sessions.get(rs.headers().get("uid")))) {
+                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
+                                PubRecMessage pubRec = new PubRecMessage();
+                                pubRec.setMessageID(publish.getMessageID());
+                                sendMessageToClient(pubRec);
+                            });
+                        } else
+                            try {
+                                writeLog(rs.headers().get("uid"), publish);
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
                     } else {
-                        sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                                : "app:" + rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                            PubRecMessage pubRec = new PubRecMessage();
-                            pubRec.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubRec);
-                        });
+                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
+                                : "app:" + rs.headers().get("uid");
+                        if (Objects.nonNull(sessions.get(clientId))) {
+                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
+                                PubRecMessage pubRec = new PubRecMessage();
+                                pubRec.setMessageID(publish.getMessageID());
+                                sendMessageToClient(pubRec);
+                            });
+                        } else
+                            try {
+                                writeLog(clientId, publish);
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
                     }
                 }
                 break;
@@ -604,6 +637,36 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 logger.error("qos not in (0,1,2) , value -> {}", rs.headers().get("qos"));
         }
 
+    }
+
+    /**
+     * @Description 寫日志
+     * @author zhang bo
+     * @date 18-8-31
+     * @version 1.0
+     */
+    public void writeLog(String clientId, PublishMessage publishMessage) throws Exception {
+        DeliveryOptions opt = new DeliveryOptions().addHeader("tenant", clientId);
+
+        publishMessage.setRetainFlag(false);
+        Buffer msg = new MQTTEncoder().enc(publishMessage);
+        if (publishMessage.getMessageID() != 0) {
+            //持久化数据
+            String[] arr = opt.getHeaders().get("tenant").split(":");
+            JsonObject request = new JsonObject().put("msg", new JsonObject()
+                    .put("message", publishMessage.getPayloadAsString())
+                    .put("qos", QOSConvertUtils.toStr(publishMessage.getQos()))
+                    .put("msgId", publishMessage.getMessageID())
+                    .put("dst", arr[0]))
+                    .put("msgId", publishMessage.getMessageID())
+                    .put("topic", arr[1]).put("timeId", 0L);
+
+            vertx.eventBus().send(LogAddr.class.getName() + WRITE_LOG, request, SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
+                if (rs.failed()) {
+                    logger.error(rs.cause().getMessage(), rs.cause());
+                }
+            });
+        }
     }
 
 

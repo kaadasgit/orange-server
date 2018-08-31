@@ -34,9 +34,12 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
 
     private Vertx vertx;
 
+    private JsonObject conf;
+
     public GatewayDeviceServiceImpl(Vertx vertx, JsonObject jsonObject) {
         super(vertx, jsonObject);
         this.vertx = vertx;
+        this.conf = jsonObject;
     }
 
 
@@ -247,7 +250,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
      */
     @SuppressWarnings("Duplicates")
     @Override
-    public void unbindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+    public void unbindGateway(JsonObject jsonObject, String qos, String msgId, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("uid", DataType.STRING)
                 .put("devuuid", DataType.STRING), as -> {
@@ -265,6 +268,14 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                 //同步第三方信息
                                 vertx.eventBus().send(MemenetAddr.class.getName() + RELIEVE_DEVICE_USER, as.result().put("mult", rs.result().headers().get("mult"))
                                         , SendOptions.getInstance());
+
+                                if (Boolean.valueOf(rs.result().headers().get("mult")))//通知网关
+                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, new JsonObject()
+                                                    .put("userId", as.result().getString("uid")).put("deviceId", "EMPTY").put("gwId", as.result().getString("devuuid"))
+                                                    .put("func", "cleanDevAll").put("msgId", 1).put("timestamp", System.currentTimeMillis()),
+                                            SendOptions.getInstance().addHeader("topic", conf.getString("repeat_message").replace("gwId", as.result().getString("devuuid")))
+                                                    .addHeader("qos", qos).addHeader("messageId", msgId)
+                                                    .addHeader("uid", as.result().getString("devuuid")).addHeader("redict", "1"));
                             } else {
                                 handler.handle(Future.succeededFuture(JsonObject.mapFrom(
                                         new ResultInfo<>().setErrorMessage(ErrorType.GET_GATEWAY_BIND_FAIL.getKey(), ErrorType.GET_GATEWAY_BIND_FAIL.getValue()

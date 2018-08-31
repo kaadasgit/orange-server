@@ -366,13 +366,6 @@ public class GatewayDao {
 //                                }
 //                            });
 
-                    MongoClient.client.removeDocuments("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
-                            , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
-                            , as -> {//status 2失效
-                                if (as.failed())
-                                    logger.error(as.cause().getMessage(), as);
-                            });
-
                     //未审批的列表失效
                     MongoClient.client.updateCollectionWithOptions("kdsApprovalList", new JsonObject().put("deviceSN"
                             , message.body().getString("devuuid")).put("type", 1)
@@ -391,16 +384,25 @@ public class GatewayDao {
                                 if (ars.failed()) {
                                     logger.error(ars.cause().getMessage(), ars);
                                 } else {
-                                    MongoClient.client.insert("kdsbindGWHistoryRecord", new JsonObject().put("deviceSN"
-                                            , message.body().getString("devuuid")).put("deviceList",
-                                            Objects.nonNull(ars.result().getValue("deviceList")) ?
-                                                    ars.result().getJsonArray("deviceList") : new JsonArray())
-                                                    .put("adminuid", message.body().getString("uid"))
-                                                    .put("bindTime", ars.result().getString("bindTime"))
-                                            , as -> {
-                                                if (as.failed())
-                                                    logger.error(as.cause().getMessage(), as);
-                                            });
+                                    if (Objects.nonNull(ars.result())) {
+                                        MongoClient.client.insert("kdsbindGWHistoryRecord", new JsonObject().put("deviceSN"
+                                                , message.body().getString("devuuid")).put("deviceList",
+                                                Objects.nonNull(ars.result().getValue("deviceList")) ?
+                                                        ars.result().getJsonArray("deviceList") : new JsonArray())
+                                                        .put("adminuid", message.body().getString("uid"))
+                                                        .put("bindTime", ars.result().getString("bindTime"))
+                                                , as -> {
+                                                    if (as.failed())
+                                                        logger.error(as.cause().getMessage(), as);
+                                                });
+
+                                        MongoClient.client.removeDocuments("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
+                                                , message.body().getString("devuuid")).put("adminuid", message.body().getString("uid"))
+                                                , as -> {//status 2失效
+                                                    if (as.failed())
+                                                        logger.error(as.cause().getMessage(), as);
+                                                });
+                                    }
                                 }
                             });
                 }
@@ -717,6 +719,7 @@ public class GatewayDao {
      * @date 18-7-20
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void selectLockRecord(Message<JsonObject> message, JsonObject paramsJsonObject) {
         int page = message.body().getInteger("page");
         int pageNum = message.body().getInteger("pageNum");
@@ -732,6 +735,30 @@ public class GatewayDao {
                             message.reply(new JsonArray(rs.result()));
                         } else
                             message.reply(new JsonArray());
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 重置设备
+     * @author zhang bo
+     * @date 18-8-31
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void resetDevice(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("gwId"))
+                , new JsonObject().put("_id", 0).put("adminuid", 1), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(rs.result())) {//管理员解绑
+                            message.reply(rs.result(), new DeliveryOptions().addHeader("mult", "true"));
+                        } else {
+                            message.reply(null);
+                        }
                     }
                 });
     }

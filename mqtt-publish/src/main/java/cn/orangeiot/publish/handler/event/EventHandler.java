@@ -5,10 +5,7 @@ import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.handler.event.device.DeviceHandler;
 import cn.orangeiot.reg.event.EventAddr;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -46,18 +43,18 @@ public class EventHandler implements EventAddr {
      * @version 1.0
      */
     public void onEventMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
-        logger.info("==EventHandler=onEventMessage params -> " + message.body());
+        logger.debug("==EventHandler=onEventMessage params -> " + message.body());
         VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("msgtype", DataType.STRING)
                 , (AsyncResult<JsonObject> rs) -> {
                     if (rs.failed()) {
                         message.reply(new JsonObject().put("code", 401));//参数校验失败
                     } else {
                         try {
-                            redirectProcess(rs.result());
+                            redirectProcess(rs.result(), message.headers());
                         } catch (Exception e) {
                             logger.error(e.getMessage(), e);
                         }
-                        //是否存在用户时间
+                        //是否存在用户
                         if (!Objects.nonNull(message.body().getString("userId"))) {
                             vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, rs.result(), SendOptions.getInstance()
                                     , (AsyncResult<Message<JsonObject>> as) -> {
@@ -86,7 +83,7 @@ public class EventHandler implements EventAddr {
      * @date 18-3-22
      * @version 1.0
      */
-    public void redirectProcess(JsonObject message) throws Exception {
+    public void redirectProcess(JsonObject message, MultiMap headers) throws Exception {
         logger.debug("==EventHandler=redirectProcess params -> " + message.toString());
         if (Objects.nonNull(message.getValue("func"))) {
             switch (message.getString("func")) {
@@ -113,6 +110,9 @@ public class EventHandler implements EventAddr {
                             && message.getJsonObject("eventparams").getInteger("devecode") == 2) {//开门
                         deviceHandler.openLock(message);
                     }
+                    break;
+                case "gatewayReset":
+                    deviceHandler.resetDevice(message, headers,jsonObject);
                     break;
                 default:
                     logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));

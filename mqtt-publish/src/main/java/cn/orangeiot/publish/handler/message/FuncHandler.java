@@ -160,7 +160,7 @@ public class FuncHandler {
                 });
                 break;
             case "unbindGateway"://取消解绑
-                gatewaydeviceService.unbindGateway(message.body(), rs -> {
+                gatewaydeviceService.unbindGateway(message.body(),message.headers().get("qos"),message.headers().get("messageId"),rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;

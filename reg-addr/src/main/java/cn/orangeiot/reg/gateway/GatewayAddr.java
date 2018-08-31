@@ -41,4 +41,6 @@ public interface GatewayAddr {
     String EVENT_OPEN_LOCK="eventOpenLock";//事件開鎖
 
     String SELECT_OPEN_LOCK_RECORD="selectOpenLockRecord";//查詢開鎖記錄
+
+    String RESET_DEVICE="resetDevice";//重置設備
 }
