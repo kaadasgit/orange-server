@@ -13,7 +13,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "host": "192.168.1.105:8090",
+  "host": "121.201.57.214:8090",
   "basePath": "/",
   "tags": [
     {
@@ -1137,6 +1137,47 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/updateNum"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/adminlock/info/number/bulkupdate": {
+      "post": {
+        "tags": [
+          "adminlock"
+        ],
+        "summary": "批量修改锁编号信息",
+        "description": "",
+        "operationId": "bulkupdateNum",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "List of user object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bulkupdateNum"
             }
           }
         ],
@@ -2446,8 +2487,7 @@
       "required": [
         "uid",
         "devname",
-        "num",
-        "numNickname"
+        "num"
       ],
       "properties": {
         "uid": {
@@ -2458,6 +2498,50 @@
           "type": "string",
           "description": "设备名"
         },
+        "num": {
+          "type": "string",
+          "description": "编号"
+        },
+        "numNickname": {
+          "type": "string",
+          "description": "编号昵称"
+        }
+      }
+    },
+    "bulkupdateNum": {
+      "type": "object",
+      "required": [
+        "uid",
+        "devname",
+        "infoList"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "用户登录返回的uid"
+        },
+        "devname": {
+          "type": "string",
+          "description": "设备名"
+        },
+        "infoList": {
+          "type": "array",
+          "xml": {
+            "name": "deviceInfoNum",
+            "wrapped": true
+          },
+          "items": {
+            "$ref": "#/definitions/deviceInfoNum"
+          }
+        }
+      }
+    },
+    "deviceInfoNum": {
+      "type": "object",
+      "required": [
+        "num"
+      ],
+      "properties": {
         "num": {
           "type": "string",
           "description": "编号"

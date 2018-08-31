@@ -691,6 +691,37 @@ public class LockHandler implements AdminlockAddr {
 
 
     /**
+     * @Description 批量修改锁编号信息
+     * @author zhang bo
+     * @date 18-8-31
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void updateBulkLockNumberInfo(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("infoList", DataType.JSONARRAY).put("devname", DataType.STRING), asyncResult -> {
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(AdminlockAddr.class.getName() + UPDATE_BULK_LOCK_NUM_INFO, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                            .setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+    /**
      * @Description 獲取lock編號信息
      * @author zhang bo
      * @date 18-7-13

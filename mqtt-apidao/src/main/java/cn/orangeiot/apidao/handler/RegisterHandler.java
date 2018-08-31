@@ -160,6 +160,7 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_LOCK_INFO, adminDevDao::updateLockInfo);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + OPEN_LOCK_NO_AUTH_SUCCESS, adminDevDao::openLockNoAuth);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_LOCK_NUM_INFO, adminDevDao::updateLockNumInfo);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_BULK_LOCK_NUM_INFO, adminDevDao::updateBulkLockNumInfo);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_LOCK_NUM_INFO, adminDevDao::getLockNumInfo);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + SELECT_OPNELOCK_RECORD, adminDevDao::selectOpenLockRecord);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + OPEN_LOCK_BY_GATEWAY, adminDevDao::openLockByGateway);

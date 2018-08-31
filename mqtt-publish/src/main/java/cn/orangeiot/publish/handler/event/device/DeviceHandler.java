@@ -115,8 +115,9 @@ public class DeviceHandler implements EventbusAddr {
     public void resetDevice(JsonObject jsonObject, MultiMap headers, JsonObject conf) {
         //配置数据
         JsonObject dataObject = new JsonObject()
-                .put("userId", jsonObject.getString("userId")).put("deviceId", "EMPTY").put("gwId", jsonObject.getString("gwId"))
-                .put("func", "cleanDevAll").put("msgId", 1).put("timestamp", System.currentTimeMillis());
+                .put("userId", jsonObject.getString("userId")).put("deviceId", jsonObject.getString("deviceId"))
+                .put("gwId", jsonObject.getString("gwId"))
+                .put("func", "gatewayReset").put("msgId", 1).put("timestamp", System.currentTimeMillis());
         DeliveryOptions deliveryOptions = SendOptions.getInstance().addHeader("topic", conf.getString("repeat_message").replace("gwId", jsonObject.getString("gwId")))
                 .addHeader("qos", headers.get("qos")).addHeader("messageId", headers.get("messageId"))
                 .addHeader("uid", jsonObject.getString("gwId")).addHeader("redict", "1");

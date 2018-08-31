@@ -61,6 +61,8 @@ public interface AdminlockAddr {
 
     String UPDATE_LOCK_NUM_INFO = "updateLockNumInfo";//修改锁的编号相关信息
 
+    String UPDATE_BULK_LOCK_NUM_INFO = "updateBulkLockNumInfo";//批量修改锁的编号相关信息
+
     String GET_LOCK_NUM_INFO = "getLockNumInfo";//獲取锁的编号相关信息
 
     String SELECT_OPNELOCK_RECORD = "selectOpenLockRecord";//查詢開鎖記錄

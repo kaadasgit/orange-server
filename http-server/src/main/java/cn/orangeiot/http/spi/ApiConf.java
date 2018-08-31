@@ -86,6 +86,8 @@ public interface ApiConf {
 
     String SELECT_OPENLOCK_RECORD = "/openlock/record/select";//查询开门记录
 
+    String UPDATE_BULK_LOCK_NUMBER = "/adminlock/info/number/bulkupdate";//批量修改锁编号信息
+
     String UPDATE_LOCK_NUMBER = "/adminlock/info/number/update";//修改锁编号信息
 
     String GET_LOCK_NUMBER = "/adminlock/info/number/get";//獲取锁编号信息

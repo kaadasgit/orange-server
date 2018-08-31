@@ -271,7 +271,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
 
                                 if (Boolean.valueOf(rs.result().headers().get("mult")))//通知网关
                                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, new JsonObject()
-                                                    .put("userId", as.result().getString("uid")).put("deviceId", "EMPTY").put("gwId", as.result().getString("devuuid"))
+                                                    .put("userId", as.result().getString("uid")).put("deviceId", as.result().getString("devuuid")).put("gwId", as.result().getString("devuuid"))
                                                     .put("func", "cleanDevAll").put("msgId", 1).put("timestamp", System.currentTimeMillis()),
                                             SendOptions.getInstance().addHeader("topic", conf.getString("repeat_message").replace("gwId", as.result().getString("devuuid")))
                                                     .addHeader("qos", qos).addHeader("messageId", msgId)

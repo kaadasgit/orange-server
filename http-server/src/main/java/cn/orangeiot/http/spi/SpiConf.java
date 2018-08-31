@@ -121,6 +121,7 @@ public class SpiConf {
             router.post(ApiConf.UPLOAD_OPEN_LOCK_RECORD).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::uploadOpenLockList);
             router.post(ApiConf.REQUEST_USER_AUTH).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::openLockAuth);
             router.post(ApiConf.UPDATE_LOCK_INFO).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateLockInfo);
+            router.post(ApiConf.UPDATE_BULK_LOCK_NUMBER).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateBulkLockNumberInfo);
             router.post(ApiConf.OPEN_LOCK_NO_AUTH_SUCCESS).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::openLockNoAuthRecord);
             router.post(ApiConf.UPDATE_LOCK_NUMBER).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::updateLockNumberInfo);
             router.post(ApiConf.GET_LOCK_NUMBER).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(lockHandler::getLockNumberInfo);

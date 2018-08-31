@@ -932,6 +932,57 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
 
 
     /**
+     * @Description 批量修改鎖的編號信息
+     * @author zhang bo
+     * @date 18-8-31
+     * @version 1.0
+     */
+    public void updateBulkLockNumInfo(Message<JsonObject> message) {
+        List<BulkOperation> delbulkOperations = new ArrayList<>();
+        List<BulkOperation> writeBulkOperations = new ArrayList<>();
+        message.body().getJsonArray("infoList").forEach(e -> {
+            JsonObject openLockLists = (JsonObject) e;
+
+            JsonObject delParams = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                    .put("filter", new JsonObject().put("lockName", message.body().getString("devname"))
+                            .put("uname", message.body().getString("uid")).put("infoList.num", new JsonObject()
+                                    .put("$in", new JsonArray().add(openLockLists.getString("num")))))
+                    .put("document", new JsonObject().put("$pull", new JsonObject().put("infoList"
+                            , new JsonObject().put("num", openLockLists.getString("num"))))).put("upsert", false).put("multi", false);
+            delbulkOperations.add(new BulkOperation(delParams));
+
+
+            JsonObject writeParams = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                    .put("filter", new JsonObject().put("lockName"
+                            , message.body().getString("devname")).put("uname", message.body().getString("uid")))
+                    .put("document", new JsonObject().put("$addToSet", new JsonObject().put("infoList"
+                            , new JsonObject().put("num", openLockLists.getString("num"))
+                                    .put("numNickname", Objects.nonNull(openLockLists.getValue("numNickname")) ?
+                                            openLockLists.getString("numNickname") : "")
+                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))))
+                    .put("upsert", false).put("multi", false);
+            writeBulkOperations.add(new BulkOperation(writeParams));
+
+        });
+        MongoClient.client.bulkWrite("kdsDeviceList", delbulkOperations, ars -> {
+            if (ars.failed()){
+                logger.error(ars.cause().getMessage(), ars);
+                message.reply(null);
+            }else {
+                MongoClient.client.bulkWrite("kdsDeviceList", writeBulkOperations, rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        message.reply(new JsonObject());
+                    }
+                });
+            }
+        });
+    }
+
+
+    /**
      * @Description 獲取鎖的編號信息
      * @author zhang bo
      * @date 18-7-13
@@ -972,7 +1023,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         message.reply(null);
                     } else {
                         if (!Objects.nonNull(ars.result())) {
-                            message.reply(null,new DeliveryOptions().addHeader("code",
+                            message.reply(null, new DeliveryOptions().addHeader("code",
                                     String.valueOf(ErrorType.DEVICE_NOT_FOUND.getKey())).addHeader("msg", ErrorType.DEVICE_NOT_FOUND.getValue()));
                             return;
                         }
