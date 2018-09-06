@@ -764,6 +764,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         .put("_id", 0).put("adminuid", 1), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs.cause());
+                        message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result())) {
                             message.reply(rs.result());

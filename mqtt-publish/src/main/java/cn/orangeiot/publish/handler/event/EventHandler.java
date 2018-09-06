@@ -6,6 +6,7 @@ import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.handler.event.device.DeviceHandler;
 import cn.orangeiot.reg.event.EventAddr;
 import cn.orangeiot.reg.message.MessageAddr;
+import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -23,7 +24,7 @@ import java.util.Objects;
  * @Description
  * @date 2018-01-16
  */
-public class EventHandler implements EventAddr, MessageAddr {
+public class EventHandler implements EventAddr, MessageAddr, UserAddr {
 
     private static Logger logger = LogManager.getLogger(EventHandler.class);
 
@@ -58,24 +59,40 @@ public class EventHandler implements EventAddr, MessageAddr {
                             logger.error(e.getMessage(), e);
                         }
                         //是否存在用户
-                        vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
-                                , (AsyncResult<Message<JsonArray>> as) -> {
-                                    if (as.failed()) {
-                                        logger.error(as.cause().getMessage(), as);
-                                    } else {
-                                        if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
-                                            handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
-                                            as.result().body().stream().forEach(e -> {
-                                                JsonObject jsonObject = (JsonObject) e;
-                                                vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
-                                                        SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
-                                                                .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1"));
-                                            });
+                        if (!Objects.nonNull(message.body().getString("userId"))) {
+                            vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
+                                    , (AsyncResult<Message<JsonArray>> as) -> {
+                                        if (as.failed()) {
+                                            logger.error(as.cause().getMessage(), as);
                                         } else {
-                                            handler.handle(Future.failedFuture("========gateway no have admin"));
+                                            if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
+                                                handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
+                                                as.result().body().stream().forEach(e -> {
+                                                    JsonObject jsonObject = (JsonObject) e;
+                                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                                            SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                                    .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1"));
+                                                });
+                                            } else {
+                                                handler.handle(Future.failedFuture("========gateway no have admin"));
+                                            }
                                         }
-                                    }
-                                });
+                                    });
+                        } else {
+                            handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
+                                    message.body().getString("userId")))));
+                            //通知管理员
+                            vertx.eventBus().send(UserAddr.class.getName() + GET_GW_ADMIN, new JsonObject().put("gwId", ""), (AsyncResult<Message<JsonObject>> ars) -> {
+                                if (ars.failed()) {
+                                    logger.error(ars.cause().getMessage(), ars);
+                                } else {
+                                    if (Objects.nonNull(ars.result().body()) && !ars.result().body().getString("adminuid").equals(message.body().getString("userId")))
+                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                                SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                        .addHeader("uid", ars.result().body().getString("adminuid")).addHeader("redict", "1"));
+                                }
+                            });
+                        }
                     }
                 });
     }
