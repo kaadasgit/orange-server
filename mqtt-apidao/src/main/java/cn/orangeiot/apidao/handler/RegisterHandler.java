@@ -187,6 +187,7 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(GatewayAddr.class.getName() + DEL_GW_USER, gatewayDao::onDelGatewayUser);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GW_USER_LIST, gatewayDao::onGetGatewayUserList);
         vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, gatewayDao::onGetGatewayAdminByuid);
+        vertx.eventBus().consumer(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, gatewayDao::onGetGatewayUserAll);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_ONLINE, gatewayDao::deviceOnline);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_OFFLINE, gatewayDao::deviceOffline);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + DEVICE_DELETE, gatewayDao::deviceDelete);
@@ -195,6 +196,8 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(GatewayAddr.class.getName() + EVENT_OPEN_LOCK, gatewayDao::EventOpenLock);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + SELECT_OPEN_LOCK_RECORD, gatewayDao::selectOpenLock);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + RESET_DEVICE, gatewayDao::resetDevice);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + UPDATE_GATE_DEV_NICKNAME, gatewayDao::updateDevNickName);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATE_DEV_LIST, gatewayDao::getGatewayDevList);
     }
 
 

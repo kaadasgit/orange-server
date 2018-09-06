@@ -17,7 +17,7 @@
   "kaadasemail_fromAddress": "<kaadas@kaadas.com>",
   "PHILIPSemail_subject": "PHILIP邮件注册验证码",
   "PHILIPSemail_text": "【飞利浦】 您的验证码:verifyCode,请及时使用哦！",
-  "PHILIPSemail_fromAddress": "PHILIP<conex@cone-x.com>",
+  "PHILIPSemail_fromAddress": "PHILIP<app@cone-x.com>",
   "codeCount": 6,
   "jpush_appkey": "339089998f183b226b657010",
   "jpush_secret": "65eaac4d56d769a506a1cda8"

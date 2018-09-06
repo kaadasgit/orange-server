@@ -32,4 +32,8 @@ public interface GatewayDeviceService extends GatewayAddr, MessageAddr, MemenetA
     void getDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
     void selectOpenLockRecord(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void updateDevNickName(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void getGatewayByDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 }

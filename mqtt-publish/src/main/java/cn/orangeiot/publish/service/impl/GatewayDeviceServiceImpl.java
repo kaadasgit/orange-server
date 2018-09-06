@@ -10,6 +10,7 @@ import cn.orangeiot.publish.service.GatewayDeviceService;
 import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import cn.orangeiot.reg.message.MessageAddr;
+import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -419,4 +420,65 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
             }
         });
     }
+
+
+    /**
+     * @Description 修改設備昵稱
+     * @author zhang bo
+     * @date 18-9-5
+     * @version 1.0
+     */
+    public void updateDevNickName(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+        //数据校验
+        VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
+                .put("deviceId", DataType.STRING).put("uid", DataType.STRING).put("nickName", DataType.STRING), as -> {
+            if (as.failed()) {
+                handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
+                        .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
+            } else {
+                vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATE_DEV_NICKNAME, jsonObject, SendOptions.getInstance(), rs -> {
+                    if (Objects.nonNull(rs.result().body())) {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func"))
+                        )));
+                    } else {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue()
+                                        , jsonObject.getString("func")))));
+                    }
+                });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 获取网关下设备
+     * @author zhang bo
+     * @date 18-9-5
+     * @version 1.0
+     */
+    public void getGatewayByDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler) {
+        //数据校验
+        VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
+                .put("uid", DataType.STRING), as -> {
+            if (as.failed()) {
+                handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
+                        .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
+            } else {
+                vertx.eventBus().send(GatewayAddr.class.getName() + GET_GATE_DEV_LIST, jsonObject, SendOptions.getInstance(), rs -> {
+                    if (Objects.nonNull(rs.result().body())) {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setData(rs.result().body()).setFunc(jsonObject.getString("func"))
+                        )));
+                    } else {
+                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                new ResultInfo<>().setErrorMessage(ErrorType.OPERATION_FAIL.getKey(), ErrorType.OPERATION_FAIL.getValue()
+                                        , jsonObject.getString("func")))));
+                    }
+                });
+            }
+        });
+    }
+
 }

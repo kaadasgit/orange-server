@@ -522,6 +522,30 @@ public class GatewayDao {
 
 
     /**
+     * @Description 获取网关所有用户
+     * @author zhang bo
+     * @date 18-9-5
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void onGetGatewayUserAll(Message<JsonObject> message) {
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("gwId")), new FindOptions().setFields(new JsonObject().put("uid", 1)
+                .put("_id", 0)), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs);
+                message.reply(new JsonArray());
+            } else {
+                if (Objects.nonNull(rs.result()))
+                    message.reply(new JsonArray(rs.result()));
+                else
+                    message.reply(new JsonArray());
+            }
+        });
+    }
+
+
+    /**
      * @Description 設備上線
      * @author zhang bo
      * @date 18-3-22
@@ -758,6 +782,64 @@ public class GatewayDao {
                             message.reply(rs.result(), new DeliveryOptions().addHeader("mult", "true"));
                         } else {
                             message.reply(null);
+                        }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 修改设备昵称
+     * @author zhang bo
+     * @date 18-9-5
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void updateDevNickName(Message<JsonObject> message) {
+        MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("devuuid")).put("deviceList.deviceId", new JsonObject()
+                        .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
+                new JsonObject().put("$set", new JsonObject().put("deviceList.$.nickName"
+                        , message.body().getString("nickName"))), as -> {
+                    if (as.failed()) {
+                        logger.error(as.cause().getMessage(), as);
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(as.result())) {
+                            message.reply(new JsonObject());
+                        } else {
+                            message.reply(null);
+                        }
+                    }
+                });
+    }
+
+
+    /**
+     * @Description 獲取網關下的設備列表
+     * @author zhang bo
+     * @date 18-9-5
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getGatewayDevList(Message<JsonObject> message) {
+        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                message.body().getString("devuuid"))
+                        .put("deviceList.event_str", new JsonObject().put("$in", new JsonArray()
+                                .add("online").add("offline"))), new JsonObject().put("deviceList", 1).put("_id", 0),
+                (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                    } else {
+                        if (Objects.nonNull(rs.result().getValue("deviceList"))) {
+                            message.reply(new JsonObject().put("deviceList",
+                                    new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
+                                        JsonObject resultJsonObject = new JsonObject(e.toString());
+                                        resultJsonObject.remove("time");
+                                        return resultJsonObject;
+                                    }).collect(Collectors.toList()))));
+                        } else {
+                            message.reply(new JsonObject().put("deviceList", new JsonArray()));
                         }
                     }
                 });

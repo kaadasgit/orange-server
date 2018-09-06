@@ -629,8 +629,7 @@ public class LockHandler implements AdminlockAddr {
     public void selectOpenLockRecord(RoutingContext routingContext) {
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
-                .put("content", DataType.STRING).put("start_time", DataType.STRING)
-                .put("end_time", DataType.STRING).put("devname", DataType.STRING)
+                .put("start_time", DataType.STRING).put("end_time", DataType.STRING).put("devname", DataType.STRING)
                 .put("page", DataType.INTEGER).put("pageNum", DataType.INTEGER), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);

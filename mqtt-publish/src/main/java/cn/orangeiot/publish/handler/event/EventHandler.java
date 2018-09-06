@@ -5,11 +5,14 @@ import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.handler.event.device.DeviceHandler;
 import cn.orangeiot.reg.event.EventAddr;
+import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import scala.util.parsing.json.JSONArray;
 import sun.security.x509.CertAttrSet;
 
 import java.util.Objects;
@@ -20,7 +23,7 @@ import java.util.Objects;
  * @Description
  * @date 2018-01-16
  */
-public class EventHandler implements EventAddr {
+public class EventHandler implements EventAddr, MessageAddr {
 
     private static Logger logger = LogManager.getLogger(EventHandler.class);
 
@@ -55,23 +58,24 @@ public class EventHandler implements EventAddr {
                             logger.error(e.getMessage(), e);
                         }
                         //是否存在用户
-                        if (!Objects.nonNull(message.body().getString("userId"))) {
-                            vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_UID, rs.result(), SendOptions.getInstance()
-                                    , (AsyncResult<Message<JsonObject>> as) -> {
-                                        if (as.failed()) {
-                                            logger.error(as.cause().getMessage(), as);
+                        vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
+                                , (AsyncResult<Message<JsonArray>> as) -> {
+                                    if (as.failed()) {
+                                        logger.error(as.cause().getMessage(), as);
+                                    } else {
+                                        if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
+                                            handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
+                                            as.result().body().stream().forEach(e -> {
+                                                JsonObject jsonObject = (JsonObject) e;
+                                                vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                                        SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                                .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1"));
+                                            });
                                         } else {
-                                            if (Objects.nonNull(as.result().body()))
-                                                handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
-                                                        as.result().body().getString("uid")))));
-                                            else
-                                                handler.handle(Future.failedFuture("========gateway no have admin"));
+                                            handler.handle(Future.failedFuture("========gateway no have admin"));
                                         }
-                                    });
-                        } else {
-                            handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
-                                    message.body().getString("userId")))));
-                        }
+                                    }
+                                });
                     }
                 });
     }
@@ -112,7 +116,7 @@ public class EventHandler implements EventAddr {
                     }
                     break;
                 case "gatewayReset":
-                    deviceHandler.resetDevice(message, headers,jsonObject);
+                    deviceHandler.resetDevice(message, headers, jsonObject);
                     break;
                 default:
                     logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));

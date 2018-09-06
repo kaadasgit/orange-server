@@ -160,7 +160,7 @@ public class FuncHandler {
                 });
                 break;
             case "unbindGateway"://取消解绑
-                gatewaydeviceService.unbindGateway(message.body(),message.headers().get("qos"),message.headers().get("messageId"),rs -> {
+                gatewaydeviceService.unbindGateway(message.body(), message.headers().get("qos"), message.headers().get("messageId"), rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
@@ -186,6 +186,16 @@ public class FuncHandler {
                 break;
             case "selectOpenLockRecord"://查询開門记录
                 gatewaydeviceService.selectOpenLockRecord(message.body(), rs -> {
+                    handler.handle(rs);
+                });
+                break;
+            case "updateDevNickName"://修改设备昵称
+                gatewaydeviceService.updateDevNickName(message.body(), rs -> {
+                    handler.handle(rs);
+                });
+                break;
+            case "getGatewayDevList"://获取网关下设备
+                gatewaydeviceService.getGatewayByDeviceList(message.body(), rs -> {
                     handler.handle(rs);
                 });
                 break;

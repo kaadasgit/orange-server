@@ -965,10 +965,10 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
 
         });
         MongoClient.client.bulkWrite("kdsDeviceList", delbulkOperations, ars -> {
-            if (ars.failed()){
+            if (ars.failed()) {
                 logger.error(ars.cause().getMessage(), ars);
                 message.reply(null);
-            }else {
+            } else {
                 MongoClient.client.bulkWrite("kdsDeviceList", writeBulkOperations, rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
@@ -1033,17 +1033,17 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         if (Objects.nonNull(ars.result()) && ars.result().getString("adminuid").equals(jsonObject.getString("uid")))
                             paramsJsonObject.put("lockName", jsonObject.getString("devname"))
                                     .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
-                                            , message.body().getString("end_time"))).put("$or", new JsonArray().add(
-                                    new JsonObject().put("nickName", new JsonObject().put("$regex"
-                                            , message.body().getString("content")).put("$options", "i")))
-                                    .add(new JsonObject().put("user_num", message.body().getString("content"))));//不区分大小写
+                                            , message.body().getString("end_time")));
                         else
                             paramsJsonObject.put("lockName", jsonObject.getString("devname")).put("uname", ars.result().getString("uname"))
                                     .put("open_time", new JsonObject().put("$gte", message.body().getString("start_time")).put("$lte"
-                                            , message.body().getString("end_time"))).put("$or", new JsonArray().add(
+                                            , message.body().getString("end_time")));
+
+                        if (Objects.nonNull(message.body().getValue("content")))
+                            paramsJsonObject.put("$or", new JsonArray().add(
                                     new JsonObject().put("nickName", new JsonObject().put("$regex"
                                             , message.body().getString("content")).put("$options", "i")))
-                                    .add(new JsonObject().put("user_num", message.body().getString("content"))));//不区分大小写
+                                    .add(new JsonObject().put("user_num", message.body().getString("content"))));//檢索
 
                         int page = message.body().getInteger("page");
                         int pageNum = message.body().getInteger("pageNum");
