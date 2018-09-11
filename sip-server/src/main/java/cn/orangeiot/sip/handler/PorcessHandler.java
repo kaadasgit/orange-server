@@ -112,6 +112,9 @@ public class PorcessHandler implements UserAddr {
                             responseSwitch((SIPResponse) rs.result(), SipOptions.TCP, netSocket.remoteAddress());//回包
                         else
                             redirectSwitch((SIPRequest) rs.result(), netSocket, SipOptions.TCP, null);//转发处理
+                        vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
+                                new JsonObject().put("socketAddress", netSocket.remoteAddress().toString())
+                                        .put("expires", jsonObject.getInteger("heartIdleTime")));
                     } else {//心跳包
                         vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
                                 new JsonObject().put("socketAddress", netSocket.remoteAddress().toString())
@@ -156,13 +159,25 @@ public class PorcessHandler implements UserAddr {
                         responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
                     else
                         redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
+
+                    heartbeatProcess(datagramPacket);
                 } else {//心跳包
-                    vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
-                            new JsonObject().put("socketAddress", datagramPacket.sender().toString())
-                                    .put("expires", jsonObject.getInteger("heartIdleTime")));
+                    heartbeatProcess(datagramPacket);
                 }
             }
         });
+    }
+
+    /**
+     * @Description 心跳处理
+     * @author zhang bo
+     * @date 18-9-11
+     * @version 1.0
+     */
+    public void heartbeatProcess(DatagramPacket datagramPacket){
+        vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
+                new JsonObject().put("socketAddress", datagramPacket.sender().toString())
+                        .put("expires", jsonObject.getInteger("heartIdleTime")));
     }
 
 

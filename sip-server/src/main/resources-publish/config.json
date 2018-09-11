@@ -10,5 +10,5 @@
   "audioHost": "192.168.1.100",
   "videoPort": 7091,
   "videoHost": "192.168.1.100",
-  "heartIdleTime": 60
+  "heartIdleTime": 100
 }
