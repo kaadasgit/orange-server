@@ -48,6 +48,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
 
     private JsonObject config;
 
+    private final String clientHeader = "app";
+
     public UserDao(JWTAuth jwtAuth, Vertx vertx, JsonObject config) {
         this.jwtAuth = jwtAuth;
         this.vertx = vertx;
@@ -62,6 +64,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUser(Message<JsonObject> message) {
+        String[] ars = message.body().getString("clientId").split(":");
+        if (ars[0].equals(clientHeader)) {//
+            authConn(message);
+            return;
+        }
         //查找缓存
         RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("username"), RedisKeyConf.USER_VAL_TOKEN, rs -> {
             if (rs.failed()) {
@@ -86,7 +93,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                             } else {
                                 if (Objects.nonNull(res.result()) && pwd.equals(res.result().getString("userPwd"))) {
                                     message.reply(true);
-                                    onSynchUser(res.result().put("username", message.body().getString("username")));
+                                    onGatewayInfo(res.result().put("username", message.body().getString("username")));
                                 } else {
                                     message.reply(false);
                                 }
@@ -96,6 +103,37 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 }
             }
         });
+
+    }
+
+    /**
+     * @Description 验证连接
+     * @author zhang bo
+     * @date 18-9-7
+     * @version 1.0
+     */
+    public void authConn(Message<JsonObject> message) {
+        RedisClient.client.hmget(RedisKeyConf.USER_ACCOUNT + message.body().getString("username"),
+                new ArrayList<String>() {{
+                    add(RedisKeyConf.USER_VAL_TOKEN);
+                    add(RedisKeyConf.USER_VAL_OLDTOKEN);
+                }}, rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs.cause());
+                        message.reply(false);
+                    } else {
+                        if (rs.result().size() > 0) {
+                            if (Objects.nonNull(rs.result().getValue(0)) && rs.result().getString(0).equals(message.body().getString("password"))) {//正確
+                                message.reply(true);
+                            } else if (Objects.nonNull(rs.result().getValue(1)) && rs.result().getString(1).equals(message.body().getString("password"))) {//老值
+                                message.reply(false, new DeliveryOptions().addHeader("status", "false"));
+                            } else
+                                message.reply(false);
+                        } else {
+                            message.reply(false);
+                        }
+                    }
+                });
 
     }
 
@@ -300,7 +338,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                                     }
                                                 });
                                         message.reply(new JsonObject().put("token", jwts[1]).put("uid", uid));
-                                        onSynchUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
+                                        onSynchRegisterUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
                                                 .put("_id", uid).put("username", message.body().getString("name")));
                                     }
                                 });
@@ -333,17 +371,6 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", jsonObject.getString("_id"))
                     .put("username", jsonObject.getString("username")), new JWTOptions());//jwt加密
             String[] jwts = StringUtils.split(jwtStr, ".");
-            RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("_id"), RedisKeyConf.USER_VAL_TOKEN
-                    , jwts[1], rs -> {
-                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
-                        else {
-                            RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("_id")
-                                    , config.getLong("liveTime"), times -> {
-                                        if (times.failed())
-                                            logger.error(times.cause().getMessage(), times.cause());
-                                    });
-                        }
-                    });
             message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
                     .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
 
@@ -358,7 +385,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         if (logtime.failed()) logtime.cause().printStackTrace();
                     });
             if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
-                onSynchUserInfo(jsonObject);
+                onSynchUserInfo(jsonObject, jwts[1], config.getLong("liveTime"));
             }
         } else {
             message.reply(null);

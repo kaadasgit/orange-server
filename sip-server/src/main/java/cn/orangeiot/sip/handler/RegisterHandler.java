@@ -37,8 +37,11 @@ public class RegisterHandler implements UserAddr {
 
     private MessageFactory msgFactory;
 
-    public RegisterHandler(MessageFactory msgFactory) {
+    private JsonObject conf;
+
+    public RegisterHandler(MessageFactory msgFactory, JsonObject conf) {
         this.msgFactory = msgFactory;
+        this.conf = conf;
     }
 
     /**
@@ -63,9 +66,12 @@ public class RegisterHandler implements UserAddr {
 //            if (Objects.nonNull(netSocket))
 //                pool.put(toURI.toString(), netSocket);
 //            else
+//            vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
+//                    new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
+//                            .put("expires", expires));
             vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
                     new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
-                            .put("expires", expires));
+                            .put("expires", conf.getInteger("heartIdleTime")));
             logger.debug("register user " + toURI);
         } else {
             flag = false;

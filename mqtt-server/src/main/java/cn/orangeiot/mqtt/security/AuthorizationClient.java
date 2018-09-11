@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
  * Created by giova_000 on 14/10/2015.
  */
 public class AuthorizationClient {
-    
+
     private static Logger logger = LogManager.getLogger(AuthorizationClient.class);
 
     private EventBus eventBus;
@@ -28,13 +28,13 @@ public class AuthorizationClient {
         this.authenticatorAddress = authenticatorAddress;
     }
 
-    public void authorize(String username, String password,String clientID,Handler<ValidationInfo> authHandler) {
+    public void authorize(String username, String password, String clientID, Handler<ValidationInfo> authHandler) {
         // AUTHENTICATION START
-        logger.info("==AuthorizationClient==authorize==username:"+username+"==password:"+password);
+        logger.info("==AuthorizationClient==authorize==username:" + username + "==password:" + password);
         JsonObject oauth2_token_info = new JsonObject()
                 .put("username", username)
                 .put("password", password)
-                .put("clientId",clientID);
+                .put("clientId", clientID);
 
         eventBus.send(authenticatorAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
             ValidationInfo vi = new ValidationInfo();
@@ -42,6 +42,8 @@ public class AuthorizationClient {
                 JsonObject validationInfo = res.result().body();
                 logger.debug(validationInfo);
                 vi.fromJson(validationInfo);
+                if (!res.result().headers().isEmpty())
+                    vi.setHeader(res.result().headers().get("status"));
                 logger.debug("authenticated ===> " + vi.auth_valid);
                 if (vi.auth_valid) {
                     logger.debug("authorized_user ===> " + vi.authorized_user + ", tenant ===> " + vi.tenant);
@@ -59,40 +61,40 @@ public class AuthorizationClient {
     }
 
     public void authorizePublish(String token, String topic, Handler<Boolean> authHandler) {
-        logger.info("==AuthorizationClient==authorizePublish==token:"+token+"==topic:"+topic);
+        logger.info("==AuthorizationClient==authorizePublish==token:" + token + "==topic:" + topic);
         JsonObject info = new JsonObject();
-       	info.put("token", token);
-    	info.put("topic", topic);
-        eventBus.send(authenticatorAddress+".publish", info, (AsyncResult<Message<JsonObject>> res) -> {
-        	boolean status = false;
+        info.put("token", token);
+        info.put("topic", topic);
+        eventBus.send(authenticatorAddress + ".publish", info, (AsyncResult<Message<JsonObject>> res) -> {
+            boolean status = false;
             if (res.succeeded()) {
-            	JsonObject reply = res.result().body();
-            	if (reply.containsKey("permitted")) {
-            		status = reply.getBoolean("permitted");
-            	}
+                JsonObject reply = res.result().body();
+                if (reply.containsKey("permitted")) {
+                    status = reply.getBoolean("permitted");
+                }
             }
-        	authHandler.handle(status);
+            authHandler.handle(status);
         });
     }
 
     public void authorizeSubscribe(String token, List<Couple> topics, Handler<JsonArray> authHandler) {
-        logger.info("==AuthorizationClient==authorizeSubscribe==token:"+token+"==topics:"+topics);
-    	JsonArray topicArray = new JsonArray();
-    	topics.forEach(topic -> {
-    		topicArray.add(topic.getTopicFilter());
-    	});
-       	JsonObject info = new JsonObject();
-       	info.put("token", token);
-    	info.put("topics", topicArray);
-        eventBus.send(authenticatorAddress+".subscribe", info, (AsyncResult<Message<JsonObject>> res) -> {
-        	JsonArray status = new JsonArray();
+        logger.info("==AuthorizationClient==authorizeSubscribe==token:" + token + "==topics:" + topics);
+        JsonArray topicArray = new JsonArray();
+        topics.forEach(topic -> {
+            topicArray.add(topic.getTopicFilter());
+        });
+        JsonObject info = new JsonObject();
+        info.put("token", token);
+        info.put("topics", topicArray);
+        eventBus.send(authenticatorAddress + ".subscribe", info, (AsyncResult<Message<JsonObject>> res) -> {
+            JsonArray status = new JsonArray();
             if (res.succeeded()) {
-            	JsonObject reply = res.result().body();
-            	if (reply.containsKey("permitted")) {
-            		status = reply.getJsonArray("permitted");
-            	}
+                JsonObject reply = res.result().body();
+                if (reply.containsKey("permitted")) {
+                    status = reply.getJsonArray("permitted");
+                }
             }
-        	authHandler.handle(status);
+            authHandler.handle(status);
         });
     }
 
@@ -102,7 +104,16 @@ public class AuthorizationClient {
         public String error_msg;
         public String tenant;
         public String token = null;
-        
+        public String header = null;
+
+        public String getHeader() {
+            return header;
+        }
+
+        public void setHeader(String header) {
+            this.header = header;
+        }
+
         public void fromJson(JsonObject validationInfo) {
             auth_valid = validationInfo.getBoolean("auth_valid", Boolean.FALSE);
             authorized_user = validationInfo.getString("authorized_user");
@@ -112,28 +123,29 @@ public class AuthorizationClient {
                 tenant = extractTenant(authorized_user);
             }
         }
+
         public JsonObject toJson() {
             JsonObject json = new JsonObject();
             json.put("auth_valid", auth_valid);
             json.put("authorized_user", authorized_user);
             json.put("error_msg", error_msg);
             if (token != null) {
-            	json.put("token", token);
+                json.put("token", token);
             }
             return json;
         }
+
         private String extractTenant(String username) {
-            if(username == null || username.trim().length()==0)
+            if (username == null || username.trim().length() == 0)
                 return "";
             String tenant = "";
             int idx = username.lastIndexOf('@');
-            if(idx > 0) {
-                tenant = username.substring(idx+1);
+            if (idx > 0) {
+                tenant = username.substring(idx + 1);
             }
             return tenant;
         }
     }
-
 
 
 }

@@ -127,11 +127,20 @@ public class SocketClientTest {
 
 
 
-        String sdp="REGISTER sip:192.168.1.105:5061 SIP/2.0\n" +
-                "Via: SIP/2.0/UDP 192.168.1.105:5061;branch=z9hG4bK-524287-1---726c884045c07c61;rport\n" +
+        String sdp="REGISTER sip:192.168.1.100 SIP/2.0\n" +
+                "Via: SIP/2.0/UDP 172.16.1.101:37679;branch=z9hG4bK.KoW5ueigd;rport\n" +
+                "From: <sip:123@192.168.1.100>;tag=CJwpPNT8N\n" +
+                "To: sip:123@192.168.1.100\n" +
+                "CSeq: 20 REGISTER\n" +
+                "Call-ID: CBKjCjQqOU\n" +
                 "Max-Forwards: 70\n" +
-                "Expires: 3600\n" +
-                "Content-Length: 0";
+                "Supported: replaces, outbound\n" +
+                "Accept: application/sdp\n" +
+                "Accept: text/plain\n" +
+                "Accept: application/vnd.gsma.rcs-ft-http+xml\n" +
+                "Contact: <sip:123@172.16.1.101:37679;transport=udp>;+sip.instance=\"<urn:uuid:e9dc736b-3e5e-4418-afbc-bf8211f86beb>\"\n" +
+                "Expires: 7200\n" +
+                "User-Agent: LinphoneAndroid/3.3.1 (belle-sip/1.6.3)";
 
         Vertx vertx = Vertx.vertx();
         DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());

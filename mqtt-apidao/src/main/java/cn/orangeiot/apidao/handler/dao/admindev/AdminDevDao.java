@@ -424,7 +424,9 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                 if (!jsonObject.getString("open_type").equals("100")) {//不上傳開鎖記錄，會重復
                                     MongoClient.client.insert("kdsOpenLockList", new JsonObject().put("lockName", jsonObject.getString("devname"))
                                             .put("versionType", message.body().getString("versionType"))
-                                            .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("adminnickname"))
+                                            .put("lockNickName", ars.result().getString("lockNickName"))
+                                            .put("nickName", Objects.nonNull(message.body().getValue("nickName")) ?
+                                                    message.body().getValue("nickName") : ars.result().getString("adminnickname"))
                                             .put("uname", ars.result().getString("adminname")).put("open_purview", "3").put("open_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
                                             .put("open_type", jsonObject.getString("open_type")), rs -> {
                                         if (rs.failed()) {
@@ -451,7 +453,9 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         } else {
                             JsonObject paramsJsoNObject = new JsonObject().put("lockName", jsonObject.getString("devname"))
                                     .put("versionType", message.body().getString("versionType"))
-                                    .put("lockNickName", ars.result().getString("lockNickName")).put("nickName", ars.result().getString("unickname"))
+                                    .put("lockNickName", ars.result().getString("lockNickName"))
+                                    .put("nickName", Objects.nonNull(message.body().getValue("nickName")) ?
+                                            message.body().getValue("nickName") : ars.result().getString("unickname"))
                                     .put("uname", ars.result().getString("uname")).put("open_type", jsonObject.getString("open_type"));
 
                             switch (ars.result().getString("open_purview")) {

@@ -198,6 +198,8 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(GatewayAddr.class.getName() + RESET_DEVICE, gatewayDao::resetDevice);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + UPDATE_GATE_DEV_NICKNAME, gatewayDao::updateDevNickName);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATE_DEV_LIST, gatewayDao::getGatewayDevList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_GATWWAY_USERALL, gatewayDao::getGatewayUserList);
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + GET_USER_GATEWAYLIST, gatewayDao::getUserWithGatewayList);
     }
 
 
@@ -255,6 +257,7 @@ public class RegisterHandler implements EventbusAddr {
     public void streamAboutEvent(Vertx vertx){
         RegisterDao registerDao = new RegisterDao();
         vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_REGISTER_USER, registerDao::saveRegisterInfo);
+        vertx.eventBus().consumer(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER, registerDao::heartbeatRegisterInfo);
         vertx.eventBus().consumer(UserAddr.class.getName() + GET_REGISTER_USER, registerDao::getRegisterInfo);
         vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
         vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);

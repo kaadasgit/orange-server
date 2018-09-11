@@ -1962,6 +1962,10 @@
         "user_id": {
           "type": "string",
           "description": "用户登录返回的uid"
+        },
+        "nickName": {
+          "type": "string",
+          "description": "设备编号昵称"
         }
       }
     },

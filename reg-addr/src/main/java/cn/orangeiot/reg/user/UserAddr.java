@@ -46,6 +46,8 @@ public interface UserAddr {
 
      String SAVE_REGISTER_USER="saveRegisterUser";//注冊用戶信息
 
+     String HEARTBEAT_REGISTER_USER="heartbeatRegisterUser";//注冊用戶信息心跳包
+
      String GET_REGISTER_USER="getRegisterUser";//獲取用戶信息
 
      String DEL_REGISTER_USER="delRegisterUser";//刪除用戶信息

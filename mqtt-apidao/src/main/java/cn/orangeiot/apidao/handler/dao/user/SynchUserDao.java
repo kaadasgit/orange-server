@@ -1,8 +1,11 @@
 package cn.orangeiot.apidao.handler.dao.user;
 
+import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -18,6 +21,8 @@ public abstract class SynchUserDao {
 
     private static Logger logger = LogManager.getLogger(SynchUserDao.class);
 
+    private final long DEFAULT_EXPIRE = 7 * 24 * 3600;//存活时间
+
     /**
      * @Description 同步用户
      * @author zhang bo
@@ -25,10 +30,37 @@ public abstract class SynchUserDao {
      * @version 1.0
      */
     public void onSynchUser(JsonObject message) {
-        logger.info("==UserHandler=onSynchUser" + message);
+        logger.debug("==UserHandler=onSynchUser" + message);
         RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.getString("username")
                 , RedisKeyConf.USER_VAL_TOKEN, message.getString("userPwd"), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
+                });
+    }
+
+
+    /**
+     * @Description 同步相关信息
+     * @author zhang bo
+     * @date 17-11-27
+     * @version 1.0
+     */
+    public void onGatewayInfo(JsonObject message) {
+        logger.debug("==UserHandler=onSynchUser" + message);
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.getString("username")),
+                new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0)), ars -> {
+                    if (ars.failed()) {
+                        logger.error(ars.cause().getMessage(), ars);
+                    } else {
+                        RedisClient.client.hmset(RedisKeyConf.USER_ACCOUNT + message.getString("username")
+                                , new JsonObject().put(RedisKeyConf.USER_VAL_TOKEN, message.getString("userPwd"))
+                                        .put(RedisKeyConf.BING_USER_INFO, new JsonArray(ars.result())), rs -> {
+                                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
+                                    else
+                                        RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + message.getString("username"), DEFAULT_EXPIRE, times -> {
+                                            if (times.failed()) logger.error(times.cause().getMessage(), times);
+                                        });
+                                });
+                    }
                 });
     }
 
@@ -39,8 +71,50 @@ public abstract class SynchUserDao {
      * @date 17-11-27
      * @version 1.0
      */
-    public void onSynchUserInfo(JsonObject message) {
-        logger.info("==UserHandler=onSynchUserInfo" + message);
+    @SuppressWarnings("Duplicates")
+    public void onSynchUserInfo(JsonObject message, String token, Long liveTime) {
+        logger.debug("==UserHandler=onSynchUserInfo" + message);
+        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.getString("_id"), RedisKeyConf.USER_VAL_TOKEN, ars -> {
+            if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
+            else {
+                if (Objects.nonNull(ars.result())) {
+                    RedisClient.client.hmset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"),
+                            new JsonObject().put(RedisKeyConf.USER_VAL_INFO
+                                    , message.toString()).put(RedisKeyConf.USER_VAL_TOKEN, token).put(RedisKeyConf.USER_VAL_OLDTOKEN, ars.result()), rs -> {
+                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
+                                else
+                                    RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + message.getString("_id")
+                                            , liveTime, times -> {
+                                                if (times.failed())
+                                                    logger.error(times.cause().getMessage(), times.cause());
+                                            });
+                            });
+                } else {
+                    RedisClient.client.hmset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"),
+                            new JsonObject().put(RedisKeyConf.USER_VAL_INFO
+                                    , message.toString()).put(RedisKeyConf.USER_VAL_TOKEN, token), rs -> {
+                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
+                                else
+                                    RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + message.getString("_id")
+                                            , liveTime, times -> {
+                                                if (times.failed())
+                                                    logger.error(times.cause().getMessage(), times.cause());
+                                            });
+                            });
+                }
+            }
+        });
+
+    }
+
+    /**
+     * @Description 同步注册信息
+     * @author zhang bo
+     * @date 18-9-7
+     * @version 1.0
+     */
+    public void onSynchRegisterUserInfo(JsonObject message) {
+        logger.debug("==UserHandler=onSynchUserInfo" + message);
         RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"), RedisKeyConf.USER_VAL_INFO
                 , message.toString(), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
@@ -55,7 +129,7 @@ public abstract class SynchUserDao {
      * @version 1.0
      */
     public void onSynchUpdateUserInfo(JsonObject message) {
-        logger.info("==UserHandler=onSynchUpdateUserInfo" + message);
+        logger.debug("==UserHandler=onSynchUpdateUserInfo" + message);
         RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());

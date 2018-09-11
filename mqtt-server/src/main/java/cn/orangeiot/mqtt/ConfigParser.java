@@ -20,6 +20,7 @@ public class ConfigParser {
     private String tlsCertPath;
     private String publish;
     private int socketIdleTimeout;
+    private String reply_message;
 
     private static final int IDLE_TIMEOUT_SECONDS = 120;
 
@@ -42,6 +43,10 @@ public class ConfigParser {
         tlsCertPath = tls.getString("certPath");
         socketIdleTimeout = conf.getInteger("socket_idle_timeout", IDLE_TIMEOUT_SECONDS);
         publish = conf.getString("send_publish_message");
+    }
+
+    public String getReply_message() {
+        return reply_message;
     }
 
     public String getPublish() {

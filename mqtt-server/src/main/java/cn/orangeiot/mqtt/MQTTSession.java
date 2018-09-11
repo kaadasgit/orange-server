@@ -70,6 +70,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private Handler<String> keepaliveErrorHandler;
     private NetSocket netSocket;
     private int sendTimes;
+    private final String REPLY_MESSAGE = "/clientId/rpc/reply";
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
@@ -149,7 +150,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     }
 
     public void handleConnectMessage(ConnectMessage connectMessage,
-                                     Handler<Boolean> authHandler)
+                                     Handler<JsonObject> authHandler)
             throws Exception {
 
         clientID = connectMessage.getClientID();
@@ -174,9 +175,12 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                     String tenant = validationInfo.tenant;
                     _initTenant(tenant);
                     _handleConnectMessage(connectMessage);
-                    authHandler.handle(Boolean.TRUE);
+                    authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
                 } else {
-                    authHandler.handle(Boolean.FALSE);
+                    JsonObject json = new JsonObject().put("state", Boolean.FALSE);
+                    if (Objects.nonNull(validationInfo.getHeader()))
+                        json.put("header", validationInfo.getHeader());
+                    authHandler.handle(json);
                 }
             });
         } else {
@@ -189,7 +193,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             }
             _initTenant(tenant);
             _handleConnectMessage(connectMessage);
-            authHandler.handle(Boolean.TRUE);
+            authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
         }
     }
 

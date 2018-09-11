@@ -31,6 +31,42 @@ public class RegisterDao {
                         });
             }
         });
+        RedisClient.client.set(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress"), message.body().getString("uri"), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
+            } else {
+                RedisClient.client.expire(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress")
+                        , message.body().getInteger("expires").longValue(), as -> {
+                            if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 心跳包
+     * @author zhang bo
+     * @date 18-9-11
+     * @version 1.0
+     */
+    public void heartbeatRegisterInfo(Message<JsonObject> message) {
+        RedisClient.client.get(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress"), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
+            } else {
+                if (Objects.nonNull(rs.result())) {
+                    RedisClient.client.expire(RedisKeyConf.REGISTER_USER + rs.result()
+                            , message.body().getInteger("expires").longValue(), as -> {
+                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                            });
+                    RedisClient.client.expire(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress")
+                            , message.body().getInteger("expires").longValue(), as -> {
+                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                            });
+                }
+            }
+        });
     }
 
 

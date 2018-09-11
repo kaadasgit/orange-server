@@ -29,12 +29,14 @@ public class MQTTNetSocket extends MQTTSocket {
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage(), event.getCause());
             handleWillMessage();
+            checkDevice(session.getClientID(), "offline");//离线狀態
             shutdown();
         });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
-            logger.info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
+            logger.debug(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
             handleWillMessage();
+            checkDevice(session.getClientID(), "offline");//离线狀態
             shutdown();
         });
     }

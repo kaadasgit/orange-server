@@ -136,9 +136,9 @@ public class MsgParserDecode {
                     }
                 }
                 handler.handle(Future.succeededFuture(message));
-            } else {
-                return;
-//                handler.handle(Future.failedFuture("=========The heartbeat packets"));
+            } else {//心跳包heart
+                handler.handle(Future.succeededFuture(null));
+//                handler.handle(Future.succeededFuture("=========The heartbeat packets"));
             }
         } else {
             handler.handle(Future.failedFuture("=========data msgBuffer is null"));

@@ -336,6 +336,7 @@ public class GatewayDao {
     }
 
 
+
     /**
      * @Description 获取mimi网用户userid
      * @author zhang bo
@@ -830,6 +831,7 @@ public class GatewayDao {
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
+                        message.reply(new JsonObject().put("deviceList", new JsonArray()));
                     } else {
                         if (Objects.nonNull(rs.result().getValue("deviceList"))) {
                             message.reply(new JsonObject().put("deviceList",
@@ -844,5 +846,61 @@ public class GatewayDao {
                     }
                 });
     }
+
+
+    /**
+     * @Description 獲取網關下綁定的用戶列表
+     * @author zhang bo
+     * @date 18-9-10
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getGatewayUserList(Message<JsonObject> message) {
+//        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("clientId"), RedisKeyConf.BING_USER_INFO, ars -> {
+//            if (ars.failed()) {
+//                logger.error(ars.cause().getMessage(), ars);
+//                message.reply(null);
+//            } else {
+//                if (Objects.nonNull(ars.result())) {
+//                    message.reply(new JsonArray(ars.result()));
+//                } else {
+                    MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("clientId"))
+                            , new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0)), rs -> {
+                                if (rs.failed()) {
+                                    logger.error(rs.cause().getMessage(), rs);
+                                    message.reply(null);
+                                } else {
+                                    if (Objects.nonNull(rs.result())) {
+                                        message.reply(new JsonArray(rs.result()));
+                                    }
+                                }
+                            });
+//                }
+//            }
+//        });
+    }
+
+
+    /**
+     * @Description 获取用户网关下所有设备列表
+     * @author zhang bo
+     * @date 18-9-10
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getUserWithGatewayList(Message<JsonObject> message) {
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid", message.body().getString("clientId"))
+                , new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0).put("deviceSN", 1)), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(rs.result())) {
+                            message.reply(new JsonArray(rs.result()));
+                        }
+                    }
+                });
+    }
+
 
 }

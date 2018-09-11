@@ -1,5 +1,6 @@
 package cn.orangeiot.sip.handler;
 
+import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import cn.orangeiot.sip.proto.codec.MsgParserDecode;
@@ -33,7 +34,7 @@ import java.util.*;
  * @Description
  * @date 2018-01-30
  */
-public class PorcessHandler {
+public class PorcessHandler implements UserAddr {
 
     private static Logger logger = LogManager.getLogger(PorcessHandler.class);
 
@@ -55,15 +56,18 @@ public class PorcessHandler {
 
     private Vertx vertx;
 
+    private JsonObject jsonObject;
+
     public PorcessHandler(MessageFactory msgFactory, HeaderFactory headerFactory, JsonObject jsonObject
             , AddressFactory addressFactory, Vertx vertx) {
-        this.registerHandler = new RegisterHandler(msgFactory);
+        this.registerHandler = new RegisterHandler(msgFactory, jsonObject);
         this.inviteHandler = new InviteHandler(msgFactory, headerFactory, jsonObject, addressFactory);
         this.responseHandler = new ResponseHandler(msgFactory, headerFactory, addressFactory, jsonObject);
         this.msgFactory = msgFactory;
         this.headerFactory = headerFactory;
         this.addressFactory = addressFactory;
         this.vertx = vertx;
+        this.jsonObject = jsonObject;
     }
 
 
@@ -94,7 +98,7 @@ public class PorcessHandler {
     public void processTcp(NetSocket netSocket) {
 
         netSocket.handler(buffer -> {
-            logger.info("SERVER received remoteAddress -> {} , bytes -> {}", netSocket.remoteAddress(), buffer.length());
+            logger.debug("SERVER received remoteAddress -> {} , bytes -> {}", netSocket.remoteAddress(), buffer.length());
             logger.debug("SERVER body(string):\n " + new String(buffer.getBytes()));
 
             // 消息协议解析
@@ -103,10 +107,16 @@ public class PorcessHandler {
                     logger.error(rs.cause().getMessage(), rs.cause());
                     netSocket.close();
                 } else {
-                    if (rs.result() instanceof SIPResponse)
-                        responseSwitch((SIPResponse) rs.result(), SipOptions.TCP, netSocket.remoteAddress());//回包
-                    else
-                        redirectSwitch((SIPRequest) rs.result(), netSocket, SipOptions.TCP, null);//转发处理
+                    if (Objects.nonNull(rs.result())) {
+                        if (rs.result() instanceof SIPResponse)
+                            responseSwitch((SIPResponse) rs.result(), SipOptions.TCP, netSocket.remoteAddress());//回包
+                        else
+                            redirectSwitch((SIPRequest) rs.result(), netSocket, SipOptions.TCP, null);//转发处理
+                    } else {//心跳包
+                        vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
+                                new JsonObject().put("socketAddress", netSocket.remoteAddress().toString())
+                                        .put("expires", jsonObject.getInteger("heartIdleTime")));
+                    }
                 }
             });
         });
@@ -132,7 +142,7 @@ public class PorcessHandler {
      */
     @SuppressWarnings("Duplicates")
     public void processUdp(DatagramPacket datagramPacket) {
-        logger.info("SERVER received remoteAddress -> {} , bytes -> {}", datagramPacket.sender().host()
+        logger.debug("SERVER received remoteAddress -> {} , bytes -> {}", datagramPacket.sender().host()
                 , datagramPacket.data().length());
         logger.debug("SERVER body(string):\n " + new String(datagramPacket.data().getBytes()));
 
@@ -141,10 +151,16 @@ public class PorcessHandler {
             if (rs.failed()) {//不是sip标准协议
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
-                if (rs.result() instanceof SIPResponse)
-                    responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
-                else
-                    redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
+                if (Objects.nonNull(rs.result())) {
+                    if (rs.result() instanceof SIPResponse)
+                        responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
+                    else
+                        redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
+                } else {//心跳包
+                    vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
+                            new JsonObject().put("socketAddress", datagramPacket.sender().toString())
+                                    .put("expires", jsonObject.getInteger("heartIdleTime")));
+                }
             }
         });
     }

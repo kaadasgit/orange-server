@@ -47,4 +47,8 @@ public interface GatewayAddr {
     String GET_GATE_DEV_LIST = "getGatewayDevList";//獲取网关下設備列表
 
     String RESET_DEVICE = "resetDevice";//重置設備
+
+    String GET_GATWWAY_USERALL = "getGatewayUserList";//获取网关下所有用户列表
+
+    String GET_USER_GATEWAYLIST = "getUserWithGatewayList";//获取所有用户下所有网关
 }

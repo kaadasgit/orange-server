@@ -23,6 +23,8 @@ public class RedisKeyConf {
 
     public final static String REGISTER_USER = "sipAcc:";//保存用户注册信息
 
+    public final static String REGISTER_SIP_HEARTS = "sipheart:";//sip心跳包地址
+
     public final static String CALLIDADDR = "addr:callIdAddr";//保存用户注册信息
 
     public final static String SAVE_PUBLISH_MSG = "msg:publish";//保存用户注册信息
@@ -31,7 +33,11 @@ public class RedisKeyConf {
 
     public final static String USER_VAL_TOKEN = "token";//token字段
 
+    public final static String BING_USER_INFO = "bindUsers";//绑定的用户
+
     public final static String USER_VAL_TIMES = "limit";//limit 限流次数字段
 
     public final static String USER_VAL_INFO = "info";//信息
+
+    public final static String USER_VAL_OLDTOKEN = "oldToken";//old token
 }

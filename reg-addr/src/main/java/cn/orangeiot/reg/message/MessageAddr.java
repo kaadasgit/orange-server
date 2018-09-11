@@ -35,4 +35,6 @@ public interface MessageAddr {
     String SEND_APPLICATION_NOTIFY = "sendAppNotify";//發送應用通知
 
     String GET_PUSHID = "getPushId";//获取应用id
+
+    String KICK_OUT = "kickOut";//踢出
 }

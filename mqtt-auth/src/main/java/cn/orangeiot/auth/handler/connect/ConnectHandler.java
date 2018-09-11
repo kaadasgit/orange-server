@@ -4,6 +4,7 @@ package cn.orangeiot.auth.handler.connect;
 import cn.orangeiot.common.options.SendOptions;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -28,28 +29,33 @@ public class ConnectHandler {
     private JsonObject config;
 
     public ConnectHandler(Vertx vertx, JsonObject config) {
-        this.vertx=vertx;
-        this.config=config;
+        this.vertx = vertx;
+        this.config = config;
     }
 
-    public void onMessage(Message message){
-        if(Objects.nonNull(message.body())){
-            logger.info("==ConnectHandler=onMessage=params:"+message.body());
-            JsonObject jsonObject=new JsonObject(message.body().toString());
+    public void onMessage(Message message) {
+        if (Objects.nonNull(message.body())) {
+            logger.info("==ConnectHandler=onMessage=params:" + message.body());
+            JsonObject jsonObject = new JsonObject(message.body().toString());
 
             /*查找*/
-            vertx.eventBus().send(config.getString("send_connect_dao"),message.body(), SendOptions.getInstance(),(AsyncResult<Message<Boolean>> rs)->{
-                if(rs.failed()){
+            vertx.eventBus().send(config.getString("send_connect_dao"), message.body(), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
+                if (rs.failed()) {
                     logger.error(rs.cause().getMessage(), rs.cause());
                     message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
                             jsonObject.getString("username")).put("auth_valid", false));
-                }else {
+                } else {
                     if (rs.result().body()) {//验证成功
                         message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
                                 jsonObject.getString("username")).put("auth_valid", rs.result().body()));
                     } else {
-                        message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
-                                jsonObject.getString("username")).put("auth_valid", rs.result().body()));
+                        if (!rs.result().headers().isEmpty())
+                            message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
+                                    jsonObject.getString("username")).put("auth_valid", rs.result().body()), new DeliveryOptions()
+                                    .addHeader("status", rs.result().headers().get("status")));
+                        else
+                            message.reply(new JsonObject().put("token", UUID.randomUUID().toString()).put("authorized_user",
+                                    jsonObject.getString("username")).put("auth_valid", rs.result().body()));
                     }
                 }
             });
