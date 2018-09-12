@@ -336,7 +336,6 @@ public class GatewayDao {
     }
 
 
-
     /**
      * @Description 获取mimi网用户userid
      * @author zhang bo
@@ -553,28 +552,48 @@ public class GatewayDao {
      * @version 1.0
      */
     public void deviceOnline(Message<JsonObject> message) {
-        MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+//        MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+//                message.body().getString("clientId").split(":")[1]).put("deviceList.deviceId", new JsonObject()
+//                        .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
+//                new JsonObject().put("$pull", new JsonObject().put("deviceList"
+//                        , new JsonObject().put("deviceId", message.body().getString("deviceId")))), as -> {
+//                    if (as.failed()) {
+//                        logger.error(as.cause().getMessage(), as);
+//                    } else {
+//        message.body().getJsonObject("eventparams").put("deviceId", message.body().getString("deviceId"))
+//                .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+        MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                 message.body().getString("clientId").split(":")[1]).put("deviceList.deviceId", new JsonObject()
                         .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
-                new JsonObject().put("$pull", new JsonObject().put("deviceList"
-                        , new JsonObject().put("deviceId", message.body().getString("deviceId")))), as -> {
-                    if (as.failed()) {
-                        logger.error(as.cause().getMessage(), as);
+                new JsonObject().put("$set", new JsonObject().put("deviceList.$.macaddr", message.body().getJsonObject("eventparams").getString("macaddr"))
+                        .put("deviceList.$.SW", message.body().getJsonObject("eventparams").getString("SW")).put("deviceList.$.event_str"
+                                , message.body().getJsonObject("eventparams").getString("event_str")).put("deviceList.$.device_type",
+                                message.body().getJsonObject("eventparams").getString("device_type")).put("deviceList.$.deviceId", message.body().getString("deviceId"))
+                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                        .put("deviceList.$.ipaddr", Objects.nonNull(message.body().getJsonObject("eventparams").getString("ipaddr")) ? message.body().getJsonObject("eventparams").getString("ipaddr")
+                                : ""))
+                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
                     } else {
-                        message.body().getJsonObject("eventparams").put("deviceId", message.body().getString("deviceId"))
-                                .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-
-                        MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
-                                message.body().getString("clientId").split(":")[1]),
-                                new JsonObject().put("$addToSet", new JsonObject().put("deviceList"
-                                        , message.body().getJsonObject("eventparams")))
-                                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
-                                    if (rs.failed()) {
-                                        logger.error(rs.cause().getMessage(), rs);
-                                    }
-                                });
+                        if (rs.result().getDocMatched() == 0) {
+                            message.body().getJsonObject("eventparams").put("deviceId", message.body().getString("deviceId"))
+                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                            MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
+                                    message.body().getString("clientId").split(":")[1]),
+                                    new JsonObject().put("$addToSet", new JsonObject().put("deviceList"
+                                            , message.body().getJsonObject("eventparams")))
+                                    , new UpdateOptions().setUpsert(false).setMulti(true), ass -> {
+                                        if (ass.failed()) {
+                                            logger.error(rs.cause().getMessage(), ass);
+                                        }
+                                    });
+                        }
                     }
                 });
+//                    }
+//                });
     }
 
 
@@ -833,7 +852,7 @@ public class GatewayDao {
                         logger.error(rs.cause().getMessage(), rs);
                         message.reply(new JsonObject().put("deviceList", new JsonArray()));
                     } else {
-                        if (Objects.nonNull(rs.result().getValue("deviceList"))) {
+                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
                             message.reply(new JsonObject().put("deviceList",
                                     new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
@@ -864,17 +883,17 @@ public class GatewayDao {
 //                if (Objects.nonNull(ars.result())) {
 //                    message.reply(new JsonArray(ars.result()));
 //                } else {
-                    MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("clientId"))
-                            , new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0)), rs -> {
-                                if (rs.failed()) {
-                                    logger.error(rs.cause().getMessage(), rs);
-                                    message.reply(null);
-                                } else {
-                                    if (Objects.nonNull(rs.result())) {
-                                        message.reply(new JsonArray(rs.result()));
-                                    }
-                                }
-                            });
+        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("clientId"))
+                , new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0)), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        if (Objects.nonNull(rs.result())) {
+                            message.reply(new JsonArray(rs.result()));
+                        }
+                    }
+                });
 //                }
 //            }
 //        });
