@@ -174,7 +174,7 @@ public class RegisterHandler implements EventbusAddr {
      * @version 1.0
      */
     public void gatewayAboutEvent(Vertx vertx) {
-        GatewayDao gatewayDao = new GatewayDao();
+        GatewayDao gatewayDao = new GatewayDao(vertx);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + BIND_GATEWAY_USER, gatewayDao::onbindGatewayByUser);
         vertx.eventBus().consumer(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, gatewayDao::onGetGatewayAdmin);
         vertx.eventBus().consumer(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, gatewayDao::onApprovalBindGateway);

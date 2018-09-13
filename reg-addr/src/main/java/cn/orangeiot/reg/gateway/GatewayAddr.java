@@ -51,4 +51,6 @@ public interface GatewayAddr {
     String GET_GATWWAY_USERALL = "getGatewayUserList";//获取网关下所有用户列表
 
     String GET_USER_GATEWAYLIST = "getUserWithGatewayList";//获取所有用户下所有网关
+
+    String SEND_GATEWAY_STATE = "sendGatewayState";//發送網關狀態
 }

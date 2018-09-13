@@ -6,6 +6,7 @@ import cn.orangeiot.apidao.conf.RedisKeyConf;
 import cn.orangeiot.apidao.handler.dao.file.FileDao;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -39,9 +40,14 @@ import java.util.stream.Collectors;
  * @Description
  * @date 2018-01-04
  */
-public class GatewayDao {
+public class GatewayDao implements GatewayAddr {
     private static Logger logger = LogManager.getLogger(GatewayDao.class);
 
+    private Vertx vertx;
+
+    public GatewayDao(Vertx vertx) {
+        this.vertx = vertx;
+    }
 
     /**
      * @Description 用户绑定网关
@@ -199,15 +205,40 @@ public class GatewayDao {
                 } else {
                     JsonObject reqUser = new JsonObject(res.result().getList().get(0).toString());//请求用户
                     JsonObject adminUser = new JsonObject(res.result().getList().get(1).toString());//管理员用户
-                    MongoClient.client.save("kdsGatewayDeviceList", new JsonObject()
-                            .put("deviceSN", message.body().getString("devuuid")).put("uid", reqUser.getString("_id"))
-                            .put("deviceNickName", message.body().getString("devuuid")).put("username", reqUser.getString("username"))
-                            .put("userNickname", reqUser.getString("nickName")).put("adminuid", adminUser.getString("_id"))
-                            .put("adminName", adminUser.getString("username")).put("adminNickname", adminUser.getString("nickName")).put("isAdmin", 2)
-                            .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                            .put("userid", reqUser.getLong("userid")), rs -> {
-                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+                    MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
+                            .put("isAdmin", 1), new JsonObject().put("deviceList", 1).put("_id", 0), ars -> {
+                        if (ars.failed()) {
+                            if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
+                        } else {
+                            JsonObject paramsObject = new JsonObject().put("$set",
+                                    new JsonObject().put("deviceSN", message.body().getString("devuuid")).put("uid", reqUser.getString("_id"))
+                                            .put("deviceNickName", message.body().getString("devuuid")).put("username", reqUser.getString("username"))
+                                            .put("userNickname", reqUser.getString("nickName")).put("adminuid", adminUser.getString("_id"))
+                                            .put("adminName", adminUser.getString("username")).put("adminNickname", adminUser.getString("nickName")).put("isAdmin", 2)
+                                            .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                            .put("userid", reqUser.getLong("userid")));
+                            if (Objects.nonNull(ars.result())
+                                    && Objects.nonNull(ars.result().getValue("deviceList")) && ars.result().getJsonArray("deviceList").size() > 0) {
+                                paramsObject.getJsonObject("$set").put("deviceList", ars.result().getJsonArray("deviceList"));
+                            }
+                            MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
+                                    .put("uid", reqUser.getString("_id")), paramsObject, new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
+                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+                                else
+                                    vertx.eventBus().send(GatewayAddr.class.getName() + SEND_GATEWAY_STATE,
+                                            new JsonObject().put("_id",reqUser.getString("_id")).put("gwId", message.body().getString("devuuid")), SendOptions.getInstance());
+                            });
+                        }
                     });
+//                    MongoClient.client.save("kdsGatewayDeviceList", new JsonObject()
+//                            .put("deviceSN", message.body().getString("devuuid")).put("uid", reqUser.getString("_id"))
+//                            .put("deviceNickName", message.body().getString("devuuid")).put("username", reqUser.getString("username"))
+//                            .put("userNickname", reqUser.getString("nickName")).put("adminuid", adminUser.getString("_id"))
+//                            .put("adminName", adminUser.getString("username")).put("adminNickname", adminUser.getString("nickName")).put("isAdmin", 2)
+//                            .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+//                            .put("userid", reqUser.getLong("userid")), rs -> {
+//                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+//                    });
                 }
             });
 
@@ -858,7 +889,7 @@ public class GatewayDao {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
                                         resultJsonObject.remove("time");
                                         return resultJsonObject;
-                                    }).collect(Collectors.toList()))));
+                                    }).filter(e -> !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
                         } else {
                             message.reply(new JsonObject().put("deviceList", new JsonArray()));
                         }

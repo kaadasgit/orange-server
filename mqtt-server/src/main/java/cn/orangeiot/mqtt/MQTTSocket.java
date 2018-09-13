@@ -123,6 +123,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 getloginAll();
                 sendPubRel();
                 kickOut();
+                deviceState();
             } else {
                 logger.warn("Timeout occurred ...");
             }
@@ -408,6 +409,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         }
     }
 
+    /**
+     * @Description 設備狀態
+     * @author zhang bo
+     * @date 18-9-13
+     * @version 1.0
+     */
+    public void deviceState() {
+        vertx.eventBus().consumer(GatewayAddr.class.getName() + SEND_GATEWAY_STATE, (Message<JsonObject> rs) -> {
+            if (Objects.nonNull(rs.body()) && Objects.nonNull(rs.body().getValue("_id")) && Objects.nonNull(rs.body().getValue("gwId")))
+                sendDeviceState(rs.body().getString("_id"), new JsonArray().add(new JsonObject().put("deviceSN", rs.body().getString("gwId"))
+                        .put("uid", rs.body().getString("_id"))), "online", true);
+        });
+    }
+
 
     /**
      * @param gwId  客户端连接id
@@ -418,6 +433,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @date 18-9-10
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public void sendDeviceState(String gwId, JsonArray jsonArray, String state, boolean flag) {
         if (Objects.nonNull(jsonArray) && jsonArray.size() > 0) {
             for (int i = 0; i < jsonArray.size(); i++) {
@@ -435,11 +451,23 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         if (Objects.nonNull(mqttSession = sessions.get(GATEWAY_PREFIX + jsonObject.getString("deviceSN")))) {
                             sendJsonObject.getJsonObject("data").put("state", "online");
                             publishMessage.setPayload(sendJsonObject.toString());
-                            session.sendMessageToClient(publishMessage);
+                            if (session != null)
+                                session.sendMessageToClient(publishMessage);
+                            else {
+                                MQTTSession mqttSession1;
+                                if (Objects.nonNull(mqttSession1 = sessions.get(USER_PREFIX + jsonObject.getString("uid"))))
+                                    mqttSession1.sendMessageToClient(publishMessage);
+                            }
                         } else {
                             sendJsonObject.getJsonObject("data").put("state", "offline");
                             publishMessage.setPayload(sendJsonObject.toString());
-                            session.sendMessageToClient(publishMessage);
+                            if (session != null)
+                                session.sendMessageToClient(publishMessage);
+                            else {
+                                MQTTSession mqttSession1;
+                                if (Objects.nonNull(mqttSession1 = sessions.get(USER_PREFIX + jsonObject.getString("uid"))))
+                                    mqttSession1.sendMessageToClient(publishMessage);
+                            }
                         }
                     } else {
                         sendJsonObject.put("devuuid", gwId);
