@@ -177,17 +177,14 @@ public class GatewayDao implements GatewayAddr {
      * @version 1.0
      */
     public void onApprovalBindGateway(Message<JsonObject> message) {
-        MongoClient.client.updateCollection("kdsApprovalList", new JsonObject().put("deviceSN", message.body().getString("devuuid"))
-                .put("uid", message.body().getString("requestuid")), new JsonObject().put("$set", new JsonObject()
-                .put("type", message.body().getInteger("type")).put("approvalTime"
-                        , LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))), rs -> {
-            if (rs.failed()) {
-                logger.error(rs.cause().getMessage(), rs);
-                message.reply(null);
-            } else {
-                message.reply(new JsonObject().put("type", message.body().getInteger("type")));//审批状态
-            }
-        });
+        MongoClient.client.updateCollection("kdsApprovalList", new JsonObject().put("_id", message.body().getString("_id"))
+                , new JsonObject().put("$set", new JsonObject()
+                        .put("type", message.body().getInteger("type")).put("approvalTime"
+                                , LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                    }
+                });
         if (message.body().getInteger("type") == 2) {//审批通过
             //取用戶信息
             Future.<String>future(f -> RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("requestuid"), RedisKeyConf.USER_VAL_INFO, f)
@@ -226,7 +223,7 @@ public class GatewayDao implements GatewayAddr {
                                 if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                 else
                                     vertx.eventBus().send(GatewayAddr.class.getName() + SEND_GATEWAY_STATE,
-                                            new JsonObject().put("_id",reqUser.getString("_id")).put("gwId", message.body().getString("devuuid")), SendOptions.getInstance());
+                                            new JsonObject().put("_id", reqUser.getString("_id")).put("gwId", message.body().getString("devuuid")), SendOptions.getInstance());
                             });
                         }
                     });
@@ -881,17 +878,17 @@ public class GatewayDao implements GatewayAddr {
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
-                        message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList", new JsonArray()));
+                        message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                     } else {
                         if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
-                            message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList",
+                            message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList",
                                     new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
                                         resultJsonObject.remove("time");
                                         return resultJsonObject;
                                     }).filter(e -> !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
                         } else {
-                            message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList", new JsonArray()));
+                            message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                         }
                     }
                 });

@@ -120,62 +120,64 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
     public void approvalBindGateway(JsonObject jsonObject, String qos, Handler<AsyncResult<JsonObject>> handler) {
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
-                .put("requestuid", DataType.STRING).put("uid", DataType.STRING).put("type", DataType.INTEGER), as -> {
+                .put("requestuid", DataType.STRING).put("uid", DataType.STRING).put("type", DataType.INTEGER)
+                .put("_id",DataType.STRING), as -> {
             if (as.failed()) {
                 handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
                         .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
             } else {
-                vertx.eventBus().send(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, as.result(), SendOptions.getInstance(), rs -> {
-                    if (Objects.nonNull(rs.result().body())) {
-                        if (as.result().getInteger("type") == 2) {
-                            //同步绑定关系到第三方
-                            vertx.eventBus().send(MemenetAddr.class.getName() + BIND_DEVICE_USER,
-                                    new JsonObject().put("uid", as.result().getString("requestuid"))
-                                            .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
-                                    , mimiResult -> {
-                                        if (!Objects.nonNull(mimiResult.result().body())) {
-                                            if (!mimiResult.result().headers().isEmpty()) {
-                                                handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                                        new ResultInfo<>().setErrorMessage(Integer.parseInt(mimiResult.result().headers().get("code"))
-                                                                , mimiResult.result().headers().get("msg")
-                                                                , jsonObject.getString("func")))));
-                                            } else {
-                                                handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                                        new ResultInfo<>().setErrorMessage(ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getValue()
-                                                                , jsonObject.getString("func")))));
-                                            }
+                if (as.result().getInteger("type") == 2) {
+                    //同步绑定关系到第三方
+                    vertx.eventBus().send(MemenetAddr.class.getName() + BIND_DEVICE_USER,
+                            new JsonObject().put("uid", as.result().getString("requestuid"))
+                                    .put("devicesn", as.result().getString("devuuid")), SendOptions.getInstance()
+                            , mimiResult -> {
+                                if (mimiResult.failed()) {
+                                    logger.error(mimiResult.cause().getMessage(), mimiResult);
+                                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                            new ResultInfo<>().setErrorMessage(ErrorType.APPROVAL_FAIL.getKey(), ErrorType.APPROVAL_FAIL.getValue()
+                                                    , jsonObject.getString("func"))
+                                    )));
+                                } else {
+                                    if (!Objects.nonNull(mimiResult.result().body())) {
+                                        if (!mimiResult.result().headers().isEmpty()) {
+                                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                    new ResultInfo<>().setErrorMessage(Integer.parseInt(mimiResult.result().headers().get("code"))
+                                                            , mimiResult.result().headers().get("msg")
+                                                            , jsonObject.getString("func")))));
                                         } else {
                                             handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                                    new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
-                                            //发送通知给gateway申请人
-                                            vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
-                                                    new JsonObject().put("devuuid", as.result().getString("devuuid"))
-                                                            .put("requestuid", as.result().getString("requestuid"))
-                                                            .put("uid", as.result().getString("uid"))
-                                                            .put("func", jsonObject.getString("func"))
-                                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance()
-                                                            .addHeader("qos", qos));
+                                                    new ResultInfo<>().setErrorMessage(ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getKey(), ErrorType.APPROVATE_MIMI_BIND_GATEWAY_FAIL.getValue()
+                                                            , jsonObject.getString("func")))));
                                         }
-                                    });
-                        } else {
-                            handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                    new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
-                            //发送通知给gateway申请人
-                            vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
-                                    new JsonObject().put("devuuid", as.result().getString("devuuid"))
-                                            .put("requestuid", as.result().getString("requestuid"))
-                                            .put("uid", as.result().getString("uid"))
-                                            .put("func", jsonObject.getString("func"))
-                                            .put("type", as.result().getInteger("type")), SendOptions.getInstance()
-                                            .addHeader("qos", qos));
-                        }
-                    } else {
-                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                new ResultInfo<>().setErrorMessage(ErrorType.APPROVAL_FAIL.getKey(), ErrorType.APPROVAL_FAIL.getValue()
-                                        , jsonObject.getString("func"))
-                        )));
-                    }
-                });
+                                    } else {
+                                        vertx.eventBus().send(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, as.result(), SendOptions.getInstance());
+                                        handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                                                new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
+                                        //发送通知给gateway申请人
+                                        vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
+                                                new JsonObject().put("devuuid", as.result().getString("devuuid"))
+                                                        .put("requestuid", as.result().getString("requestuid"))
+                                                        .put("uid", as.result().getString("uid"))
+                                                        .put("func", jsonObject.getString("func"))
+                                                        .put("type", as.result().getInteger("type")), SendOptions.getInstance()
+                                                        .addHeader("qos", qos));
+                                    }
+                                }
+                            });
+                } else {
+                    vertx.eventBus().send(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, as.result(), SendOptions.getInstance());
+                    handler.handle(Future.succeededFuture(JsonObject.mapFrom(
+                            new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));
+                    //发送通知给gateway申请人
+                    vertx.eventBus().send(MessageAddr.class.getName() + REPLY_GATEWAY_USER,
+                            new JsonObject().put("devuuid", as.result().getString("devuuid"))
+                                    .put("requestuid", as.result().getString("requestuid"))
+                                    .put("uid", as.result().getString("uid"))
+                                    .put("func", jsonObject.getString("func"))
+                                    .put("type", as.result().getInteger("type")), SendOptions.getInstance()
+                                    .addHeader("qos", qos));
+                }
             }
         });
     }
