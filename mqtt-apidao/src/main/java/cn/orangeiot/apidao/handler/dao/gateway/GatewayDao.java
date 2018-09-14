@@ -881,17 +881,17 @@ public class GatewayDao implements GatewayAddr {
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
-                        message.reply(new JsonObject().put("deviceList", new JsonArray()));
+                        message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                     } else {
                         if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
-                            message.reply(new JsonObject().put("deviceList",
+                            message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList",
                                     new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
                                         resultJsonObject.remove("time");
                                         return resultJsonObject;
                                     }).filter(e -> !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
                         } else {
-                            message.reply(new JsonObject().put("deviceList", new JsonArray()));
+                            message.reply(new JsonObject().put("devuuid",message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                         }
                     }
                 });

@@ -691,11 +691,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     }
                     if (rs.headers().get("uid").indexOf(":") >= 0) {
                         if (Objects.nonNull(rs.headers().get("uid"))) {
-                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                                PubAckMessage pubAck = new PubAckMessage();
-                                pubAck.setMessageID(publish.getMessageID());
-                                sendMessageToClient(pubAck);
-                            });
+                            MQTTSession mqttSession;
+                            if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid")))) {
+                                mqttSession.handlePublishMessage(publish, permitted -> {
+                                    PubAckMessage pubAck = new PubAckMessage();
+                                    pubAck.setMessageID(publish.getMessageID());
+                                    sendMessageToClient(pubAck);
+                                });
+                            }else{
+                                try {
+                                    writeLog(rs.headers().get("uid"), publish);
+                                } catch (Exception e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+                            }
                         } else
                             try {
                                 writeLog(rs.headers().get("uid"), publish);
