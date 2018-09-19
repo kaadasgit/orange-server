@@ -1,6 +1,5 @@
 package cn.orangeiot.apidao.client;
 
-import com.mongodb.MongoCredential;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;

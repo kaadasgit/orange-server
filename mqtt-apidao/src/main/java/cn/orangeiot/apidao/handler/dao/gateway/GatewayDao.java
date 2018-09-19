@@ -177,6 +177,7 @@ public class GatewayDao implements GatewayAddr {
      * @version 1.0
      */
     public void onApprovalBindGateway(Message<JsonObject> message) {
+        logger.info("approval bind gatewaty params -> {}", message.body());
         MongoClient.client.updateCollection("kdsApprovalList", new JsonObject().put("_id", message.body().getString("_id"))
                 , new JsonObject().put("$set", new JsonObject()
                         .put("type", message.body().getInteger("type")).put("approvalTime"
@@ -704,35 +705,64 @@ public class GatewayDao implements GatewayAddr {
      * @version 1.0
      */
     public void EventOpenLock(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsDeviceList", new JsonObject().put("lockName", message.body().getString("deviceId"))
-                , new JsonObject().put("infoList", 1).put("_id", 0), rs -> {//獲取鎖映射打昵稱
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage(), rs);
-                    } else {
-                        String nickName = "";
-                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("infoList")) && rs.result().getJsonArray("infoList").size() > 0) //鎖編號名稱
-                            nickName = rs.result().getJsonArray("infoList").stream().filter(e -> new JsonObject(e.toString()).getString("num").equals(
-                                    String.valueOf(message.body().getInteger("userID")))).map(e -> new JsonObject(e.toString()).getString("numNickname")).findFirst().orElse("");
-                        else
-                            nickName = String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID"));
-                        MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
-                                        .put("lockName", message.body().getString("deviceId")).put("user_num", String.valueOf(message.body()
-                                                .getJsonObject("eventparams").getInteger("userID"))).put("medium", message.body().getString("gwId"))
-                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
-                                        .put("open_time", message.body().getString("timestamp"))
-                                , new JsonObject().put("$set", new JsonObject()
-                                        .put("open_time", message.body().getString("timestamp"))
-                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
-                                        .put("medium", message.body().getString("gwId"))
-                                        .put("lockName", message.body().getString("deviceId"))
-                                        .put("user_num", String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID")))
-                                        .put("nickName", nickName))
-                                , new UpdateOptions().setMulti(false).setUpsert(true), res -> {
-                                    if (res.failed())
-                                        logger.error(res.cause().getMessage(), res);
-                                });
-                    }
-                });
+        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("gwId"))
+                .put("isAdmin", 1), new JsonObject().put("uid", 1).put("_id", 0), rs -> {//獲取管理员
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs);
+            } else {
+                if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("uid"))) {//存在管理员
+                    MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+                                    .put("lockName", message.body().getString("deviceId")).put("user_num", String.valueOf(message.body()
+                                            .getJsonObject("eventparams").getInteger("userID"))).put("medium", message.body().getString("gwId"))
+                                    .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+                                    .put("open_time", message.body().getString("timestamp"))
+                            , new JsonObject().put("$set", new JsonObject()
+                                    .put("open_time", message.body().getString("timestamp"))
+                                    .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+                                    .put("medium", message.body().getString("gwId"))
+                                    .put("lockName", message.body().getString("deviceId"))
+                                    .put("user_num", String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID")))
+                                    .put("nickName", String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID")))
+                                    .put("adminuid", rs.result().getString("uid")))
+                            , new UpdateOptions().setMulti(false).setUpsert(true), res -> {
+                                if (res.failed())
+                                    logger.error(res.cause().getMessage(), res);
+                            });
+                } else {
+                    logger.warn("EventOpenLock no admin , params -> {}", message.body());
+                }
+            }
+        });
+
+//        MongoClient.client.findOne("kdsDeviceList", new JsonObject().put("lockName", message.body().getString("deviceId"))
+//                , new JsonObject().put("infoList", 1).put("_id", 0), rs -> {//獲取鎖映射打昵稱
+//                    if (rs.failed()) {
+//                        logger.error(rs.cause().getMessage(), rs);
+//                    } else {
+//                        String nickName = "";
+//                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("infoList")) && rs.result().getJsonArray("infoList").size() > 0) //鎖編號名稱
+//                            nickName = rs.result().getJsonArray("infoList").stream().filter(e -> new JsonObject(e.toString()).getString("num").equals(
+//                                    String.valueOf(message.body().getInteger("userID")))).map(e -> new JsonObject(e.toString()).getString("numNickname")).findFirst().orElse("");
+//                        else
+//                            nickName = String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID"));
+//                        MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+//                                        .put("lockName", message.body().getString("deviceId")).put("user_num", String.valueOf(message.body()
+//                                                .getJsonObject("eventparams").getInteger("userID"))).put("medium", message.body().getString("gwId"))
+//                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+//                                        .put("open_time", message.body().getString("timestamp"))
+//                                , new JsonObject().put("$set", new JsonObject()
+//                                        .put("open_time", message.body().getString("timestamp"))
+//                                        .put("open_type", String.valueOf(message.body().getJsonObject("eventparams").getInteger("eventsource")))
+//                                        .put("medium", message.body().getString("gwId"))
+//                                        .put("lockName", message.body().getString("deviceId"))
+//                                        .put("user_num", String.valueOf(message.body().getJsonObject("eventparams").getInteger("userID")))
+//                                        .put("nickName", nickName))
+//                                , new UpdateOptions().setMulti(false).setUpsert(true), res -> {
+//                                    if (res.failed())
+//                                        logger.error(res.cause().getMessage(), res);
+//                                });
+//                    }
+//                });
     }
 
 
@@ -743,45 +773,48 @@ public class GatewayDao implements GatewayAddr {
      * @version 1.0
      */
     public void selectOpenLock(Message<JsonObject> message) {
-        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("devuuid", message.body().getString("deviceSN"))
-                        .put("adminuid", new JsonObject().put("$exists", true)).put("uid", message.body().getString("uid")),
-                new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
-                        .put("deviceSN", 1)), ars -> {
-                    if (ars.failed()) {
-                        logger.error(ars.cause().getMessage(), ars);
-                        message.reply(null);
-                    } else {
-                        JsonObject paramsJsonObject = new JsonObject();
-                        // 根据不同权限查询记录
-                        if (ars.result().size() > 0 && ars.result().get(0).getString("adminuid").equals(message.body().getString("uid"))) {
-
-                            MongoClient.client.findWithOptions("kdsbindGWHistoryRecord", new JsonObject()
-                                            .put("deviceList.deviceId", message.body().getString("deviceId")),
-                                    new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0)
-                                            .put("deviceSN", 1)), rs -> {
-                                        if (rs.failed()) {
-                                            logger.error(rs.cause().getMessage(), rs);
-                                        } else {
-                                            if (rs.result().size() > 0) {
-                                                List<String> deviceList = rs.result().stream().filter(e -> e.getString("adminuid").equals(message.body().getString("uid"))).map(e -> e.getString("deviceSN"))
-                                                        .distinct().collect(Collectors.toList());
-                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
-                                                        .put("medium", new JsonObject().put("$in", new JsonArray(deviceList)));
-                                            } else {
-                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
-                                                        .put("medium", message.body().getString("devuuid"));
-                                            }
-                                            selectLockRecord(message, paramsJsonObject);
-                                        }
-                                    });
-                        } else {//普通用戶
-                            paramsJsonObject.put("lockName", message.body().getString("deviceId"))
-                                    .put("uname", message.body().getString("uid"));
-                            selectLockRecord(message, paramsJsonObject);
-                        }
-
-                    }
-                });
+//        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("devuuid", message.body().getString("deviceSN"))
+//                        .put("adminuid", new JsonObject().put("$exists", true)).put("uid", message.body().getString("uid")),
+//                new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0).put("uname", 1)
+//                        .put("deviceSN", 1)), ars -> {
+//                    if (ars.failed()) {
+//                        logger.error(ars.cause().getMessage(), ars);
+//                        message.reply(null);
+//                    } else {
+//                        JsonObject paramsJsonObject = new JsonObject();
+//                        // 根据不同权限查询记录
+//                        if (ars.result().size() > 0 && ars.result().get(0).getString("adminuid").equals(message.body().getString("uid"))) {
+//
+//                            MongoClient.client.findWithOptions("kdsbindGWHistoryRecord", new JsonObject()
+//                                            .put("deviceList.deviceId", message.body().getString("deviceId")),
+//                                    new FindOptions().setFields(new JsonObject().put("adminuid", 1).put("_id", 0)
+//                                            .put("deviceSN", 1)), rs -> {
+//                                        if (rs.failed()) {
+//                                            logger.error(rs.cause().getMessage(), rs);
+//                                        } else {
+//                                            if (rs.result().size() > 0) {
+//                                                List<String> deviceList = rs.result().stream().filter(e -> e.getString("adminuid").equals(message.body().getString("uid"))).map(e -> e.getString("deviceSN"))
+//                                                        .distinct().collect(Collectors.toList());
+//                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+//                                                        .put("medium", new JsonObject().put("$in", new JsonArray(deviceList)));
+//                                            } else {
+//                                                paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+//                                                        .put("medium", message.body().getString("devuuid"));
+//                                            }
+//                                            selectLockRecord(message, paramsJsonObject);
+//                                        }
+//                                    });
+//                        } else {//普通用戶
+//                            paramsJsonObject.put("lockName", message.body().getString("deviceId"))
+//                                    .put("uname", message.body().getString("uid"));
+//                            selectLockRecord(message, paramsJsonObject);
+//                        }
+//
+//                    }
+//                });
+        selectLockRecord(message, new JsonObject().put("lockName", message.body().getString("deviceId"))
+                .put("$or", new JsonArray().add(new JsonObject().put("adminuid", message.body().getString("uid")))
+                        .add(new JsonObject().put("uid", message.body().getString("uid")))));
     }
 
 

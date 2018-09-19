@@ -105,7 +105,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
      * @version 1.0
      */
     public void redirectProcess(JsonObject message, MultiMap headers) throws Exception {
-        logger.debug("==EventHandler=redirectProcess params -> " + message.toString());
+        logger.info("==EventHandler=redirectProcess params -> " + message.toString());
         if (Objects.nonNull(message.getValue("func"))) {
             switch (message.getString("func")) {
                 case "gwevent":

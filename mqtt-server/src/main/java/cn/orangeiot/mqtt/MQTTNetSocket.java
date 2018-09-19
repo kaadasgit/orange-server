@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -29,14 +30,16 @@ public class MQTTNetSocket extends MQTTSocket {
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage(), event.getCause());
             handleWillMessage();
-            checkDevice(session.getClientID(), "offline");//离线狀態
+            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID()))
+                checkDevice(session.getClientID(), "offline");//离线狀態
             shutdown();
         });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
             logger.debug(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
             handleWillMessage();
-            checkDevice(session.getClientID(), "offline");//离线狀態
+            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID()))
+                checkDevice(session.getClientID(), "offline");//离线狀態
             shutdown();
         });
     }

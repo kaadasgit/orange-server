@@ -1081,23 +1081,36 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 logger.error(as.cause().getMessage(), as);
             } else {
                 if (Objects.nonNull(as.result())) {
-                    JsonObject userInfo = new JsonObject(as.result());
-                    MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
-                                    .put("lockName", message.body().getString("deviceId")).put("uid", message.body().getString("userId"))
-                                    .put("medium", message.body().getString("gwId")).put("open_type"
-                                    , message.body().getJsonObject("params").getString("type")).put("open_time"
-                                    , message.body().getString("timestamp"))
-                            , new JsonObject().put("$set", new JsonObject()
-                                    .put("open_time", message.body().getString("timestamp"))
-                                    .put("open_type", message.body().getJsonObject("params").getString("type"))
-                                    .put("medium", message.body().getString("gwId"))
-                                    .put("lockName", message.body().getString("deviceId"))
-                                    .put("uid", message.body().getString("userId"))
-                                    .put("nickName", userInfo.getString("nickName")))
-                            , new UpdateOptions().setMulti(false).setUpsert(true), rs -> {
-                                if (rs.failed())
-                                    logger.error(rs.cause().getMessage(), rs);
-                            });
+                    MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("gwId"))
+                            .put("isAdmin", 1), new JsonObject().put("uid", 1).put("_id", 0), ars -> {//獲取管理员
+                        if (ars.failed()) {
+                            logger.error(ars.cause().getMessage(), ars);
+                        } else {
+                            if (Objects.nonNull(ars.result()) && Objects.nonNull(ars.result().getValue("uid"))) {//存在管理员
+                                JsonObject userInfo = new JsonObject(as.result());
+                                MongoClient.client.updateCollectionWithOptions("kdsOpenLockList", new JsonObject()
+                                                .put("lockName", message.body().getString("deviceId")).put("uid", message.body().getString("userId"))
+                                                .put("medium", message.body().getString("gwId")).put("open_type"
+                                                , message.body().getJsonObject("params").getString("type")).put("open_time"
+                                                , message.body().getString("timestamp"))
+                                        , new JsonObject().put("$set", new JsonObject()
+                                                .put("open_time", message.body().getString("timestamp"))
+                                                .put("open_type", message.body().getJsonObject("params").getString("type"))
+                                                .put("medium", message.body().getString("gwId"))
+                                                .put("lockName", message.body().getString("deviceId"))
+                                                .put("uid", message.body().getString("userId"))
+                                                .put("nickName", userInfo.getString("nickName"))
+                                                .put("adminuid", ars.result().getString("uid")))
+                                        , new UpdateOptions().setMulti(false).setUpsert(true), rs -> {
+                                            if (rs.failed())
+                                                logger.error(rs.cause().getMessage(), rs);
+                                        });
+                            } else {
+                                logger.warn("openLockByGateway no admin");
+                            }
+                        }
+                    });
+
                 }
             }
         });
