@@ -698,7 +698,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                                     pubAck.setMessageID(publish.getMessageID());
                                     sendMessageToClient(pubAck);
                                 });
-                            }else{
+                            } else {
                                 try {
                                     writeLog(rs.headers().get("uid"), publish);
                                 } catch (Exception e) {

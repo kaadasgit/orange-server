@@ -91,7 +91,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                 logger.error(res.cause().getMessage(), res.cause());
                                 message.reply(false);
                             } else {
-                                if (Objects.nonNull(res.result()) && pwd.equals(res.result().getString("userPwd"))) {
+                                if (Objects.nonNull(res.result()) && Objects.nonNull(res.result().getValue("userPwd"))
+                                        && pwd.equals(res.result().getString("userPwd"))) {
                                     message.reply(true);
                                     onGatewayInfo(res.result().put("username", message.body().getString("username")));
                                 } else {

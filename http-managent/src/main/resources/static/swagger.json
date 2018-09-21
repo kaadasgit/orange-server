@@ -31,6 +31,14 @@
         "description": "Find out more about our store",
         "url": "http://swagger.io"
       }
+    },
+    {
+      "name": "managent",
+      "description": "后台管理",
+      "externalDocs": {
+        "description": "Find out more about our store",
+        "url": "http://swagger.io"
+      }
     }
   ],
   "schemes": [
@@ -233,6 +241,120 @@
           }
         }
       }
+    },
+    "/user/state/online/count": {
+      "post": {
+        "tags": [
+          "managent"
+        ],
+        "summary": "获取用户rest服务在线人数",
+        "description": "List of user object",
+        "operationId": "restState",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "auth",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/resRestState"
+            }
+          },
+          "500": {
+            "description": "sever fail"
+          }
+        }
+      }
+    },
+    "/mqttbroker/online/count": {
+      "post": {
+        "tags": [
+          "managent"
+        ],
+        "summary": "mqttbroker 在线数量",
+        "description": "List of user object",
+        "operationId": "brokercount",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "auth",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/brokercount"
+            }
+          },
+          "500": {
+            "description": "sever fail"
+          }
+        }
+      }
+    },
+    "/user/register/interTime/count": {
+      "post": {
+        "tags": [
+          "managent"
+        ],
+        "summary": "根据时间区间获取注册人数",
+        "description": "List of user object",
+        "operationId": "interTimeCount",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "auth",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/reqcount"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/interTimeCount"
+            }
+          },
+          "500": {
+            "description": "sever fail"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -389,6 +511,140 @@
         "msg": {
           "type": "string",
           "description": "code码相应状态消息"
+        }
+      }
+    },
+    "resRestState": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "msg"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "状态码，全局 成功200"
+        },
+        "data": {
+          "$ref": "#/definitions/RestState"
+        },
+        "msg": {
+          "type": "string",
+          "description": "code码相应状态消息"
+        }
+      }
+    },
+    "RestState": {
+      "type": "object",
+      "required": [
+        "count",
+        "totalcount"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "在线状态人数"
+        },
+        "totalcount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "总人数"
+        }
+      }
+    },
+    "brokercount": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "msg"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "状态码，全局 成功200"
+        },
+        "data": {
+          "$ref": "#/definitions/brokerinfo"
+        },
+        "msg": {
+          "type": "string",
+          "description": "code码相应状态消息"
+        }
+      }
+    },
+    "brokerinfo": {
+      "type": "object",
+      "required": [
+        "count",
+        "totalcount"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "在线连接数"
+        },
+        "totalcount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "总数"
+        }
+      }
+    },
+    "interTimeCount": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "msg"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "状态码，全局 成功200"
+        },
+        "data": {
+          "$ref": "#/definitions/interTimeCountData"
+        },
+        "msg": {
+          "type": "string",
+          "description": "code码相应状态消息"
+        }
+      }
+    },
+    "interTimeCountData": {
+      "type": "object",
+      "required": [
+        "count"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "注册数量"
+        }
+      }
+    },
+    "reqcount": {
+      "type": "object",
+      "required": [
+        "startTime",
+        "endTIme"
+      ],
+      "properties": {
+        "startTime": {
+          "type": "string",
+          "description": "开始时间"
+        },
+        "endTIme": {
+          "type": "string",
+          "description": "结束时间"
         }
       }
     }

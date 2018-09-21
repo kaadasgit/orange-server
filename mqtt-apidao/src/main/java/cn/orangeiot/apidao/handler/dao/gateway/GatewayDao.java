@@ -29,6 +29,7 @@ import scala.util.parsing.json.JSONObject;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collector;
@@ -255,20 +256,16 @@ public class GatewayDao implements GatewayAddr {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1).put("adminuid", 1)), rs -> {
+                .put("deviceNickName", 1).put("isAdmin", 1)), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
-                List<JsonObject> resultList = rs.result().stream().map(e -> {
-                    if (e.getString("adminuid").equals(message.body().getString("uid")))
-                        e.put("isAdmin", 1);//管理员
-                    else
-                        e.put("isAdmin", 2);//普通用户
-                    e.remove("adminuid");
-                    return e;
-                }).collect(Collectors.toList());
-                message.reply(new JsonArray(resultList));
+                if (Objects.nonNull(rs.result()) && rs.result().size() > 0) {
+                    message.reply(new JsonArray(rs.result()));
+                } else {
+                    message.reply(new JsonArray());
+                }
             }
         });
     }
