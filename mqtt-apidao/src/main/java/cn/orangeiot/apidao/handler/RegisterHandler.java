@@ -244,6 +244,7 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MAC_IN, deviceDao::modelMacIn);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_MODEL_PASSWORD, deviceDao::getPwdByMac);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + MODEL_MANY_MAC_IN, deviceDao::modelManyMacIn);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + DEVICE_TEST_INFO_IN, deviceDao::deviceTestInfoIn);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, deviceDao::getWriteMacResult);
     }
 

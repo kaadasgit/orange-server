@@ -279,7 +279,7 @@ public class DeviceDao {
                 if (message.body().size() % BOUNART_NUM == 0)
                     times = BOUNART_NUM;
                 else
-                    times = BOUNART_NUM * (i + 1) - message.body().size();
+                    times = BOUNART_NUM - (BOUNART_NUM * (i + 1) - message.body().size());
             } else {
                 times = BOUNART_NUM;
             }
@@ -312,17 +312,19 @@ public class DeviceDao {
                     }
                 }, (AsyncResult<List<JsonObject>> rs) -> {
                     if (rs.result().size() > 0) {
+                        int insertTotal = rs.result().stream().mapToInt(count -> count.getJsonArray("upserts").size()).sum();
                         int updateTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
                         int matchTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
                         message.reply(new JsonObject().put("uploadTotal", message.body().size())
-                                .put("updateTotal", updateTotal).put("matchTotal", matchTotal));
+                                .put("updateTotal", updateTotal).put("matchTotal", matchTotal).put("insertTotal", insertTotal));
                     } else {
                         message.reply(new JsonObject().put("uploadTotal", message.body().size())
-                                .put("updateTotal", 0).put("matchTotal", 0));
+                                .put("updateTotal", 0).put("matchTotal", 0).put("insertTotal", 0));
                     }
                 }
         );
     }
+
 
     /**
      * @Description 上传mac
@@ -330,6 +332,7 @@ public class DeviceDao {
      * @date 18-4-26
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     public Future<JsonObject> uploadMac(List<BulkOperation> bulkOperationList) {
         return Future.future(rs -> {
             MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
@@ -339,12 +342,115 @@ public class DeviceDao {
                             rs.fail(ars.cause());
                         } else {
                             JsonObject resultJson = JsonObject.mapFrom(ars.result());
-                            logger.info("=========mongoBulk============" + resultJson.toString());
+                            logger.debug("=========mongoBulk============" + resultJson.toString());
                             rs.complete(resultJson);
                         }
                     });
         });
     }
+
+
+    /**
+     * @Description 设备的测试信息写入
+     * @author zhang bo
+     * @date 18-9-25
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void deviceTestInfoIn(Message<JsonArray> message) {
+        final int BOUNART_NUM = 1000;//阀值
+        int num = message.body().size();
+        int batch = num % BOUNART_NUM == 0 ? num / BOUNART_NUM : num / BOUNART_NUM + 1;//次数
+
+        final List<BulkOperation>[] bulkOperationList = new LinkedList[batch];
+
+        for (int i = 0; i < batch; i++) {
+            bulkOperationList[i] = new LinkedList<>();
+        }
+        AtomicInteger atomicInteger = new AtomicInteger(0);
+
+        final Future<JsonObject>[] future = new Future[batch];//分批回調
+
+
+        for (int i = 0; i < bulkOperationList.length; i++) {//上傳
+            int times;
+            if (num < BOUNART_NUM) {
+                times = num;
+            } else if (bulkOperationList.length - 1 == i) {
+                if (message.body().size() % BOUNART_NUM == 0)
+                    times = BOUNART_NUM;
+                else
+                    times = BOUNART_NUM - (BOUNART_NUM * (i + 1) - message.body().size());
+            } else {
+                times = BOUNART_NUM;
+            }
+            for (int j = 0; j < times; j++) {
+                JsonObject datas = message.body().getJsonObject(i * BOUNART_NUM + j);
+                JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
+                        .put("filter", new JsonObject().put("SN", datas.getString("SN")))
+                        .put("document", new JsonObject().put("$set", datas))
+                        .put("upsert", true).put("multi", false);
+                bulkOperationList[i].add(new BulkOperation(params));
+            }
+            future[i] = uploadDevTestInfo(bulkOperationList[i]);
+        }
+
+        vertx.executeBlocking(res -> {
+                    //处理返回结果
+                    List<JsonObject> list = new Vector();
+                    for (int i = 0; i < future.length; i++) {
+                        future[i].setHandler((AsyncResult<JsonObject> rs) -> {
+                            if (rs.failed()) {
+                                logger.error(rs.cause().getMessage(), rs);
+                            } else {
+                                list.add(rs.result());
+                                if (atomicInteger.get() == batch - 1) {//最后一次
+                                    res.complete(list);
+                                }
+                                atomicInteger.incrementAndGet();
+                            }
+                        });
+                    }
+                }, (AsyncResult<List<JsonObject>> rs) -> {
+                    if (rs.result().size() > 0) {
+                        int insertTotal = rs.result().stream().mapToInt(count -> count.getJsonArray("upserts").size()).sum();
+                        int updateTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
+                        int matchTotal = rs.result().stream().mapToInt(count -> count.getInteger("matchedCount")).sum();
+                        message.reply(new JsonObject().put("uploadTotal", message.body().size())
+                                .put("updateTotal", updateTotal).put("matchTotal", matchTotal).put("insertTotal", insertTotal));
+                    } else {
+                        message.reply(new JsonObject().put("uploadTotal", message.body().size())
+                                .put("updateTotal", 0).put("matchTotal", 0).put("insertTotal", 0));
+                    }
+                }
+        );
+    }
+
+
+    /**
+     * @Description 上传设备测试信息数据
+     * @author zhang bo
+     * @date 18-9-25
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public Future<JsonObject> uploadDevTestInfo(List<BulkOperation> bulkOperationList) {
+        return Future.future(rs -> {
+            MongoClient.client.bulkWriteWithOptions("kdsProductInfoTestList", bulkOperationList
+                    , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
+                        if (ars.failed()) {
+                            logger.error(ars.cause().getMessage(), ars);
+                            rs.fail(ars.cause());
+                        } else {
+                            JsonObject resultJson = JsonObject.mapFrom(ars.result());
+                            if (Objects.nonNull(resultJson.getValue("upserts")) && resultJson.getJsonArray("upserts").size() > 0)
+                                logger.debug("=========mongoBulk============ upserts -> " + resultJson.getJsonArray("upserts").size());
+                            rs.complete(resultJson);
+                        }
+                    });
+        });
+    }
+
 
     /**
      * @Description 获取mac写入结果

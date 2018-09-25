@@ -76,7 +76,6 @@ public class GatewayDao implements GatewayAddr {
                     RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, userResult -> {
                         if (userResult.failed()) {
                             logger.error(userResult.cause().getMessage(), userResult);
-                            message.reply(null);
                         } else {
                             // 加入审批列表
                             if (Objects.nonNull(userResult.result())) {
@@ -99,6 +98,8 @@ public class GatewayDao implements GatewayAddr {
                                                     .put("type", 1).put("approvalTime", time).put("status", 1), rs -> {//status 1 有效
                                                 if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                             });
+                                        } else {
+
                                         }
                                     }
                                 });

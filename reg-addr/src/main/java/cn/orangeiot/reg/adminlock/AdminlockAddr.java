@@ -48,6 +48,8 @@ public interface AdminlockAddr {
 
     String MODEL_MANY_MAC_IN = "modelManyMacIn";//mac地址多写入
 
+    String DEVICE_TEST_INFO_IN = "deviceTestInfoIn";//设备打测试信息写入
+
     String GET_WRITE_MAC_RESULT = "getWriteMacResult";//获取mac写入结果
 
     String GET_MODEL_PASSWORD = "getPwdByMac";//根据mac获取模块的password1

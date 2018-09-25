@@ -31,4 +31,6 @@ public interface ApiConf {
 
     String SUBMIT_UPGRADE_DATA = "/ota/submit";//提交升級的數據
 
+    String UPLOAD_DEVICE_TEST_INFO="/file/device/info/test";//上传设备测试信息
+
 }
