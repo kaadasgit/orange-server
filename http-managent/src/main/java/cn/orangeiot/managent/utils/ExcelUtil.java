@@ -515,7 +515,13 @@ public class ExcelUtil {
                         // 如果是Date类型则，转化为Data格式
 
                         //方法1：这样子的data格式是带时分秒的：2015-12-18 0:00:00
-                        cellvalue = cell.getDateCellValue().toString();
+//                        cellvalue = cell.getDateCellValue().toString();
+                        try {
+                            cellvalue = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cell.getDateCellValue());
+                        } catch (Exception e) {
+                            logger.error(e.getMessage(), e);
+                            cellvalue = cell.getDateCellValue().toString();
+                        }
 
                         //方法2：这样子的data格式是不带带时分秒的：2011-10-12
 //                        Date date = cell.getDateCellValue();

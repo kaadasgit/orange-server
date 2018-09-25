@@ -13,7 +13,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "host": "192.168.1.105:17000",
+  "host": "172.16.0.105:17000",
   "basePath": "/",
   "tags": [
     {
@@ -230,6 +230,39 @@
             "schema": {
               "$ref": "#/definitions/getMacResult"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/file/device/info/test": {
+      "post": {
+        "tags": [
+          "file"
+        ],
+        "summary": "上传设备测试信息",
+        "description": "List of user object",
+        "operationId": "deviceINfoTest",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "file to upload",
+            "required": true,
+            "type": "file"
           }
         ],
         "responses": {
