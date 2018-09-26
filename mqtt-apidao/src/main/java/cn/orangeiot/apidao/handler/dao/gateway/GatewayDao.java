@@ -699,7 +699,7 @@ public class GatewayDao implements GatewayAddr {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
-                        if (Objects.nonNull(rs.result().getValue("deviceList"))) {
+                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
                             message.reply(new JsonObject().put("deviceList",
                                     new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
