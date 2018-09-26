@@ -121,7 +121,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
         //数据校验
         VerifyParamsUtil.verifyParams(jsonObject, new JsonObject().put("devuuid", DataType.STRING)
                 .put("requestuid", DataType.STRING).put("uid", DataType.STRING).put("type", DataType.INTEGER)
-                .put("_id",DataType.STRING), as -> {
+                .put("_id", DataType.STRING), as -> {
             if (as.failed()) {
                 handler.handle(Future.succeededFuture(new JsonObject().put("code", ErrorType.RESULT_PARAMS_FAIL.getKey())
                         .put("msg", ErrorType.RESULT_PARAMS_FAIL.getValue())));
@@ -151,6 +151,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                                             , jsonObject.getString("func")))));
                                         }
                                     } else {
+                                        logger.info("bind gateway general user -> {} , gateway -> {}", as.result().getString("uid"), as.result().getString("devuuid"));
                                         vertx.eventBus().send(GatewayAddr.class.getName() + APPROVAL_GATEWAY_BIND, as.result(), SendOptions.getInstance());
                                         handler.handle(Future.succeededFuture(JsonObject.mapFrom(
                                                 new ResultInfo<>().setData(new JsonObject()).setFunc(jsonObject.getString("func")))));

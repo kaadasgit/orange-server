@@ -108,6 +108,7 @@ public class GatewayDao implements GatewayAddr {
                         }
                     });
                 } else {//绑定网关(角色管理员)
+                    logger.info("bind gateway -> {} , uid -> {}", message.body().getString("devuuid"), message.body().getString("uid"));
                     RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, userResult -> {
                         if (userResult.failed()) {
                             logger.error(userResult.cause().getMessage(), userResult);
@@ -412,12 +413,14 @@ public class GatewayDao implements GatewayAddr {
                                     logger.error(ars.cause().getMessage(), ars);
                                 } else {
                                     if (Objects.nonNull(ars.result())) {
+                                        //插入历史记录
                                         MongoClient.client.insert("kdsbindGWHistoryRecord", new JsonObject().put("deviceSN"
                                                 , message.body().getString("devuuid")).put("deviceList",
                                                 Objects.nonNull(ars.result().getValue("deviceList")) ?
                                                         ars.result().getJsonArray("deviceList") : new JsonArray())
-                                                        .put("adminuid", message.body().getString("uid"))
+                                                        .put("uid", message.body().getString("uid"))
                                                         .put("bindTime", ars.result().getString("bindTime"))
+                                                        .put("unbindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                                                 , as -> {
                                                     if (as.failed())
                                                         logger.error(as.cause().getMessage(), as);
@@ -438,12 +441,27 @@ public class GatewayDao implements GatewayAddr {
             MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
                     , message.body().getString("devuuid")).put("uid", message.body().getString("uid"))
                     , new FindOptions().setFields(new JsonObject()
-                            .put("userid", 1).put("_id", 0)), rs -> {
+                            .put("userid", 1).put("_id", 0).put("deviceList", 1).put("bindTime", 1)), rs -> {
                         if (rs.failed()) {
                             logger.error(rs.cause().getMessage(), rs);
                             message.reply(null);
                         } else {
                             message.reply(new JsonArray(rs.result()));
+
+                            //插入历史记录
+                            if (Objects.nonNull(rs.result()) && rs.result().size() > 0) {
+                                MongoClient.client.insert("kdsbindGWHistoryRecord", new JsonObject().put("deviceSN"
+                                        , message.body().getString("devuuid")).put("deviceList",
+                                        Objects.nonNull(rs.result().get(0).getValue("deviceList")) ?
+                                                rs.result().get(0).getJsonArray("deviceList") : new JsonArray())
+                                                .put("uid", message.body().getString("uid"))
+                                                .put("bindTime", rs.result().get(0).getString("bindTime"))
+                                                .put("unbindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                        , as -> {
+                                            if (as.failed())
+                                                logger.error(as.cause().getMessage(), as);
+                                        });
+                            }
 
                             MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject().put("deviceSN"
                                     , message.body().getString("devuuid")).put("uid", message.body().getString("uid"))

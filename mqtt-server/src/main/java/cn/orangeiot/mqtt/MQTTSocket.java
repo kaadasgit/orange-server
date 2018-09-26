@@ -74,6 +74,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.sessions = sessions;
         this.netSocket = netSocket;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
+        sendMessage();
+        sendGWMessage();
+        sendStorage();
+        getloginAll();
+        sendPubRel();
+        kickOut();
+        deviceState();
     }
 
     public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
@@ -85,6 +92,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.config = config;
         this.sessions = sessions;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
+        sendMessage();
+        sendGWMessage();
+        sendStorage();
+        getloginAll();
+        sendPubRel();
+        kickOut();
+        deviceState();
     }
 
     abstract protected void sendMessageToClient(Buffer bytes);
@@ -117,13 +131,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 Buffer buffer = Buffer.buffer(token);
                 AbstractMessage message = decoder.dec(buffer);
                 onMessageFromClient(message);
-                sendMessage();
-                sendGWMessage();
-                sendStorage();
-                getloginAll();
-                sendPubRel();
-                kickOut();
-                deviceState();
             } else {
                 logger.warn("Timeout occurred ...");
             }
@@ -185,11 +192,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.setPublishMessageHandler(this::sendMessageToClient);
                 session.setKeepaliveErrorHandler(clientID -> {
                     String cinfo = clientID;
+                    String cliId = clientID;
                     if (session != null) {
                         cinfo = session.getClientInfo();
+                        cliId = session.getClientID();
                     }
                     logger.debug("keep alive exausted! closing connection for client[" + cinfo + "] ...");
-                    checkDevice(connectedClientID, "offline");//离线狀態
+                    checkDevice(null, "offline");//离线狀態
                     closeConnection();
                 });
                 session.handleConnectMessage(connect, authenticated -> {
@@ -216,154 +225,174 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 });
                 break;
             case SUBSCRIBE:
-                session.resetKeepAliveTimer();
+                if (checkConnected(session)) {
+                    session.resetKeepAliveTimer();
 
-                SubscribeMessage subscribeMessage = (SubscribeMessage) msg;
-                PromMetrics.mqtt_subscribe_total.labels(session.getClientID()).inc();
+                    SubscribeMessage subscribeMessage = (SubscribeMessage) msg;
+                    PromMetrics.mqtt_subscribe_total.labels(session.getClientID()).inc();
 
-                session.handleSubscribeMessage(subscribeMessage, permitted -> {
-                    SubAckMessage subAck = new SubAckMessage();
-                    subAck.setMessageID(subscribeMessage.getMessageID());
-                    int indx = 0;
-                    for (SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
-                        if (permitted.getBoolean(indx++)) {
-                            QOSType qos = new QOSUtils().toQos(c.getQos());
-                            subAck.addType(qos);
-                        } else {
-                            subAck.addType(QOSType.FAILURE);
+                    session.handleSubscribeMessage(subscribeMessage, permitted -> {
+                        SubAckMessage subAck = new SubAckMessage();
+                        subAck.setMessageID(subscribeMessage.getMessageID());
+                        int indx = 0;
+                        for (SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
+                            if (permitted.getBoolean(indx++)) {
+                                QOSType qos = new QOSUtils().toQos(c.getQos());
+                                subAck.addType(qos);
+                            } else {
+                                subAck.addType(QOSType.FAILURE);
+                            }
                         }
-                    }
-                    if (subscribeMessage.isRetainFlag()) {
+                        if (subscribeMessage.isRetainFlag()) {
                         /*
                         When a new subscription is established on a topic,
 	                    the last retained message on that topic should be sent to the subscriber with the Retain flag set.
 	                    If there is no retained message, nothing is sent
 	                    */
-                    }
-                    sendMessageToClient(subAck);
+                        }
+                        sendMessageToClient(subAck);
 
-                    checkDevice(session.getClientID(), "online");//在線狀態
-                    checkUser(session.getClientID(), "online");//在線狀態
-                    //推送持久化记录
+                        checkDevice(session.getClientID(), "online");//在線狀態
+                        checkUser(session.getClientID(), "online");//在線狀態
+                        //推送持久化记录
 //                    vertx.eventBus().send(StorageAddr.class.getName() + GET_STORAGE_DATA, null
 //                            , new DeliveryOptions().addHeader("clientId", session.getClientID()));
 
-                    vertx.eventBus().send(LogAddr.class.getName() + READ_LOG, new JsonObject().put("topic", session.getClientID().split(":")[1]));
-                    vertx.eventBus().send(LogAddr.class.getName() + SEND_PUBREL, new JsonObject().put("topic", session.getClientID()));
-                });
+                        vertx.eventBus().send(LogAddr.class.getName() + READ_LOG, new JsonObject().put("topic", session.getClientID().split(":")[1]));
+                        vertx.eventBus().send(LogAddr.class.getName() + SEND_PUBREL, new JsonObject().put("topic", session.getClientID()));
+                    });
+                }
                 break;
             case UNSUBSCRIBE:
-                PromMetrics.mqtt_unsubscribe_total.labels(session.getClientID()).inc();
-                session.resetKeepAliveTimer();
+                if (checkConnected(session)) {
+                    PromMetrics.mqtt_unsubscribe_total.labels(session.getClientID()).inc();
+                    session.resetKeepAliveTimer();
 
-                UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage) msg;
-                session.handleUnsubscribeMessage(unsubscribeMessage);
-                UnsubAckMessage unsubAck = new UnsubAckMessage();
-                unsubAck.setMessageID(unsubscribeMessage.getMessageID());
-                sendMessageToClient(unsubAck);
+                    UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage) msg;
+                    session.handleUnsubscribeMessage(unsubscribeMessage);
+                    UnsubAckMessage unsubAck = new UnsubAckMessage();
+                    unsubAck.setMessageID(unsubscribeMessage.getMessageID());
+                    sendMessageToClient(unsubAck);
+                }
                 break;
             case PUBLISH:
-                session.resetKeepAliveTimer();
+                if (checkConnected(session)) {
+                    session.resetKeepAliveTimer();
 
-                PublishMessage publish = (PublishMessage) msg;
+                    PublishMessage publish = (PublishMessage) msg;
 
-                logger.debug("client publish topic -> {}", publish.getTopicName());
+                    logger.debug("client publish topic -> {}", publish.getTopicName());
 
-                session.handlerPublishMessage(publish, session.getClientID(), rs -> {
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage());
-                        publishReplyPackage(publish);
-                    } else {
-                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("flag")))
-                            publishMsg(publish, rs.result(), false);
-                        else if (Objects.nonNull(rs.result()))
-                            publishMsg(publish, rs.result(), true);
-                    }
-                });
+                    session.handlerPublishMessage(publish, session.getClientID(), rs -> {
+                        if (rs.failed()) {
+                            logger.error(rs.cause().getMessage());
+                            publishReplyPackage(publish);
+                        } else {
+                            if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("flag")))
+                                publishMsg(publish, rs.result(), false);
+                            else if (Objects.nonNull(rs.result()))
+                                publishMsg(publish, rs.result(), true);
+                        }
+                    });
+                }
                 break;
             case PUBREC:
-                session.resetKeepAliveTimer();
+                if (checkConnected(session)) {
+                    session.resetKeepAliveTimer();
 
-                PubRecMessage pubRec = (PubRecMessage) msg;
-                PubRelMessage prelResp = new PubRelMessage();
-                prelResp.setMessageID(pubRec.getMessageID());
-                prelResp.setQos(LEAST_ONE);
+                    PubRecMessage pubRec = (PubRecMessage) msg;
+                    PubRelMessage prelResp = new PubRelMessage();
+                    prelResp.setMessageID(pubRec.getMessageID());
+                    prelResp.setQos(LEAST_ONE);
 //                sendMessageToClient(prelResp);
 
-                //停止发送
-                vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubRec.getMessageID())
-                        .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage(), rs);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) {
-                            vertx.cancelTimer(Long.parseLong(rs.result().body()));
-                            saveRel(prelResp);
+                    //停止发送
+                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubRec.getMessageID())
+                            .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
+                        if (rs.failed()) {
+                            logger.error(rs.cause().getMessage(), rs);
+                        } else {
+                            if (Objects.nonNull(rs.result().body())) {
+                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
+                                saveRel(prelResp);
+                            }
                         }
-                    }
-                });
-
+                    });
+                }
 
                 break;
             case PUBREL:
-                session.resetKeepAliveTimer();
-                PubRelMessage pubRel = (PubRelMessage) msg;
-                PubCompMessage pubComp = new PubCompMessage();
-                pubComp.setMessageID(pubRel.getMessageID());
-                sendMessageToClient(pubComp);
+                if (checkConnected(session)) {
+                    session.resetKeepAliveTimer();
+                    PubRelMessage pubRel = (PubRelMessage) msg;
+                    PubCompMessage pubComp = new PubCompMessage();
+                    pubComp.setMessageID(pubRel.getMessageID());
+                    sendMessageToClient(pubComp);
 
-                //接收确认
+                    //接收确认
 //                vertx.eventBus().send(StorageAddr.class.getName() + DEL_STORAGE_DATA, null, new DeliveryOptions()
 //                        .addHeader("clientId", session.getClientID()).addHeader("msgId", pubRel.getMessageID().toString()));
+                }
                 break;
             case PUBACK:
-                session.getMessageFromQueue();
-                session.resetKeepAliveTimer();
-                PubAckMessage pubAckMessage = (PubAckMessage) msg;
+                if (checkConnected(session)) {
+                    session.getMessageFromQueue();
+                    session.resetKeepAliveTimer();
+                    PubAckMessage pubAckMessage = (PubAckMessage) msg;
 
-                //接收确认
+                    //接收确认
 //                vertx.eventBus().send(StorageAddr.class.getName() + DEL_STORAGE_DATA, null, new DeliveryOptions()
 //                        .addHeader("clientId", session.getClientID()).addHeader("msgId", pubAckMessage.getMessageID().toString()));
 
-                vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubAckMessage.getMessageID())
-                        .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage(), rs);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) vertx.cancelTimer(Long.parseLong(rs.result().body()));
-                    }
-                });
-                // A PUBACK message is the response to a PUBLISH message with QoS level 1.
-                // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
-                // and by a subscriber in response to a PUBLISH message from the server.
+                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubAckMessage.getMessageID())
+                            .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
+                        if (rs.failed()) {
+                            logger.error(rs.cause().getMessage(), rs);
+                        } else {
+                            if (Objects.nonNull(rs.result().body()))
+                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
+                        }
+                    });
+                    // A PUBACK message is the response to a PUBLISH message with QoS level 1.
+                    // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
+                    // and by a subscriber in response to a PUBLISH message from the server.
+                }
                 break;
             case PUBCOMP:
-                session.getMessageFromQueue();
-                session.resetKeepAliveTimer();
+                if (checkConnected(session)) {
+                    session.getMessageFromQueue();
+                    session.resetKeepAliveTimer();
 
-                PubCompMessage pubCompMessage = (PubCompMessage) msg;
-                vertx.eventBus().send(LogAddr.class.getName() + CONSUME_PUBREL, new JsonObject().put("relId", pubCompMessage.getMessageID())
-                        .put("topic", session.getClientID()), (AsyncResult<Message<String>> rs) -> {
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage(), rs);
-                    } else {
-                        if (Objects.nonNull(rs.result().body())) vertx.cancelTimer(Long.parseLong(rs.result().body()));
-                    }
-                });
+                    PubCompMessage pubCompMessage = (PubCompMessage) msg;
+                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_PUBREL, new JsonObject().put("relId", pubCompMessage.getMessageID())
+                            .put("topic", session.getClientID()), (AsyncResult<Message<String>> rs) -> {
+                        if (rs.failed()) {
+                            logger.error(rs.cause().getMessage(), rs);
+                        } else {
+                            if (Objects.nonNull(rs.result().body()))
+                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
+                        }
+                    });
+                }
                 break;
             case PINGREQ:
-                session.resetKeepAliveTimer();
-                PingRespMessage pingResp = new PingRespMessage();
-                sendMessageToClient(pingResp);
+                if (checkConnected(session)) {
+                    session.resetKeepAliveTimer();
+                    PingRespMessage pingResp = new PingRespMessage();
+                    sendMessageToClient(pingResp);
+                }
                 break;
             case DISCONNECT:
-                PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
-                checkDevice(session.getClientID(), "offline");//离线狀態
-                session.resetKeepAliveTimer();
-                DisconnectMessage disconnectMessage = (DisconnectMessage) msg;
-                handleDisconnect(disconnectMessage);
+                if (checkConnected(session)) {
+                    PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
+                    checkDevice(session.getClientID(), "offline");//离线狀態
+                    session.resetKeepAliveTimer();
+                    DisconnectMessage disconnectMessage = (DisconnectMessage) msg;
+                    handleDisconnect(disconnectMessage);
+                }
                 break;
             default:
+                checkConnected(session);
                 logger.warn("type of message not known: " + msg.getClass().getSimpleName());
                 break;
         }
@@ -373,6 +402,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     }
 
+    /**
+     * @Description 检查连接
+     * @author zhang bo
+     * @date 18-9-26
+     * @version 1.0
+     */
+    private boolean checkConnected(MQTTSession session) {
+        if (Objects.nonNull(session)) {
+            return true;
+        } else {
+            this.netSocket.close();
+            return false;
+        }
+    }
 
     /**
      * @Description
@@ -381,7 +424,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @version 1.0
      */
     public void checkDevice(String clientId, String state) {
-        if (clientId.indexOf(GATEWAY_PREFIX) >= 0) {//網關
+        if (Objects.nonNull(clientId) && clientId.indexOf(GATEWAY_PREFIX) >= 0) {//網關
+            logger.debug("gwID -> {}", clientId);
             String gwId = clientId.split(":")[1];
             vertx.eventBus().send(GatewayAddr.class.getName() + GET_GATWWAY_USERALL, new JsonObject().put("clientId", gwId)
                     , SendOptions.getInstance(), (AsyncResult<Message<JsonArray>> ars) -> {
@@ -396,7 +440,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
 
     public void checkUser(String clientId, String state) {
-        if (clientId.indexOf(USER_PREFIX) >= 0) {//網關
+        if (Objects.nonNull(clientId) && clientId.indexOf(USER_PREFIX) >= 0) {//網關
+            logger.debug("userID -> {}", clientId);
             String userId = clientId.split(":")[1];
             vertx.eventBus().send(GatewayAddr.class.getName() + GET_USER_GATEWAYLIST, new JsonObject().put("clientId", userId)
                     , SendOptions.getInstance(), (AsyncResult<Message<JsonArray>> ars) -> {
