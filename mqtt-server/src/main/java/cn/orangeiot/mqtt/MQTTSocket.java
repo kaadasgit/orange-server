@@ -74,13 +74,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.sessions = sessions;
         this.netSocket = netSocket;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
-        sendMessage();
-        sendGWMessage();
-        sendStorage();
-        getloginAll();
-        sendPubRel();
-        kickOut();
-        deviceState();
+//        sendMessage();
+//        sendGWMessage();
+//        sendStorage();
+//        getloginAll();
+//        sendPubRel();
+//        kickOut();
+//        deviceState();
     }
 
     public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
@@ -92,13 +92,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.config = config;
         this.sessions = sessions;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
-        sendMessage();
-        sendGWMessage();
-        sendStorage();
-        getloginAll();
-        sendPubRel();
-        kickOut();
-        deviceState();
+//        sendMessage();
+//        sendGWMessage();
+//        sendStorage();
+//        getloginAll();
+//        sendPubRel();
+//        kickOut();
+//        deviceState();
     }
 
     abstract protected void sendMessageToClient(Buffer bytes);
@@ -413,6 +413,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             return true;
         } else {
             this.netSocket.close();
+            logger.warn("session is null , from message");
             return false;
         }
     }
@@ -460,13 +461,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @date 18-9-13
      * @version 1.0
      */
-    public void deviceState() {
-        vertx.eventBus().consumer(GatewayAddr.class.getName() + SEND_GATEWAY_STATE, (Message<JsonObject> rs) -> {
-            if (Objects.nonNull(rs.body()) && Objects.nonNull(rs.body().getValue("_id")) && Objects.nonNull(rs.body().getValue("gwId")))
-                sendDeviceState(rs.body().getString("_id"), new JsonArray().add(new JsonObject().put("deviceSN", rs.body().getString("gwId"))
-                        .put("uid", rs.body().getString("_id"))), "online", true);
-        });
-    }
+//    public void deviceState() {
+//        vertx.eventBus().consumer(GatewayAddr.class.getName() + SEND_GATEWAY_STATE, (Message<JsonObject> rs) -> {
+//            if (Objects.nonNull(rs.body()) && Objects.nonNull(rs.body().getValue("_id")) && Objects.nonNull(rs.body().getValue("gwId")))
+//                sendDeviceState(rs.body().getString("_id"), new JsonArray().add(new JsonObject().put("deviceSN", rs.body().getString("gwId"))
+//                        .put("uid", rs.body().getString("_id"))), "online", true);
+//        });
+//    }
 
 
     /**
@@ -594,7 +595,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         if (Objects.nonNull(rs)) {
             String tempTopic = publish.getTopicName();
             QOSType qos = publish.getQos();
-            publish.setTopicName(rs.getString("topicName"));
+            if (Objects.nonNull(rs.getValue("topicName")))
+                publish.setTopicName(rs.getString("topicName"));
             if (flag)
                 try {
                     rs.remove("topicName");
@@ -631,56 +633,56 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
 
     //踢出
-    public void kickOut() {
-        vertx.eventBus().consumer(MessageAddr.class.getName() + KICK_OUT, (Message<JsonObject> rs) -> {
-            MQTTSession session = null;
-            if (Objects.nonNull(rs.headers().get("clientId")) && Objects.nonNull(session = sessions.get(rs.headers().get("clientId")))) {
-                session.closeConnect();
-            }
-        });
-    }
+//    public void kickOut() {
+//        vertx.eventBus().consumer(MessageAddr.class.getName() + KICK_OUT, (Message<JsonObject> rs) -> {
+//            MQTTSession session = null;
+//            if (Objects.nonNull(rs.headers().get("clientId")) && Objects.nonNull(session = sessions.get(rs.headers().get("clientId")))) {
+//                session.closeConnect();
+//            }
+//        });
+//    }
 
 
     //qos发送消息
-    public void sendMessage() {
-        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_ADMIN_MSG, (Message<JsonObject> rs) -> {
-            String topicName = SEND_USER_REPLAY.replace("clientId", rs.headers().get("uid").replace("app:", ""));
-            rs.headers().set("topicName", topicName);
-            sendMsgToClient(rs);
-        });
-    }
+//    public void sendMessage() {
+//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_ADMIN_MSG, (Message<JsonObject> rs) -> {
+//            String topicName = SEND_USER_REPLAY.replace("clientId", rs.headers().get("uid").replace("app:", ""));
+//            rs.headers().set("topicName", topicName);
+//            sendMsgToClient(rs);
+//        });
+//    }
 
 
     //qos发送升级消息
-    public void sendGWMessage() {
-        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_UPGRADE_MSG, (Message<JsonObject> rs) -> {
-            String topicName = rs.headers().get("topic");
-            rs.headers().set("topicName", topicName);
-            sendMsgToClient(rs);
-        });
-    }
+//    public void sendGWMessage() {
+//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_UPGRADE_MSG, (Message<JsonObject> rs) -> {
+//            String topicName = rs.headers().get("topic");
+//            rs.headers().set("topicName", topicName);
+//            sendMsgToClient(rs);
+//        });
+//    }
 
 
     //发送storage消息
-    public void sendStorage() {
-        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_STORAGE_MSG, (Message<JsonObject> rs) -> {
-            String topicName = rs.headers().get("topic");
-            rs.headers().set("topicName", topicName);
-            sendMsgToClient(rs);
-        });
-    }
+//    public void sendStorage() {
+//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_STORAGE_MSG, (Message<JsonObject> rs) -> {
+//            String topicName = rs.headers().get("topic");
+//            rs.headers().set("topicName", topicName);
+//            sendMsgToClient(rs);
+//        });
+//    }
 
     //发送pubRel消息
-    public void sendPubRel() {
-        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_PUBREL_MSG, (Message<JsonObject> rs) -> {
-            PubRelMessage prelResp = new PubRelMessage();
-            prelResp.setMessageID(Integer.parseInt(rs.body().getString("relId")));
-            prelResp.setQos(LEAST_ONE);
-            sendMessageToClient(prelResp);
-            if (Objects.nonNull(sessions.get(rs.body().getString("clientid"))))
-                sessions.get(rs.body().getString("clientid")).sendMessageToClient(prelResp);
-        });
-    }
+//    public void sendPubRel() {
+//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_PUBREL_MSG, (Message<JsonObject> rs) -> {
+//            PubRelMessage prelResp = new PubRelMessage();
+//            prelResp.setMessageID(Integer.parseInt(rs.body().getString("relId")));
+//            prelResp.setQos(LEAST_ONE);
+//            sendMessageToClient(prelResp);
+//            if (Objects.nonNull(sessions.get(rs.body().getString("clientid"))))
+//                sessions.get(rs.body().getString("clientid")).sendMessageToClient(prelResp);
+//        });
+//    }
 
 
     /**
@@ -907,10 +909,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
 
-    private void getloginAll() {
-        vertx.eventBus().consumer("cn.login.all", msg -> {
-            msg.reply(new JsonArray(sessions.keySet().stream().collect(Collectors.toList())));
-        });
-    }
+//    private void getloginAll() {
+//        vertx.eventBus().consumer("cn.login.all", msg -> {
+//            msg.reply(new JsonArray(sessions.keySet().stream().collect(Collectors.toList())));
+//        });
+//    }
 
 }

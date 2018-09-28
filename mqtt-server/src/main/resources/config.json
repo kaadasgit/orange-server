@@ -11,11 +11,11 @@
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "authenticator_address": "mqtt.authenticator.oauth2.apifest"
     },
-    {
-      "tcp_port": 1884,
-      "retain_support": false,
-      "authenticator_address": "mqtt.authenticator.oauth2"
-    },
+//    {
+//      "tcp_port": 1884,
+//      "retain_support": false,
+//      "authenticator_address": "mqtt.authenticator.oauth2"
+//    },
     {
       "tcp_port": 11884,
       "retain_support": false,
@@ -23,10 +23,10 @@
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "authenticator_address": "mqtt.authenticator.oauth2"
     },
-    {
-      "tcp_port": 1885,
-      "retain_support": false
-    },
+//    {
+//      "tcp_port": 1885,
+//      "retain_support": false
+//    },
     {
       "tcp_port": 11885,
       "websocket_enabled": true,

@@ -15,9 +15,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface GatewayDeviceService extends GatewayAddr, MessageAddr, MemenetAddr {
 
-    void bindGatewayByUser(JsonObject jsonObject, String qos, Handler<AsyncResult<JsonObject>> handler);
+    void bindGatewayByUser(JsonObject jsonObject, String qos, String messageId, Handler<AsyncResult<JsonObject>> handler);
 
-    void approvalBindGateway(JsonObject jsonObject, String qos, Handler<AsyncResult<JsonObject>> handler);
+    void approvalBindGateway(JsonObject jsonObject, String qos, String messageId, Handler<AsyncResult<JsonObject>> handler);
 
     void getGatewayBindList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 

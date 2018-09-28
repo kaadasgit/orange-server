@@ -52,7 +52,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
         //獲取升級數據
         vertx.eventBus().send(OtaAddr.class.getName() + OTA_SELECT_DATA, message.body(), (AsyncResult<Message<JsonArray>> rs) -> {
             //0:強制升级 1用户确认升级 //2定时强制升级
-            if (Objects.nonNull(rs.result().body())) {
+            if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().body())) {
                 switch (message.body().getInteger("type")) {
                     case 0://强制升级
                         if (rs.result().body().size() > 0)
@@ -70,6 +70,8 @@ public class OtaUpgradeHandler implements EventbusAddr {
                         logger.warn("==OtaUpgradeHandler=UpgradeProcess params type -> {}", message.body().getInteger("type"));
                         break;
                 }
+            } else {
+                logger.warn("device list size is 0 , params -> {}" + message.body());
             }
         });
     }

@@ -140,12 +140,12 @@ public class FuncHandler {
 //                });
 //                break;
             case "bindGatewayByUser"://用户绑定网关
-                gatewaydeviceService.bindGatewayByUser(message.body(), message.headers().get("qos"), rs -> {
+                gatewaydeviceService.bindGatewayByUser(message.body(), message.headers().get("qos"), message.headers().get("messageId"), rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;
             case "approvalBindGateway"://审批普通用户绑定网关
-                gatewaydeviceService.approvalBindGateway(message.body(), message.headers().get("qos"), rs -> {
+                gatewaydeviceService.approvalBindGateway(message.body(), message.headers().get("qos"), message.headers().get("messageId"), rs -> {
                     handler.handle(Future.succeededFuture(rs.result()));
                 });
                 break;

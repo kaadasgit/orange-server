@@ -17,6 +17,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.kafka.common.network.Send;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -168,9 +169,9 @@ public class OTAHandler implements EventbusAddr {
                     routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()
                             .setData(new JsonObject().put("OTAOrderNo", orderNO))).toString());
                     //保存記錄
-                    vertx.eventBus().send(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, rs.result());
+                    vertx.eventBus().send(OtaAddr.class.getName() + SUBMIT_OTA_UPGRADE, rs.result(),SendOptions.getInstance());
                     //升级处理
-                    vertx.eventBus().send(OtaAddr.class.getName() + OTA_UPGRADE_PROCESS, rs.result());
+                    vertx.eventBus().send(OtaAddr.class.getName() + OTA_UPGRADE_PROCESS, rs.result(), SendOptions.getInstance().setSendTimeout(10000));
                 } else
                     routingContext.response().end(JsonObject.mapFrom(new Result<>()
                             .setErrorMessage(ErrorType.RESULT_DATA_FAIL.getKey(), ErrorType.RESULT_DATA_FAIL.getValue())).toString());

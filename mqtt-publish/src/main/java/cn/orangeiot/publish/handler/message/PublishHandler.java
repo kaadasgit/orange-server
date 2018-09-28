@@ -9,6 +9,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -72,7 +73,10 @@ public class PublishHandler implements MessageAddr {
                     eventHandler.onEventMessage(message, as -> {
                         if (as.failed()) {
                             logger.error(as.cause().getMessage());
-                            message.reply(null);
+//                            if (StringUtils.isNotBlank(as.cause().getMessage()))
+//                                message.reply(new JsonObject().put("code", 401));//参数校验失败
+//                            else
+                                message.reply(null);
                         } else {
                             jsonObject.getString("app_fuc_message");
                             message.reply(as.result(),
@@ -107,7 +111,7 @@ public class PublishHandler implements MessageAddr {
                 String flag = rs.result().getString("clientId").split(":")[0];
                 funcHandler.onRpcMessage(message, as -> {
                     if (as.failed()) {
-                        logger.error(as.cause().getMessage(),as);
+                        logger.error(as.cause().getMessage(), as);
                         message.reply(null);
                     } else {
                         if (Objects.nonNull(message.body().getValue("topicName")) && message.body().getString("topicName").indexOf("/event") >= 0) {

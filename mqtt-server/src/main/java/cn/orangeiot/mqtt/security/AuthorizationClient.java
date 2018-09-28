@@ -2,6 +2,7 @@ package cn.orangeiot.mqtt.security;
 
 import java.util.List;
 
+import cn.orangeiot.common.options.SendOptions;
 import org.dna.mqtt.moquette.proto.messages.SubscribeMessage.Couple;
 
 import io.vertx.core.AsyncResult;
@@ -65,16 +66,21 @@ public class AuthorizationClient {
         JsonObject info = new JsonObject();
         info.put("token", token);
         info.put("topic", topic);
-        eventBus.send(authenticatorAddress + ".publish", info, (AsyncResult<Message<JsonObject>> res) -> {
-            boolean status = false;
-            if (res.succeeded()) {
-                JsonObject reply = res.result().body();
-                if (reply.containsKey("permitted")) {
-                    status = reply.getBoolean("permitted");
-                }
-            }
-            authHandler.handle(status);
-        });
+        authHandler.handle(true);
+//        eventBus.send(authenticatorAddress + ".publish", info, SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> res) -> {
+//            boolean status = false;
+//            if (res.succeeded()) {
+//                JsonObject reply = res.result().body();
+//                if (reply.containsKey("permitted")) {
+//                    status = reply.getBoolean("permitted");
+//                } else {
+//                    status = true;
+//                }
+//            } else {
+//                status = true;
+//            }
+//
+//        });
     }
 
     public void authorizeSubscribe(String token, List<Couple> topics, Handler<JsonArray> authHandler) {

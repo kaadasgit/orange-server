@@ -51,7 +51,8 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
         VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("msgtype", DataType.STRING)
                 , (AsyncResult<JsonObject> rs) -> {
                     if (rs.failed()) {
-                        message.reply(new JsonObject().put("code", 401));//参数校验失败
+//                        message.reply(new JsonObject().put("code", 401));//参数校验失败
+                        handler.handle(Future.failedFuture(""));
                     } else {
                         try {
                             redirectProcess(rs.result(), message.headers());
@@ -63,7 +64,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                             vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
                                     , (AsyncResult<Message<JsonArray>> as) -> {
                                         if (as.failed()) {
-                                            logger.error(as.cause().getMessage(), as);
+                                            handler.handle(Future.failedFuture(as.cause().getMessage()));
                                         } else {
                                             if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
                                                 handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
@@ -71,7 +72,8 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                                                     JsonObject jsonObject = (JsonObject) e;
                                                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
                                                             SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
-                                                                    .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1"));
+                                                                    .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1")
+                                                                    .addHeader("messageId", message.headers().get("messageId")));
                                                 });
                                             } else {
                                                 handler.handle(Future.failedFuture("========gateway no have admin"));
@@ -89,7 +91,8 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                                     if (Objects.nonNull(ars.result().body()) && !ars.result().body().getString("adminuid").equals(message.body().getString("userId")))
                                         vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
                                                 SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
-                                                        .addHeader("uid", ars.result().body().getString("adminuid")).addHeader("redict", "1"));
+                                                        .addHeader("uid", ars.result().body().getString("adminuid")).addHeader("redict", "1")
+                                                        .addHeader("messageId", message.headers().get("messageId")));
                                 }
                             });
                         }
@@ -121,7 +124,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                                 deviceHandler.devicedelete(message);
                                 break;
                             case "getDevList"://設備列表
-                                deviceHandler.getDeviceList(message);
+                                deviceHandler.getDeviceList(message,headers);
                                 break;
                             default:
                                 logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));

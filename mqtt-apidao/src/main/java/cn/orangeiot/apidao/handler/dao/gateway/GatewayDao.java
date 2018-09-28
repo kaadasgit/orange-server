@@ -227,7 +227,8 @@ public class GatewayDao implements GatewayAddr {
                                 if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                 else
                                     vertx.eventBus().send(GatewayAddr.class.getName() + SEND_GATEWAY_STATE,
-                                            new JsonObject().put("_id", reqUser.getString("_id")).put("gwId", message.body().getString("devuuid")), SendOptions.getInstance());
+                                            new JsonObject().put("_id", reqUser.getString("_id")).put("gwId", message.body().getString("devuuid")), SendOptions.getInstance()
+                                                    .addHeader("qos", message.headers().get("qos")).addHeader("messageId", message.headers().get("messageId")));
                             });
                         }
                     });

@@ -4,6 +4,7 @@ import cn.orangeiot.mqtt.bridge.EventBusBridgeWebsocketClientVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeClientVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeServerVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeWebsocketServerVerticle;
+import cn.orangeiot.mqtt.event.RegistEvenProcessHandler;
 import cn.orangeiot.mqtt.persistence.StoreVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -178,6 +179,7 @@ public class MQTTBroker extends AbstractVerticle {
         }
         NetServer netServer = vertx.createNetServer(opt);
         Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
+        new RegistEvenProcessHandler(vertx, sessions).initHandle();
         netServer.connectHandler(netSocket -> {
             MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket, sessions);
             mqttNetSocket.start();

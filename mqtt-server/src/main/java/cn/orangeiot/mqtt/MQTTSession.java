@@ -395,7 +395,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         //周期发送
         AtomicInteger atomicInteger = new AtomicInteger(0);
         Long timeId = vertx.setPeriodic(2000, id -> {
-            logger.info("periodic send -> " + msg);
+            logger.debug("periodic send -> " + msg);
             vertx.eventBus().publish(ADDRESS, msg, opt);
             atomicInteger.incrementAndGet();
             if (atomicInteger.get() == sendTimes) {
@@ -685,9 +685,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         }
         vertx.eventBus().send(publish, new JsonObject(publishMessage.getPayloadAsString())
                         .put("topicName", publishMessage.getTopicName()).put("clientId", clientId),
-                deliveryOptions, (AsyncResult<Message<JsonObject>> rs) -> {
+                deliveryOptions.setSendTimeout(2000), (AsyncResult<Message<JsonObject>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
                         asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
                     } else {
                         if (Objects.nonNull(rs.result().body()))

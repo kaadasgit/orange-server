@@ -204,6 +204,7 @@ public class MqttServerStart {
 
             vertx.deployVerticle(SubscibeVerticle.class.getName(), deploymentOptions);
             vertx.deployVerticle(PublishVerticle.class.getName(), deploymentOptions);
+            vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
         }
 
     }

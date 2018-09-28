@@ -78,14 +78,14 @@ public class DeviceHandler implements EventbusAddr {
      * @date 18-3-22
      * @version 1.0
      */
-    public void getDeviceList(JsonObject jsonObject) {
+    public void getDeviceList(JsonObject jsonObject, MultiMap headers) {
         vertx.eventBus().send(GatewayAddr.class.getName() + GET_GW_DEVICE_List, jsonObject, SendOptions.getInstance(), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
             } else {
                 DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
-                        , "gw:" + jsonObject.getString("gwId")).addHeader("qos", "1")
-                        .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", jsonObject.getString("gwId")));
+                        , "gw:" + jsonObject.getString("gwId")).addHeader("messageId", headers.get("messageId")).addHeader("qos"
+                        ,headers.get("qos")).addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", jsonObject.getString("gwId")));
 
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, jsonObject
                                 .put("returnCode", 200).put("returnData", rs.result().body())
@@ -131,8 +131,8 @@ public class DeviceHandler implements EventbusAddr {
                         if (Objects.nonNull(rs.result().body())) {//数据是否存在
                             //同步第三方信息
                             vertx.eventBus().send(MemenetAddr.class.getName() + RELIEVE_DEVICE_USER, rs.result().body()
-                                            .put("uid",rs.result().body().getString("adminuid"))
-                                            .put("devuuid",jsonObject.getString("gwId")).put("mult", rs.result().headers().get("mult"))
+                                            .put("uid", rs.result().body().getString("adminuid"))
+                                            .put("devuuid", jsonObject.getString("gwId")).put("mult", rs.result().headers().get("mult"))
                                     , SendOptions.getInstance());
 
                             vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG
