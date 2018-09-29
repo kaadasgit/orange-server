@@ -31,7 +31,7 @@ public class AuthorizationClient {
 
     public void authorize(String username, String password, String clientID, Handler<ValidationInfo> authHandler) {
         // AUTHENTICATION START
-        logger.info("==AuthorizationClient==authorize==username:" + username + "==password:" + password);
+        logger.info("==AuthorizationClient==authorize==username:" + username + "==password:" + password + "==clientId:" + clientID);
         JsonObject oauth2_token_info = new JsonObject()
                 .put("username", username)
                 .put("password", password)

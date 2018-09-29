@@ -10,6 +10,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MQTTBroker extends AbstractVerticle {
 
     private Logger logger = LogManager.getLogger(MQTTBroker.class);
+
+    private final int DEFAULT_IDLE_TIME = 60;//默认打idle最大超时时间
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
@@ -168,7 +171,7 @@ public class MQTTBroker extends AbstractVerticle {
         // MQTT over TCP
         NetServerOptions opt = new NetServerOptions()
                 .setTcpKeepAlive(true)
-                .setIdleTimeout(idleTimeout) // in seconds; 0 means "don't timeout".
+                .setIdleTimeout(DEFAULT_IDLE_TIME) // in seconds; 0 means "don't timeout".
                 .setPort(port);
 
         if (tlsEnabled) {
@@ -181,7 +184,8 @@ public class MQTTBroker extends AbstractVerticle {
         Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
         new RegistEvenProcessHandler(vertx, sessions).initHandle();
         netServer.connectHandler(netSocket -> {
-            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket, sessions);
+            NetSocketInternal soi = (NetSocketInternal) netSocket;
+            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME,soi, vertx, c, netSocket, sessions);
             mqttNetSocket.start();
         }).listen();
 
@@ -210,7 +214,8 @@ public class MQTTBroker extends AbstractVerticle {
         HttpServer http = vertx.createHttpServer(httpOpt);
         Map<String, MQTTSession> sessions = new HashMap<>();
         http.websocketHandler(serverWebSocket -> {
-            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket, sessions);
+            NetSocketInternal soi = (NetSocketInternal) serverWebSocket;
+            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(DEFAULT_IDLE_TIME,soi, vertx, c, serverWebSocket, sessions);
             mqttWebSocket.start();
         }).listen();
     }

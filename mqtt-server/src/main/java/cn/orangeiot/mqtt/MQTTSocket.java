@@ -11,6 +11,11 @@ import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.log.LogAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -18,6 +23,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
@@ -62,9 +68,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private final String GATEWAY_PREFIX = "gw:";//网关前綴
     private final String GATEWAY_ON_OFF_STATE = "gatewayState";//網關狀態
     private final String REPLY_MESSAGE = "/clientId/rpc/reply";
+    private ChannelHandlerContext chctx;
+    private int timeout;
 
 
-    public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions, NetSocket netSocket) {
+    public MQTTSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions, NetSocket netSocket) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTPacketTokenizer();
@@ -74,6 +82,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.sessions = sessions;
         this.netSocket = netSocket;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
+        this.chctx = soi.channelHandlerContext();
+        this.timeout = timeout;
 //        sendMessage();
 //        sendGWMessage();
 //        sendStorage();
@@ -83,7 +93,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //        deviceState();
     }
 
-    public MQTTSocket(Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
+    public MQTTSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTPacketTokenizer();
@@ -92,6 +102,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.config = config;
         this.sessions = sessions;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
+        this.chctx = soi.channelHandlerContext();
+        this.timeout = timeout;
 //        sendMessage();
 //        sendGWMessage();
 //        sendStorage();
@@ -190,6 +202,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     connAck.setSessionPresent(false);
                 }
                 session.setPublishMessageHandler(this::sendMessageToClient);
+                //移除KeepaliveError 处理
                 session.setKeepaliveErrorHandler(clientID -> {
                     String cinfo = clientID;
                     String cliId = clientID;
@@ -204,13 +217,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated.getBoolean("state")) {
                         connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
-                        sessions.put(session.getClientID(), session);
+                        sessions.put(connectedClientID, session);
                         sendMessageToClient(connAck);
                         if (!session.isCleanSession()) {
                             session.sendAllMessagesFromQueue();
                         }
-
-
+                        AddheartIdle(connect);
                     } else {
                         logger.warn("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
 //                        closeConnection();
@@ -403,6 +415,42 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
     /**
+     * @Description 添加心跳处理
+     * @author zhang bo
+     * @date 18-9-29
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void AddheartIdle(ConnectMessage msg) {
+        logger.debug("add idle state handle,msg ->{}", msg.getClientID());
+
+        //移移除默認idle handler
+        chctx.pipeline().remove("idle");
+        int keepAlive = 0;
+        // client端保活時間爲0,前置最大時間
+        if (msg.getKeepAlive() != 0) {
+            // Idle 時間間隔 1.5 倍
+            keepAlive = msg.getKeepAlive() +
+                    msg.getKeepAlive() / 2;
+        } else {
+            keepAlive = this.timeout;
+        }
+        // 添加 channel pipeline idle handler
+        this.chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAlive, 0, 0));
+        this.chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
+            @Override
+            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                if (evt instanceof IdleStateEvent) {
+                    IdleStateEvent e = (IdleStateEvent) evt;
+                    if (e.state() == IdleState.READER_IDLE) {
+                        netSocket.close();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * @Description 检查连接
      * @author zhang bo
      * @date 18-9-26
@@ -439,7 +487,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         }
     }
 
-
+    /**
+     * @Description 检查用户
+     * @author zhang bo
+     * @date 18-9-29
+     * @version 1.0
+     */
     public void checkUser(String clientId, String state) {
         if (Objects.nonNull(clientId) && clientId.indexOf(USER_PREFIX) >= 0) {//網關
             logger.debug("userID -> {}", clientId);
@@ -685,156 +738,156 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //    }
 
 
-    /**
-     * @Description 發送消息到客戶端
-     * @author zhang bo
-     * @date 18-4-16
-     * @version 1.0
-     */
-    @SuppressWarnings("Duplicates")
-    public void sendMsgToClient(Message<JsonObject> rs) {
-        PublishMessage publish = new PublishMessage();
-        publish.setTopicName(rs.headers().get("topicName"));
-        try {
-            if (Objects.nonNull(rs.headers().get("msgId")))
-                publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-            publish.setPayload(rs.body().toString());
-        } catch (UnsupportedEncodingException e) {
-            logger.error(e.getMessage(), e);
-        }
-        switch (Integer.parseInt(rs.headers().get("qos"))) {
-            case 0:
-                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-                    session.handlePublishMessage(publish, null);
-                } else {
-                    publish.setQos(MOST_ONE);
-                    publish.setMessageID(0);
-                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, null);
-                    } else {
-                        sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                                : "app:" + rs.headers().get("uid")).handlePublishMessage(publish, null);
-                    }
-                }
-                break;
-            case 1:
-                publish.setQos(LEAST_ONE);
-                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-                    if (!Objects.nonNull(publish.getMessageID()))
-                        publish.setMessageID(1);
-                    session.handlePublishMessage(publish, permitted -> {
-                        PubAckMessage pubAck = new PubAckMessage();
-                        pubAck.setMessageID(publish.getMessageID());
-                        if (Objects.nonNull(pubAck))
-                            sendMessageToClient(pubAck);
-                    });
-                } else {
-                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
-                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-                    } else {
-                        publish.setMessageID(1);
-                    }
-                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-                        if (Objects.nonNull(rs.headers().get("uid"))) {
-                            MQTTSession mqttSession;
-                            if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid")))) {
-                                mqttSession.handlePublishMessage(publish, permitted -> {
-                                    PubAckMessage pubAck = new PubAckMessage();
-                                    pubAck.setMessageID(publish.getMessageID());
-                                    sendMessageToClient(pubAck);
-                                });
-                            } else {
-                                try {
-                                    writeLog(rs.headers().get("uid"), publish);
-                                } catch (Exception e) {
-                                    logger.error(e.getMessage(), e);
-                                }
-                            }
-                        } else
-                            try {
-                                writeLog(rs.headers().get("uid"), publish);
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                    } else {
-                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                                : "app:" + rs.headers().get("uid");
-                        if (Objects.nonNull(sessions.get(clientId))) {
-                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
-                                PubAckMessage pubAck = new PubAckMessage();
-                                pubAck.setMessageID(publish.getMessageID());
-                                sendMessageToClient(pubAck);
-                            });
-                        } else
-                            try {
-                                writeLog(rs.headers().get("uid"), publish);
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                    }
-                }
-                break;
-            case 2:
-                publish.setQos(EXACTLY_ONCE);
-                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-                    } else {
-                        publish.setMessageID(1);
-                    }
-                    session.handlePublishMessage(publish, permitted -> {
-                        PubRecMessage pubRec = new PubRecMessage();
-                        pubRec.setMessageID(publish.getMessageID());
-                        if (Objects.nonNull(pubRec))
-                            sendMessageToClient(pubRec);
-                    });
-
-                } else {
-                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
-                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-                    } else {
-                        publish.setMessageID(1);
-                    }
-                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-                        if (Objects.nonNull(sessions.get(rs.headers().get("uid")))) {
-                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-                                PubRecMessage pubRec = new PubRecMessage();
-                                pubRec.setMessageID(publish.getMessageID());
-                                sendMessageToClient(pubRec);
-                            });
-                        } else
-                            try {
-                                writeLog(rs.headers().get("uid"), publish);
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                    } else {
-                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                                : "app:" + rs.headers().get("uid");
-                        if (Objects.nonNull(sessions.get(clientId))) {
-                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
-                                PubRecMessage pubRec = new PubRecMessage();
-                                pubRec.setMessageID(publish.getMessageID());
-                                sendMessageToClient(pubRec);
-                            });
-                        } else
-                            try {
-                                writeLog(clientId, publish);
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                    }
-                }
-                break;
-            default:
-                logger.error("qos not in (0,1,2) , value -> {}", rs.headers().get("qos"));
-        }
-
-    }
+//    /**
+//     * @Description 發送消息到客戶端
+//     * @author zhang bo
+//     * @date 18-4-16
+//     * @version 1.0
+//     */
+//    @SuppressWarnings("Duplicates")
+//    public void sendMsgToClient(Message<JsonObject> rs) {
+//        PublishMessage publish = new PublishMessage();
+//        publish.setTopicName(rs.headers().get("topicName"));
+//        try {
+//            if (Objects.nonNull(rs.headers().get("msgId")))
+//                publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
+//            publish.setPayload(rs.body().toString());
+//        } catch (UnsupportedEncodingException e) {
+//            logger.error(e.getMessage(), e);
+//        }
+//        switch (Integer.parseInt(rs.headers().get("qos"))) {
+//            case 0:
+//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
+//                    session.handlePublishMessage(publish, null);
+//                } else {
+//                    publish.setQos(MOST_ONE);
+//                    publish.setMessageID(0);
+//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
+//                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, null);
+//                    } else {
+//                        sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
+//                                : "app:" + rs.headers().get("uid")).handlePublishMessage(publish, null);
+//                    }
+//                }
+//                break;
+//            case 1:
+//                publish.setQos(LEAST_ONE);
+//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
+//                    if (!Objects.nonNull(publish.getMessageID()))
+//                        publish.setMessageID(1);
+//                    session.handlePublishMessage(publish, permitted -> {
+//                        PubAckMessage pubAck = new PubAckMessage();
+//                        pubAck.setMessageID(publish.getMessageID());
+//                        if (Objects.nonNull(pubAck))
+//                            sendMessageToClient(pubAck);
+//                    });
+//                } else {
+//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
+//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
+//                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
+//                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
+//                    } else {
+//                        publish.setMessageID(1);
+//                    }
+//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
+//                        if (Objects.nonNull(rs.headers().get("uid"))) {
+//                            MQTTSession mqttSession;
+//                            if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid")))) {
+//                                mqttSession.handlePublishMessage(publish, permitted -> {
+//                                    PubAckMessage pubAck = new PubAckMessage();
+//                                    pubAck.setMessageID(publish.getMessageID());
+//                                    sendMessageToClient(pubAck);
+//                                });
+//                            } else {
+//                                try {
+//                                    writeLog(rs.headers().get("uid"), publish);
+//                                } catch (Exception e) {
+//                                    logger.error(e.getMessage(), e);
+//                                }
+//                            }
+//                        } else
+//                            try {
+//                                writeLog(rs.headers().get("uid"), publish);
+//                            } catch (Exception e) {
+//                                logger.error(e.getMessage(), e);
+//                            }
+//                    } else {
+//                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
+//                                : "app:" + rs.headers().get("uid");
+//                        if (Objects.nonNull(sessions.get(clientId))) {
+//                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
+//                                PubAckMessage pubAck = new PubAckMessage();
+//                                pubAck.setMessageID(publish.getMessageID());
+//                                sendMessageToClient(pubAck);
+//                            });
+//                        } else
+//                            try {
+//                                writeLog(rs.headers().get("uid"), publish);
+//                            } catch (Exception e) {
+//                                logger.error(e.getMessage(), e);
+//                            }
+//                    }
+//                }
+//                break;
+//            case 2:
+//                publish.setQos(EXACTLY_ONCE);
+//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
+//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
+//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
+//                    } else {
+//                        publish.setMessageID(1);
+//                    }
+//                    session.handlePublishMessage(publish, permitted -> {
+//                        PubRecMessage pubRec = new PubRecMessage();
+//                        pubRec.setMessageID(publish.getMessageID());
+//                        if (Objects.nonNull(pubRec))
+//                            sendMessageToClient(pubRec);
+//                    });
+//
+//                } else {
+//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
+//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
+//                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
+//                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
+//                    } else {
+//                        publish.setMessageID(1);
+//                    }
+//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
+//                        if (Objects.nonNull(sessions.get(rs.headers().get("uid")))) {
+//                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
+//                                PubRecMessage pubRec = new PubRecMessage();
+//                                pubRec.setMessageID(publish.getMessageID());
+//                                sendMessageToClient(pubRec);
+//                            });
+//                        } else
+//                            try {
+//                                writeLog(rs.headers().get("uid"), publish);
+//                            } catch (Exception e) {
+//                                logger.error(e.getMessage(), e);
+//                            }
+//                    } else {
+//                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
+//                                : "app:" + rs.headers().get("uid");
+//                        if (Objects.nonNull(sessions.get(clientId))) {
+//                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
+//                                PubRecMessage pubRec = new PubRecMessage();
+//                                pubRec.setMessageID(publish.getMessageID());
+//                                sendMessageToClient(pubRec);
+//                            });
+//                        } else
+//                            try {
+//                                writeLog(clientId, publish);
+//                            } catch (Exception e) {
+//                                logger.error(e.getMessage(), e);
+//                            }
+//                    }
+//                }
+//                break;
+//            default:
+//                logger.error("qos not in (0,1,2) , value -> {}", rs.headers().get("qos"));
+//        }
+//
+//    }
 
     /**
      * @Description 寫日志
@@ -842,29 +895,30 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @date 18-8-31
      * @version 1.0
      */
-    public void writeLog(String clientId, PublishMessage publishMessage) throws Exception {
-        DeliveryOptions opt = new DeliveryOptions().addHeader("tenant", clientId);
-
-        publishMessage.setRetainFlag(false);
-        Buffer msg = new MQTTEncoder().enc(publishMessage);
-        if (publishMessage.getMessageID() != 0) {
-            //持久化数据
-            String[] arr = opt.getHeaders().get("tenant").split(":");
-            JsonObject request = new JsonObject().put("msg", new JsonObject()
-                    .put("message", publishMessage.getPayloadAsString())
-                    .put("qos", QOSConvertUtils.toStr(publishMessage.getQos()))
-                    .put("msgId", publishMessage.getMessageID())
-                    .put("dst", arr[0]))
-                    .put("msgId", publishMessage.getMessageID())
-                    .put("topic", arr[1]).put("timeId", 0L);
-
-            vertx.eventBus().send(LogAddr.class.getName() + WRITE_LOG, request, SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
-                if (rs.failed()) {
-                    logger.error(rs.cause().getMessage(), rs.cause());
-                }
-            });
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    public void writeLog(String clientId, PublishMessage publishMessage) throws Exception {
+//        DeliveryOptions opt = new DeliveryOptions().addHeader("tenant", clientId);
+//
+//        publishMessage.setRetainFlag(false);
+//        Buffer msg = new MQTTEncoder().enc(publishMessage);
+//        if (publishMessage.getMessageID() != 0) {
+//            //持久化数据
+//            String[] arr = opt.getHeaders().get("tenant").split(":");
+//            JsonObject request = new JsonObject().put("msg", new JsonObject()
+//                    .put("message", publishMessage.getPayloadAsString())
+//                    .put("qos", QOSConvertUtils.toStr(publishMessage.getQos()))
+//                    .put("msgId", publishMessage.getMessageID())
+//                    .put("dst", arr[0]))
+//                    .put("msgId", publishMessage.getMessageID())
+//                    .put("topic", arr[1]).put("timeId", 0L);
+//
+//            vertx.eventBus().send(LogAddr.class.getName() + WRITE_LOG, request, SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
+//                if (rs.failed()) {
+//                    logger.error(rs.cause().getMessage(), rs.cause());
+//                }
+//            });
+//        }
+//    }
 
 
     public void sendMessageToClient(AbstractMessage message) {
@@ -885,7 +939,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     private void removeCurrentSessionFromMap() {
         String cid = session.getClientID();
-        if (sessions != null && session.isCleanSession() && sessions.containsKey(cid)) {
+//        if (sessions != null && session.isCleanSession() && sessions.containsKey(cid)) {
+        if (sessions != null && sessions.containsKey(cid)) {
             sessions.remove(cid);
         }
     }

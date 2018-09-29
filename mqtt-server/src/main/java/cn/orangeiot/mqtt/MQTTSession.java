@@ -42,7 +42,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
 
-    private final int DEFAULT_SENDMSG_TIMES = 5;//发送次数
+    private final int DEFAULT_SENDMSG_TIMES = 3;//发送次数
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -141,6 +141,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.publishMessageHandler = publishMessageHandler;
     }
 
+    @Deprecated
     public void setKeepaliveErrorHandler(Handler<String> keepaliveErrorHandler) {
         this.keepaliveErrorHandler = keepaliveErrorHandler;
     }
@@ -235,8 +236,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                 }
             }
         }
-        startKeepAliveTimer(connectMessage.getKeepAlive());
-        logger.info("New connection client : " + getClientInfo());
+//        startKeepAliveTimer(connectMessage.getKeepAlive());
+        logger.debug("New connection client : " + getClientInfo());
     }
 
     private void startKeepAliveTimer(int keepAliveSeconds) {
@@ -711,7 +712,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
     public void shutdown() {
         // stop timers
-        stopKeepAliveTimer();
+//        stopKeepAliveTimer();
 
         // deallocate this instance ...
         if (messageConsumer != null && cleanSession) {

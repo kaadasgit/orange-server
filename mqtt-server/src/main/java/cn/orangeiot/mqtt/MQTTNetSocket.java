@@ -1,7 +1,9 @@
 package cn.orangeiot.mqtt;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.NetSocketInternal;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetSocket;
@@ -18,8 +20,9 @@ public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
 
-    public MQTTNetSocket(Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions) {
-        super(vertx, config, sessions, netSocket);
+
+    public MQTTNetSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions) {
+        super(timeout, soi, vertx, config, sessions, netSocket);
         this.netSocket = netSocket;
     }
 
@@ -49,10 +52,12 @@ public class MQTTNetSocket extends MQTTSocket {
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {
-            netSocket.write(bytes);
-            if (netSocket.writeQueueFull()) {
-                netSocket.pause();
-                netSocket.drainHandler(done -> netSocket.resume());
+            if (netSocket != null) {
+                netSocket.write(bytes);
+                if (netSocket.writeQueueFull()) {
+                    netSocket.pause();
+                    netSocket.drainHandler(done -> netSocket.resume());
+                }
             }
         } catch (Throwable e) {
             logger.error(e.getMessage());
