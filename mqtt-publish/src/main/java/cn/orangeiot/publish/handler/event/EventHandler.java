@@ -60,7 +60,8 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                             logger.error(e.getMessage(), e);
                         }
                         //是否存在用户
-                        if (!Objects.nonNull(message.body().getString("userId"))) {
+                        if (!Objects.nonNull(message.body().getValue("userId")) || (Objects.nonNull(message.body().getValue("userId")) &&
+                                message.body().getString("userId").equals("EMPTY"))) {
                             vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
                                     , (AsyncResult<Message<JsonArray>> as) -> {
                                         if (as.failed()) {
@@ -124,7 +125,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                                 deviceHandler.devicedelete(message);
                                 break;
                             case "getDevList"://設備列表
-                                deviceHandler.getDeviceList(message,headers);
+                                deviceHandler.getDeviceList(message, headers);
                                 break;
                             default:
                                 logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
