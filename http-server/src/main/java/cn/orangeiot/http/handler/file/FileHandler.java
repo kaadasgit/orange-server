@@ -69,7 +69,7 @@ public class FileHandler implements EventbusAddr {
                             routingContext.fail(501);
                         } else {
                             if (Objects.nonNull(rs.result().body())) {
-                                logger.info("get Images params : uid -> {} , return fileSize -> {}", routingContext.request().getParam("uid")
+                                logger.debug("get Images params : uid -> {} , return fileSize -> {}", routingContext.request().getParam("uid")
                                         , rs.result().body().getLong("size"));
 
                                 routingContext.response().setChunked(true).putHeader("content-Length", String.valueOf(rs.result().body().getLong("size")))
@@ -77,7 +77,7 @@ public class FileHandler implements EventbusAddr {
                                         .putHeader("Pragma", "no-cache").putHeader("Expires", "0")
                                         .write(Buffer.buffer(rs.result().body().getJsonObject("content").getBinary("$binary"))).end();
                             } else {
-                                logger.info("get Images params : uid -> {} , return fileSize -> 0", routingContext.request().getParam("uid"));
+                                logger.warn("get Images params : uid -> {} , return fileSize -> 0", routingContext.request().getParam("uid"));
                                 routingContext.response().setStatusCode(StatusCode.Not_FOUND).end();
                             }
 
@@ -161,7 +161,7 @@ public class FileHandler implements EventbusAddr {
                         }
                     });
         } else {
-            logger.debug("Images checked token is null");
+            logger.warn("Images checked token is null");
             routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
             routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
                     , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
