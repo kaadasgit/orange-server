@@ -59,8 +59,12 @@ public class FileHandler implements EventbusAddr {
                 if (ars.failed()) {
                     routingContext.fail(500);
                 } else {
+                    String uid = routingContext.request().getParam("uid");
+                    if (StringUtils.isNotBlank(routingContext.get("uid")))
+                        uid = routingContext.get("uid").toString();
+
                     vertx.eventBus().send(FileAddr.class.getName() + GET_FILE_HEADER, new JsonObject().put("uid"
-                            , routingContext.request().getParam("uid")), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
+                            , uid), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> rs) -> {
                         if (rs.failed()) {
                             routingContext.fail(501);
                         } else {
@@ -98,8 +102,13 @@ public class FileHandler implements EventbusAddr {
             } else {
                 if (ars.result() && Objects.nonNull(routingContext.request().formAttributes().get("uid"))
                         && routingContext.fileUploads().size() == 1) {
+
+                    if (StringUtils.isNotBlank(routingContext.get("uid")))
+                        routingContext.request().formAttributes().set("uid", routingContext.get("uid").toString());
+
+                    //文件数据
                     for (FileUpload f : routingContext.fileUploads()) {
-                        logger.info("upload Images params : uid -> {} , fileSize -> {} bytes", routingContext.request().formAttributes().get("uid")
+                        logger.debug("upload Images params : uid -> {} , fileSize -> {} bytes", routingContext.request().formAttributes().get("uid")
                                 , f.size());
                         Buffer fileByteBuffer = vertx.fileSystem().readFileBlocking(f.uploadedFileName());
                         vertx.eventBus().send(FileAddr.class.getName() + UPLOAD_HEADER_IMG, new JsonObject().put("name", f.fileName())
@@ -122,7 +131,7 @@ public class FileHandler implements EventbusAddr {
                                 });
                     }
                 } else {
-                    logger.info("upload Images params fail: uid -> {} , filecount -> {}"
+                    logger.warn("upload Images params fail: uid -> {} , filecount -> {}"
                             , routingContext.request().formAttributes().get("uid"), routingContext.fileUploads().size());
                     routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
                     routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
@@ -147,11 +156,12 @@ public class FileHandler implements EventbusAddr {
                         if (rs.failed()) {
                             handler.handle(Future.failedFuture(rs.cause()));
                         } else {
+                            routingContext.put("uid", rs.result().headers().get("uid"));
                             handler.handle(Future.succeededFuture(rs.result().body()));
                         }
                     });
         } else {
-            logger.info("Images checked token is null");
+            logger.debug("Images checked token is null");
             routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
             routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
                     , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
