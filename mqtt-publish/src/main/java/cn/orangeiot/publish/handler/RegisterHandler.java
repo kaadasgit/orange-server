@@ -44,7 +44,7 @@ public class RegisterHandler implements EventbusAddr{
 
             //消息处理
             PublishHandler publishHandler=new PublishHandler(config,funcHandler,eventHandler,vertx);
-            vertx.eventBus().consumer(PUBLISH_MSG,publishHandler::onMessage);//qos1和2回调
+            vertx.eventBus().consumer(PUBLISH_MSG,publishHandler::onProcessMssage);//qos1和2回调
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());

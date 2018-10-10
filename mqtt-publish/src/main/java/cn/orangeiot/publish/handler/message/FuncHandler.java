@@ -212,21 +212,50 @@ public class FuncHandler {
      * @param message
      */
     public void onRpcMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
-        switch (message.body().getString("func")) {
-            case "selectGWAdmin"://获取网关管理员
-                userService.selectGWAdmin(message.body());
-                handler.handle(Future.failedFuture("selectGWAdmin process successs"));
-                break;
-            case "openLock"://开门
-                if (message.body().getString("clientId").indexOf("gw:") >= 0
-                        && Objects.nonNull(message.body().getValue("params"))
-                        && message.body().getJsonObject("params").getString("optype").equals("unlock"))
-                    lockService.openLock(message.body());
-                handler.handle(Future.succeededFuture());
-                break;
-            default:
-                handler.handle(Future.succeededFuture());
-                break;
+        if (Objects.nonNull(message.body().getValue("func"))) {
+            switch (message.body().getString("func")) {
+                case "selectGWAdmin"://获取网关管理员
+                    userService.selectGWAdmin(message.body());
+                    handler.handle(Future.failedFuture("selectGWAdmin process successs"));
+                    break;
+                case "openLock"://开门
+                    if (message.body().getString("clientId").indexOf("gw:") >= 0
+                            && Objects.nonNull(message.body().getValue("params"))
+                            && message.body().getJsonObject("params").getString("optype").equals("unlock"))
+                        lockService.openLock(message.body());
+                    handler.handle(Future.succeededFuture());
+                    break;
+                default:
+                    handler.handle(Future.succeededFuture());
+                    break;
+            }
+        } else {
+            handler.handle(Future.failedFuture("onRpcMessage func is null"));
+        }
+    }
+
+
+    /**
+     * rpc 网关响应处理
+     *
+     * @param message
+     */
+    public void onRpcGatewayResponseMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
+        if (Objects.nonNull(message.body().getValue("func"))) {
+            switch (message.body().getString("func")) {
+                case "openLock"://开门
+                    if (message.body().getString("clientId").indexOf("gw:") >= 0
+                            && Objects.nonNull(message.body().getValue("params"))
+                            && message.body().getJsonObject("params").getString("optype").equals("unlock"))
+                        lockService.openLock(message.body());
+                    handler.handle(Future.succeededFuture());
+                    break;
+                default:
+                    handler.handle(Future.succeededFuture());
+                    break;
+            }
+        } else {
+            handler.handle(Future.failedFuture("onRpcMessage func is null"));
         }
     }
 }

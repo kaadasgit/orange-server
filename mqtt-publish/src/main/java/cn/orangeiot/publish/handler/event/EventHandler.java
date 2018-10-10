@@ -4,6 +4,8 @@ import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.DataType;
 import cn.orangeiot.common.verify.VerifyParamsUtil;
 import cn.orangeiot.publish.handler.event.device.DeviceHandler;
+import cn.orangeiot.publish.service.UserService;
+import cn.orangeiot.publish.service.impl.UserServiceImpl;
 import cn.orangeiot.reg.event.EventAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
@@ -13,6 +15,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.w3c.dom.UserDataHandler;
 import scala.util.parsing.json.JSONArray;
 import sun.security.x509.CertAttrSet;
 
@@ -34,10 +37,13 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
 
     private DeviceHandler deviceHandler;
 
+    private UserService userService;
+
     public EventHandler(Vertx vertx, JsonObject jsonObject) {
         this.vertx = vertx;
         this.jsonObject = jsonObject;
         deviceHandler = new DeviceHandler(vertx, jsonObject);
+        userService = new UserServiceImpl(vertx, jsonObject);
     }
 
     /**
@@ -54,48 +60,56 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
 //                        message.reply(new JsonObject().put("code", 401));//参数校验失败
                         handler.handle(Future.failedFuture(""));
                     } else {
+                        boolean flag = false;
                         try {
-                            redirectProcess(rs.result(), message.headers());
+                            flag = redirectProcess(rs.result(), message.headers());
                         } catch (Exception e) {
                             logger.error(e.getMessage(), e);
                         }
-                        //是否存在用户
-                        if (!Objects.nonNull(message.body().getValue("userId")) || (Objects.nonNull(message.body().getValue("userId")) &&
-                                message.body().getString("userId").equals("EMPTY"))) {
-                            vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
-                                    , (AsyncResult<Message<JsonArray>> as) -> {
-                                        if (as.failed()) {
-                                            handler.handle(Future.failedFuture(as.cause().getMessage()));
-                                        } else {
-                                            if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
-                                                handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
-                                                as.result().body().stream().forEach(e -> {
-                                                    JsonObject jsonObject = (JsonObject) e;
-                                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
-                                                            SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
-                                                                    .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1")
-                                                                    .addHeader("messageId", message.headers().get("messageId")));
-                                                });
+                        if (flag) {
+                            //是否存在用户
+                            if (!Objects.nonNull(message.body().getValue("userId")) || (Objects.nonNull(message.body().getValue("userId")) &&
+                                    message.body().getString("userId").equals("EMPTY"))) {
+                                vertx.eventBus().send(EventAddr.class.getName() + GET_GATEWAY_ADMIN_ALL, rs.result(), SendOptions.getInstance()
+                                        , (AsyncResult<Message<JsonArray>> as) -> {
+                                            if (as.failed()) {
+                                                handler.handle(Future.failedFuture(as.cause().getMessage()));
                                             } else {
-                                                handler.handle(Future.failedFuture("========gateway no have admin"));
+                                                if (Objects.nonNull(as.result()) && as.result().body().size() > 0) {
+                                                    handler.handle(Future.failedFuture("========gateway user size " + as.result().body().size()));
+                                                    as.result().body().stream().forEach(e -> {
+                                                        JsonObject jsonObject = (JsonObject) e;
+                                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                                                SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                                        .addHeader("uid", jsonObject.getString("uid")).addHeader("redict", "1")
+                                                                        .addHeader("messageId", message.headers().get("messageId")));
+                                                    });
+                                                } else {
+                                                    handler.handle(Future.failedFuture("========gateway no have admin"));
+                                                }
                                             }
-                                        }
-                                    });
+                                        });
+                            } else {
+                                handler.handle(Future.failedFuture("========gateway send a user"));
+                                vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                        SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                .addHeader("uid", message.body().getString("userId"))
+                                                .addHeader("messageId", message.headers().get("messageId")));
+                                //通知管理员
+                                vertx.eventBus().send(UserAddr.class.getName() + GET_GW_ADMIN, new JsonObject().put("gwId", ""), (AsyncResult<Message<JsonObject>> ars) -> {
+                                    if (ars.failed()) {
+                                        logger.error(ars.cause().getMessage(), ars);
+                                    } else {
+                                        if (Objects.nonNull(ars.result().body()) && !ars.result().body().getString("adminuid").equals(message.body().getString("userId")))
+                                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
+                                                    SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                                            .addHeader("uid", ars.result().body().getString("adminuid")).addHeader("redict", "1")
+                                                            .addHeader("messageId", message.headers().get("messageId")));
+                                    }
+                                });
+                            }
                         } else {
-                            handler.handle(Future.succeededFuture(message.body().put("topicName", jsonObject.getString("reply_message").replace("clientId",
-                                    message.body().getString("userId")))));
-                            //通知管理员
-                            vertx.eventBus().send(UserAddr.class.getName() + GET_GW_ADMIN, new JsonObject().put("gwId", ""), (AsyncResult<Message<JsonObject>> ars) -> {
-                                if (ars.failed()) {
-                                    logger.error(ars.cause().getMessage(), ars);
-                                } else {
-                                    if (Objects.nonNull(ars.result().body()) && !ars.result().body().getString("adminuid").equals(message.body().getString("userId")))
-                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body(),
-                                                SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
-                                                        .addHeader("uid", ars.result().body().getString("adminuid")).addHeader("redict", "1")
-                                                        .addHeader("messageId", message.headers().get("messageId")));
-                                }
-                            });
+                            handler.handle(Future.failedFuture("========event no send"));
                         }
                     }
                 });
@@ -108,7 +122,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
      * @date 18-3-22
      * @version 1.0
      */
-    public void redirectProcess(JsonObject message, MultiMap headers) throws Exception {
+    public boolean redirectProcess(JsonObject message, MultiMap headers) throws Exception {
         logger.info("==EventHandler=redirectProcess params -> " + message.toString());
         if (Objects.nonNull(message.getValue("func"))) {
             switch (message.getString("func")) {
@@ -117,34 +131,40 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                         switch (message.getJsonObject("eventparams").getString("event_str")) {//判断时间
                             case "online"://設備上報
                                 deviceHandler.deviceOnline(message);
-                                break;
+                                return true;
                             case "offline"://設備下線
                                 deviceHandler.deviceOffline(message);
-                                break;
+                                return true;
                             case "delete"://設備删除
                                 deviceHandler.devicedelete(message);
-                                break;
+                                return true;
                             case "getDevList"://設備列表
                                 deviceHandler.getDeviceList(message, headers);
-                                break;
+                                return false;
                             default:
                                 logger.warn("==EventHandler=redirectProcess not case function -> " + message.getString(""));
-                                break;
+                                return false;
                         }
                     } else if (Objects.nonNull(message.getJsonObject("eventparams").getValue("devecode"))
                             && message.getJsonObject("eventparams").getInteger("devecode") == 2) {//开门
                         deviceHandler.openLock(message);
+                        return true;
+                    } else {
+                        return false;
                     }
-                    break;
-                case "gatewayReset":
+                case "gatewayReset"://网关重置
                     deviceHandler.resetDevice(message, headers, jsonObject);
-                    break;
+                    return true;
+                case "selectGWAdmin"://获取网关管理员
+                    userService.selectGWAdmin(message);
+                    return false;
                 default:
                     logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));
-                    break;
+                    return false;
             }
         } else {
             logger.warn("==EventHandler=redirectProcess func is null -> " + message.getValue("func"));
+            return false;
         }
     }
 

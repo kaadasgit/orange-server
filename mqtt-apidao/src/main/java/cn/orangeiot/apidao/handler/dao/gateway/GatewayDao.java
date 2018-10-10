@@ -615,7 +615,7 @@ public class GatewayDao implements GatewayAddr {
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.macaddr", message.body().getJsonObject("eventparams").getString("macaddr"))
                         .put("deviceList.$.SW", message.body().getJsonObject("eventparams").getString("SW")).put("deviceList.$.event_str"
                                 , message.body().getJsonObject("eventparams").getString("event_str")).put("deviceList.$.device_type",
-                                message.body().getJsonObject("eventparams").getString("device_type")).put("deviceList.$.deviceId", message.body().getString("deviceId"))
+                                message.body().getString("devtype")).put("deviceList.$.deviceId", message.body().getString("deviceId"))
                         .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                         .put("deviceList.$.ipaddr", Objects.nonNull(message.body().getJsonObject("eventparams").getString("ipaddr")) ? message.body().getJsonObject("eventparams").getString("ipaddr")
                                 : ""))
@@ -625,6 +625,7 @@ public class GatewayDao implements GatewayAddr {
                     } else {
                         if (rs.result().getDocMatched() == 0) {
                             message.body().getJsonObject("eventparams").put("deviceId", message.body().getString("deviceId"))
+                                    .put("device_type", message.body().getString("devtype"))
                                     .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                             MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                                     message.body().getString("clientId").split(":")[1]),
@@ -706,7 +707,7 @@ public class GatewayDao implements GatewayAddr {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
                                         resultJsonObject.remove("time");
                                         return resultJsonObject;
-                                    }).collect(Collectors.toList()))));
+                                    }).filter(e -> !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
                         } else {
                             message.reply(new JsonObject().put("deviceList", new JsonArray()));
                         }

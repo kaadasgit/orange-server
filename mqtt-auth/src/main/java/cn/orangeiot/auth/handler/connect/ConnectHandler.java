@@ -35,7 +35,7 @@ public class ConnectHandler {
 
     public void onMessage(Message message) {
         if (Objects.nonNull(message.body())) {
-            logger.info("==ConnectHandler=onMessage=params:" + message.body());
+            logger.debug("==ConnectHandler=onMessage=params:" + message.body());
             JsonObject jsonObject = new JsonObject(message.body().toString());
 
             /*查找*/

@@ -300,10 +300,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                             logger.error(rs.cause().getMessage());
                             publishReplyPackage(publish);
                         } else {
-                            if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("flag")))
-                                publishMsg(publish, rs.result(), false);
-                            else if (Objects.nonNull(rs.result()))
-                                publishMsg(publish, rs.result(), true);
+                            if (Objects.nonNull(rs.result()))
+                                publishMsg(publish, rs.result());
+                            else
+                                logger.warn("reply data is null");
                         }
                     });
                 }
@@ -644,18 +644,21 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
 
-    public void publishMsg(PublishMessage publish, JsonObject rs, boolean flag) {
+    public void publishMsg(PublishMessage publish, JsonObject rs) {
         if (Objects.nonNull(rs)) {
             String tempTopic = publish.getTopicName();
             QOSType qos = publish.getQos();
             if (Objects.nonNull(rs.getValue("topicName")))
                 publish.setTopicName(rs.getString("topicName"));
-            if (flag)
+            JsonObject payload = rs;
+            payload.remove("clientId");
+            payload.remove("topicName");
+            if (Objects.nonNull(rs))
                 try {
-                    rs.remove("topicName");
                     publish.setPayload(rs.toString());
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
+                } catch (UnsupportedEncodingException e) {
+                    logger.error("add payload error , topicName -> {} , clientId -> {}" + publish.getTopicName(),
+                            Objects.nonNull(session) ? session.getClientID() : "null");
                 }
             String topic = Objects.nonNull(publish.getTopicName()) ? publish.getTopicName() : tempTopic;
             PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
@@ -919,8 +922,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //            });
 //        }
 //    }
-
-
     public void sendMessageToClient(AbstractMessage message) {
         try {
             logger.debug(">>> " + message);

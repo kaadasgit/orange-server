@@ -25,6 +25,15 @@ public interface StatusCode {
     //用户验证失败,或没有header token字段
     int UNAUTHORIZED = 401;
 
+    //参数不对
+    int PARAMS_FIAL = 406;
+
+    //不是系統賬戶
+    int EXCEPTION_SYSTEM_ACCOUNT = 999;
+
+    //错误的主题,不支持
+    int FAIL_TOPCINAME = 946;
+
     //暂时不存在的异常
     int NO_EXISTS_EX = 599;
 

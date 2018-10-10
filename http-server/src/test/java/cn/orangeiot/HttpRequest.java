@@ -37,7 +37,7 @@ public class HttpRequest {
 //            logger.error(e.getMessage(), e);
         }
         try {
-            String uri = "https://192.168.1.100:8090/user/edit/uploaduserhead";
+            String uri = "https://127.0.0.1:8090/user/edit/uploaduserhead";
 //            String uri = "https://114.67.58.242:8090/user/edit/uploaduserhead";
             HttpPost httppost = new HttpPost(uri);
 

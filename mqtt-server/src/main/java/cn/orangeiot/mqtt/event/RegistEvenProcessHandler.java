@@ -24,7 +24,6 @@ import org.dna.mqtt.moquette.proto.messages.*;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.EXACTLY_ONCE;
@@ -98,7 +97,8 @@ public class RegistEvenProcessHandler implements EventbusAddr {
     private void sendGWMessage() {
         vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_UPGRADE_MSG, (Message<JsonObject> rs) -> {
             String topicName = rs.headers().get("topic");
-            rs.headers().set("topicName", topicName);
+            if (Objects.nonNull(topicName))
+                rs.headers().set("topicName", topicName);
             sendMessageProcess(rs);
         });
     }
@@ -258,7 +258,10 @@ public class RegistEvenProcessHandler implements EventbusAddr {
         try {
             if (Objects.nonNull(rs.headers().get("msgId")))
                 publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-            publish.setPayload(rs.body().toString());
+            JsonObject payload = rs.body();
+            payload.remove("topicName");
+            payload.remove("clientId");
+            publish.setPayload(payload.toString());
         } catch (UnsupportedEncodingException e) {
             logger.error(e.getMessage(), e);
         }

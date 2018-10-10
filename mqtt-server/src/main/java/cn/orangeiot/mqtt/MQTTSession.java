@@ -18,6 +18,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
@@ -70,6 +71,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private Handler<String> keepaliveErrorHandler;
     private NetSocket netSocket;
     private int sendTimes;
+    private final String USER_PREFIX = "app";//用戶前綴
+    private final String GATEWAY_PREFIX = "gw";//网关前綴
     private final String REPLY_MESSAGE = "/clientId/rpc/reply";
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
@@ -151,50 +154,73 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     }
 
     public void handleConnectMessage(ConnectMessage connectMessage,
-                                     Handler<JsonObject> authHandler)
-            throws Exception {
+                                     Handler<JsonObject> authHandler) throws Exception {
 
         clientID = connectMessage.getClientID();
-        cleanSession = connectMessage.isCleanSession();
-        protoName = connectMessage.getProtocolName();
-        if ("MQIsdp".equals(protoName)) {
-            logger.debug("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
-        } else if ("MQTT".equals(protoName)) {
-            logger.debug("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
-        } else {
-            logger.debug("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
-        }
 
-        String username = connectMessage.getUsername();
-        String password = connectMessage.getPassword();
-
-        if (securityEnabled) {
-            AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
-            auth.authorize(username, password, getClientID(), validationInfo -> {
-                if (validationInfo.auth_valid) {
-                    authorizationToken = validationInfo.token;
-                    String tenant = validationInfo.tenant;
-                    _initTenant(tenant);
-                    _handleConnectMessage(connectMessage);
-                    authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
-                } else {
-                    JsonObject json = new JsonObject().put("state", Boolean.FALSE);
-                    if (Objects.nonNull(validationInfo.getHeader()))
-                        json.put("header", validationInfo.getHeader());
-                    authHandler.handle(json);
-                }
-            });
-        } else {
-            String clientID = connectMessage.getClientID();
-            String tenant = null;
-            if (username == null || username.trim().length() == 0) {
-                tenant = extractTenant(clientID);
+        if (verifyClientId(clientID)) {
+            cleanSession = connectMessage.isCleanSession();
+            protoName = connectMessage.getProtocolName();
+            if ("MQIsdp".equals(protoName)) {
+                logger.debug("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
+            } else if ("MQTT".equals(protoName)) {
+                logger.debug("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
             } else {
-                tenant = extractTenant(username);
+                logger.debug("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
             }
-            _initTenant(tenant);
-            _handleConnectMessage(connectMessage);
-            authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
+
+            String username = connectMessage.getUsername();
+            String password = connectMessage.getPassword();
+
+            if (securityEnabled) {
+                AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
+                auth.authorize(username, password, getClientID(), validationInfo -> {
+                    if (validationInfo.auth_valid) {
+                        authorizationToken = validationInfo.token;
+                        String tenant = validationInfo.tenant;
+                        _initTenant(tenant);
+                        _handleConnectMessage(connectMessage);
+                        authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
+                    } else {
+                        JsonObject json = new JsonObject().put("state", Boolean.FALSE);
+                        if (Objects.nonNull(validationInfo.getHeader()))
+                            json.put("header", validationInfo.getHeader());
+                        authHandler.handle(json);
+                    }
+                });
+            } else {
+                String clientID = connectMessage.getClientID();
+                String tenant = null;
+                if (username == null || username.trim().length() == 0) {
+                    tenant = extractTenant(clientID);
+                } else {
+                    tenant = extractTenant(username);
+                }
+                _initTenant(tenant);
+                _handleConnectMessage(connectMessage);
+                authHandler.handle(new JsonObject().put("state", Boolean.TRUE));
+            }
+        } else
+            authHandler.handle(new JsonObject().put("state", Boolean.FALSE));
+    }
+
+
+    /**
+     * @param clientId client端 連接的唯一標識
+     * @Description 檢驗client是否合法
+     * @author zhang bo
+     * @date 18-9-30
+     * @version 1.0
+     */
+    public boolean verifyClientId(String clientId) {
+        if (StringUtils.isNotBlank(clientId)) {
+            String[] arrs = clientId.split(":");
+            if (arrs.length == 2 && (arrs[0].equals(USER_PREFIX) || arrs[0].equals(GATEWAY_PREFIX))) {
+                return true;
+            } else
+                return false;
+        } else {
+            return false;
         }
     }
 
@@ -337,6 +363,9 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             String clientId = getClienId(publishMessage.getTopicName());
             DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientId);
 
+            if (publishMessage.getMessageID() == null)
+                publishMessage.setMessageID(0);
+
             if (publishMessage.getMessageID() != 0)
                 writeLog(publishMessage, opt, msg, rs -> {
                     if (rs.failed()) {
@@ -354,6 +383,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 //            if (publishMessage.getMessageID() != 0)
 //                flushStorage(publishMessage, publishTenant);
         } catch (Throwable e) {
+            e.printStackTrace();
             logger.error(e.getMessage());
         }
     }
@@ -690,10 +720,11 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                     if (rs.failed()) {
                         asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
                     } else {
-                        if (Objects.nonNull(rs.result().body()))
+                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().body())) {
                             asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
-                        else
+                        } else {
                             asyncResultHandler.handle(Future.failedFuture("return data is null"));
+                        }
                     }
                 });
 

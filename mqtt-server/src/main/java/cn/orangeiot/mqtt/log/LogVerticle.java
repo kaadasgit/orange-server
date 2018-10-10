@@ -73,7 +73,6 @@ public class LogVerticle extends AbstractVerticle {
             Properties kfkconfig = new Properties();
             kfkconfig.load(consumerkfkIn);
             consumer = KafkaConsumer.create(vertx, kfkconfig);
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

@@ -73,53 +73,51 @@ public class Test extends AbstractVerticle {
         Buffer buffer = Test.loadConf();
 //        WebClient webClient = WebClient.create(vertx, new WebClientOptions()
 //                .setMaxPoolSize(5000).setKeepAlive(true).setDefaultHost("47.106.87.6").setDefaultPort(8090));
-
-        for (int i = 0; i <= 10000; i++) {
-            WebClient webClient = WebClient.create(vertx, new WebClientOptions()
-                    .setMaxPoolSize(1).setKeepAlive(true));
-//            webClient.post(8090, "47.106.87.6", "/user/login/getuserbytel")
-//                    .putHeader("Content-Type", "application/json")
-//                    .sendJsonObject(new JsonObject().put("tel", "13510513746").put("password", "zb123456"), rs -> {
-//                        if (rs.failed()) {
-//                            rs.cause().printStackTrace();
-//                        } else {
-//                            System.out.println(rs.result().body().toString());
-//                        }
-//                    });
-            webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
-                if (Objects.nonNull(rs.result()))
-                    System.out.println(rs.result().body());
-            });
-        }
-
-        vertx.setPeriodic(100000,id->{
-            for (int i = 0; i <= 10000; i++) {
-                WebClient webClient = WebClient.create(vertx, new WebClientOptions()
-                        .setMaxPoolSize(1).setKeepAlive(true));
-                webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
-                    if (Objects.nonNull(rs.result()))
-                        System.out.println(rs.result().body());
-                });
-            }
-        });
-
-//        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
-//                .setMaxPoolSize(100).setDefaultPort(443)
-//                .setSsl(true).setVerifyHost(false).setTrustAll(true));
 //
-//        webClient.post("api.jpush.cn", "/v3/push")
-//                .putHeader("Content-Type", "application/json")
-//                .putHeader("Authorization", "Basic YWEzYTAyNDk1N2E5MWNkZGU0OGM3ZDk1Ojk3OGVkMDdkNjk3ZWM5OTJkNmRkM2MyMw==")
-//                .sendJsonObject(new JsonObject().put("platform", "all")
-//                        .put("audience", new JsonObject().put("registration_id"
-//                                , new JsonArray().add("121c83f760020ee299d")))
-//                        .put("notification", new JsonObject().put("alert", "Hello, JPush!")), rs -> {
-//                    if (rs.failed()) {
-//                        rs.cause().printStackTrace();
-//                    } else {
-//                        System.out.println(rs.result().body().toString());
-//                    }
+//        for (int i = 0; i <= 10000; i++) {
+//            WebClient webClient = WebClient.create(vertx, new WebClientOptions()
+//                    .setMaxPoolSize(1).setKeepAlive(true));
+////            webClient.post(8090, "47.106.87.6", "/user/login/getuserbytel")
+////                    .putHeader("Content-Type", "application/json")
+////                    .sendJsonObject(new JsonObject().put("tel", "13510513746").put("password", "zb123456"), rs -> {
+////                        if (rs.failed()) {
+////                            rs.cause().printStackTrace();
+////                        } else {
+////                            System.out.println(rs.result().body().toString());
+////                        }
+////                    });
+//            webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
+//                if (Objects.nonNull(rs.result()))
+//                    System.out.println(rs.result().body());
+//            });
+//        }
+//
+//        vertx.setPeriodic(100000,id->{
+//            for (int i = 0; i <= 10000; i++) {
+//                WebClient webClient = WebClient.create(vertx, new WebClientOptions()
+//                        .setMaxPoolSize(1).setKeepAlive(true));
+//                webClient.get(8090, "47.106.87.6","/ceshi").send(rs -> {
+//                    if (Objects.nonNull(rs.result()))
+//                        System.out.println(rs.result().body());
 //                });
+//            }
+//        });
+
+        WebClient webClient = WebClient.create(Vertx.vertx(), new WebClientOptions().setConnectTimeout(2000)
+                .setMaxPoolSize(100).setDefaultPort(8090)
+                .setSsl(true).setVerifyHost(false).setKeyStoreOptions(new JksOptions().setValue(buffer).setPassword("123456"))
+                );
+
+        webClient.post("127.0.0.1", "/user/login/getuserbymail")
+                .putHeader("Content-Type", "application/json")
+                .sendJsonObject(new JsonObject().put("platfo rm", "all")
+                        .put("notification", new JsonObject().put("alert", "Hello, JPush!")), rs -> {
+                    if (rs.failed()) {
+                        rs.cause().printStackTrace();
+                    } else {
+                        System.out.println(rs.result().body().toString());
+                    }
+                });
 
 
 //        /**APNS推送需要的证书、密码、和设备的Token**/
@@ -262,7 +260,7 @@ public class Test extends AbstractVerticle {
 //    }
 //
     public static Buffer loadConf() {
-        InputStream jksIn = Test.class.getResourceAsStream("/server.cer");
+        InputStream jksIn = Test.class.getResourceAsStream("/server.jks");
         Buffer buffer = null;
         try {
             byte[] jksByte = IOUtils.toByteArray(jksIn);

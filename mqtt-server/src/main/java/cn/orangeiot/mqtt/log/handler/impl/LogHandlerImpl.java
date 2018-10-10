@@ -290,7 +290,8 @@ public class LogHandlerImpl implements LogHandler {
     @SuppressWarnings("Duplicates")
     @Override
     public void readLog(String topic, String custor) {
-        logger.debug("params  custor -> {} , topic -> {}", custor, topic);
+        logger.debug("params start custor -> {} , topic -> {} ", custor, topic);
+        long startTime = System.currentTimeMillis();
         //取出信息条数,防止一次取出数据过大,阻塞
         vertx.executeBlocking(e -> {
             String index;
@@ -320,11 +321,10 @@ public class LogHandlerImpl implements LogHandler {
                                     logger.error(res.cause().getMessage(), res);
                                 } else {
                                     consumer.handler(record -> {
+                                        logger.debug("msgUser -> {} , offsets -> {}", topic, String.join(",", offsets.stream().map(val -> val.toString()).collect(Collectors.toList())));
+                                        logger.debug("Processing msgUser -> {} , topic -> {} , key -> {} , value -> {} , partition -> {} , offset -> {} ", topic
+                                                , record.topic(), record.key(), record.value(), record.partition(), record.offset());
                                         if (offsets.contains(record.offset())) {
-                                            logger.info("Processing  topic = " + record.topic().toString()
-                                                    + " ,key = " + record.key() + " ,value = " + record.value() +
-                                                    " ,partition = " + record.partition() + " ,offset = " + record.offset());
-
                                             consumer.commit();
                                             //推送消息
                                             publishMsg(record.value(), topic);
@@ -334,6 +334,9 @@ public class LogHandlerImpl implements LogHandler {
                             });
                             if (!newCustor.equals("0")) {
                                 readLog(topic, newCustor);
+                            } else {
+                                logger.debug("params end custor -> {} , topic -> {} , time -> {}", custor, topic, (System.currentTimeMillis() - startTime));
+                                e.complete();
                             }
                         }
                     }
@@ -530,7 +533,6 @@ public class LogHandlerImpl implements LogHandler {
      */
     @SuppressWarnings("Duplicates")
     public void readRelMsgId(String topic, String custor) {
-        logger.debug("params  custor -> {} , topic -> {}", custor, topic);
         //取出信息条数,防止一次取出数据过大,阻塞
         vertx.executeBlocking(e -> {
             String index;
@@ -555,7 +557,9 @@ public class LogHandlerImpl implements LogHandler {
                         List<String> pubRels = getPubRels(rs.result(), topic);
                         pubRels.stream().forEach(relId -> publishRelByMsg(relId, topic));
                         if (!newCustor.equals("0")) {
-                            readLog(topic, newCustor);
+                            readRelMsgId(topic, newCustor);
+                        } else {
+                            e.complete();
                         }
                     }
                 }
