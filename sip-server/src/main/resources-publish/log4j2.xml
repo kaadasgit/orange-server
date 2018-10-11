@@ -19,7 +19,7 @@
     </Appenders>
     <Loggers>
         <!--异步写入log-->
-        <Root name="async">
+        <Root name="info">
             <AppenderRef ref="serverLog"/>
         </Root>
     </Loggers>
