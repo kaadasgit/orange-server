@@ -28,10 +28,7 @@ import scala.util.parsing.json.JSONObject;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -616,7 +613,7 @@ public class GatewayDao implements GatewayAddr {
                         .put("deviceList.$.SW", message.body().getJsonObject("eventparams").getString("SW")).put("deviceList.$.event_str"
                                 , message.body().getJsonObject("eventparams").getString("event_str")).put("deviceList.$.device_type",
                                 message.body().getString("devtype")).put("deviceList.$.deviceId", message.body().getString("deviceId"))
-                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))
                         .put("deviceList.$.ipaddr", Objects.nonNull(message.body().getJsonObject("eventparams").getString("ipaddr")) ? message.body().getJsonObject("eventparams").getString("ipaddr")
                                 : ""))
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
@@ -626,7 +623,7 @@ public class GatewayDao implements GatewayAddr {
                         if (rs.result().getDocMatched() == 0) {
                             message.body().getJsonObject("eventparams").put("deviceId", message.body().getString("deviceId"))
                                     .put("device_type", message.body().getString("devtype"))
-                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                    .put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
                             MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
                                     message.body().getString("clientId").split(":")[1]),
                                     new JsonObject().put("$addToSet", new JsonObject().put("deviceList"
@@ -656,7 +653,7 @@ public class GatewayDao implements GatewayAddr {
                         .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.event_str"
                         , message.body().getJsonObject("eventparams").getString("event_str"))
-                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//下线狀態
+                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))))//下线狀態
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
@@ -677,7 +674,7 @@ public class GatewayDao implements GatewayAddr {
                         .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.event_str"
                         , message.body().getJsonObject("eventparams").getString("event_str"))
-                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))))//刪除狀態
+                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))))//刪除狀態
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
@@ -923,7 +920,7 @@ public class GatewayDao implements GatewayAddr {
     @SuppressWarnings("Duplicates")
     public void getGatewayDevList(Message<JsonObject> message) {
         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
-                message.body().getString("devuuid"))
+                message.body().getString("devuuid")).put("uid", message.body().getString("uid"))
                         .put("deviceList.event_str", new JsonObject().put("$in", new JsonArray()
                                 .add("online").add("offline"))), new JsonObject().put("deviceList", 1).put("_id", 0),
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
@@ -932,16 +929,45 @@ public class GatewayDao implements GatewayAddr {
                         message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                     } else {
                         if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
+                            HashSet hashSet = new HashSet(rs.result().getJsonArray("deviceList").size());//过滤重复数据
+
                             message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList",
                                     new JsonArray(rs.result().getJsonArray("deviceList").stream().map(e -> {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
-                                        resultJsonObject.remove("time");
-                                        return resultJsonObject;
-                                    }).filter(e -> !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
+                                        if (!hashSet.add(resultJsonObject.getString("deviceId"))) {//清除重复数据
+                                            cleanDistinctGatewayinDev(message.body().getString("devuuid"), resultJsonObject.getString("deviceId")
+                                                    , message.body().getString("uid"),resultJsonObject.getString("time"));
+                                            return null;
+                                        } else {
+                                            resultJsonObject.remove("time");
+                                            return resultJsonObject;
+                                        }
+                                    }).filter(e -> Objects.nonNull(e) && !new JsonObject(e.toString()).getString("event_str").equals("delete")).collect(Collectors.toList()))));
                         } else {
                             message.reply(new JsonObject().put("devuuid", message.body().getString("devuuid")).put("deviceList", new JsonArray()));
                         }
                     }
+                });
+    }
+
+
+    /**
+     * @param deviceSN 网关SN
+     * @param deviceId 设备id
+     * @param uid 用户id
+     * @param time 时间
+     * @Description 清理重复数据网关设备数据
+     * @author zhang bo
+     * @date 18-10-11
+     * @version 1.0
+     */
+    public void cleanDistinctGatewayinDev(String deviceSN, String deviceId, String uid,String time) {
+        MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN", deviceSN)
+                        .put("uid", uid),
+                new JsonObject().put("$pull", new JsonObject().put("deviceList"
+                        , new JsonObject().put("deviceId", deviceId).put("time",time))), as -> {
+                    if (as.failed())
+                        logger.error(as.cause().getMessage(), as);
                 });
     }
 

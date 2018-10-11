@@ -231,14 +231,16 @@ public class PublishHandler implements MessageAddr {
         if (jsonObject.getString("topicName").indexOf(TOPIC_USER_REQUEST_SUFFIX) > 0) {//用户请求响应
             VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("func", DataType.STRING), res -> {
                 if (res.failed()) {
+                    logger.warn("data params is fail , data -> {}" + message.body());
                     message.reply(new JsonObject().put("code", StatusCode.Not_FOUND).put("msg", "params is fail")
                                     .put("topicName", conf.getString("reply_message").replace("clientId",
-                                            getClientId(message.body().getString("clientId")))).put("func",message.body().getString("func")),
+                                            getClientId(message.body().getString("clientId")))).put("func", message.body().getString("func")),
                             new DeliveryOptions().addHeader("messageId", message.headers().get("messageId"))
                                     .addHeader("qos", message.headers().get("qos")));
                 } else {
                     funcHandler.onMessage(message, (AsyncResult<JsonObject> returnData) -> {
                         if (returnData.failed()) {
+                            logger.warn("data params is fail , data -> {}" + message.body());
                             message.reply(new JsonObject().put("code", StatusCode.Not_FOUND).put("msg", returnData.cause().getMessage())
                                             .put("topicName", conf.getString("reply_message").replace("clientId",
                                                     getClientId(res.result().getString("clientId")))).put("func", res.result().getString("func")),
@@ -257,6 +259,7 @@ public class PublishHandler implements MessageAddr {
             VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("gwId", DataType.STRING)
                     .put("userId", DataType.STRING), res -> {
                 if (res.failed()) {
+                    logger.warn("data params is fail , data -> {}" + message.body());
                     message.reply(new JsonObject().put("code", StatusCode.Not_FOUND).put("msg", "params is fail")
                                     .put("topicName", conf.getString("reply_message").replace("clientId",
                                             getClientId(message.body().getString("clientId")))).put("func", "RPC"),
@@ -289,6 +292,7 @@ public class PublishHandler implements MessageAddr {
         if (jsonObject.getString("topicName").indexOf(TOPIC_USER_RPC_WITH_GATEWAY_REP_SUFFIX) > 0) {//rpc响应
             VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("gwId", DataType.STRING).put("userId", DataType.STRING), res -> {
                 if (res.failed()) {
+                    logger.warn("data params is fail , data -> {}" + message.body());
                     message.reply(message.body().put("returnCode", StatusCode.PARAMS_FIAL).put("func", "RPC")
                                     .put("topicName", conf.getString("repeat_message").replace("gwId",
                                             getClientId(message.body().getString("clientId"))))
@@ -312,6 +316,7 @@ public class PublishHandler implements MessageAddr {
         } else if (jsonObject.getString("topicName").indexOf(TOPCI_GATEWAY_EVENT_SUFFIX) > 0) {//网关事件
             VerifyParamsUtil.verifyParams(message.body(), new JsonObject().put("gwId", DataType.STRING), res -> {
                 if (res.failed()) {
+                    logger.warn("data params is fail , data -> {}" + message.body());
                     message.reply(message.body().put("returnCode", StatusCode.PARAMS_FIAL).put("func", "EVENT")
                                     .put("topicName", conf.getString("repeat_message").replace("gwId",
                                             getClientId(message.body().getString("clientId"))))

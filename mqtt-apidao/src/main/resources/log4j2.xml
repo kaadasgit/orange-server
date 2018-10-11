@@ -36,7 +36,7 @@
     </Appenders>
     <Loggers>
         <!--配置日志的根节点-->
-        <Root level="info">
+        <Root level="all">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="Failover"/>
         </Root>

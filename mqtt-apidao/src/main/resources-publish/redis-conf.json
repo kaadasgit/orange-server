@@ -1,6 +1,6 @@
 // "port": 6380  飞利浦
-// "port": 6379  kaadas
+// "port": 6381  kaadas
 {
   "host": "10.29.68.127",
-  "port": 6379
+  "port": 6381
 }

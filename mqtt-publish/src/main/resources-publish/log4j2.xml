@@ -19,7 +19,7 @@
     </Appenders>
     <Loggers>
         <!--配置日志的根节点-->
-        <Root level="all">
+        <Root level="info">
             <AppenderRef ref="serverLog"/>
         </Root>
     </Loggers>
