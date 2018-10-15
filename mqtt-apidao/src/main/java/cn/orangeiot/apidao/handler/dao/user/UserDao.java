@@ -606,7 +606,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void suggestMsg(Message<JsonObject> message) {
-        MongoClient.client.insert("kdsSuggest", message.body(), rs -> {
+        MongoClient.client.insert("kdsSuggest", message.body().put("time",LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
