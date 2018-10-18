@@ -170,9 +170,9 @@ public class MQTTBroker extends AbstractVerticle {
 
         // MQTT over TCP
         NetServerOptions opt = new NetServerOptions()
-                .setTcpKeepAlive(true)
+                .setTcpKeepAlive(false)
                 .setIdleTimeout(DEFAULT_IDLE_TIME) // in seconds; 0 means "don't timeout".
-                .setPort(port);
+                .setPort(port).setAcceptBacklog(100000);
 
         if (tlsEnabled) {
             opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
@@ -185,7 +185,7 @@ public class MQTTBroker extends AbstractVerticle {
         new RegistEvenProcessHandler(vertx, sessions).initHandle();
         netServer.connectHandler(netSocket -> {
             NetSocketInternal soi = (NetSocketInternal) netSocket;
-            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME,soi, vertx, c, netSocket, sessions);
+            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME, soi, vertx, c, netSocket, sessions);
             mqttNetSocket.start();
         }).listen();
 
@@ -215,7 +215,7 @@ public class MQTTBroker extends AbstractVerticle {
         Map<String, MQTTSession> sessions = new HashMap<>();
         http.websocketHandler(serverWebSocket -> {
             NetSocketInternal soi = (NetSocketInternal) serverWebSocket;
-            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(DEFAULT_IDLE_TIME,soi, vertx, c, serverWebSocket, sessions);
+            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(DEFAULT_IDLE_TIME, soi, vertx, c, serverWebSocket, sessions);
             mqttWebSocket.start();
         }).listen();
     }

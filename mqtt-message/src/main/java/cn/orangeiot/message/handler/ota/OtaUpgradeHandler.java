@@ -243,28 +243,41 @@ public class OtaUpgradeHandler implements EventbusAddr {
                 }
             });
         } else {//網關升級
-            rs.result().body().stream().map(e -> {
-                JsonObject jsonObject = new JsonObject(e.toString());
-                return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("SN"))
-                        .put("deviceId", jsonObject.getString("SN"))
+//            rs.result().body().stream().map(e -> {
+//                JsonObject jsonObject = new JsonObject(e.toString());
+//                return new JsonObject().put("func", "otaNotify").put("gwId", jsonObject.getString("SN"))
+//                        .put("deviceId", jsonObject.getString("SN"))
+//                        .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", "SYS")
+//                        .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
+//                                .put("childCode", message.body().getString("childCode")).put("fileUrl"
+//                                        , message.body().getString("filePathUrl")).put("SW"
+//                                        , message.body().getString("SW")).put("deviceList"
+//                                        , new JsonArray().add(jsonObject.getString("SN")))
+//                                .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
+//                                        , message.body().getInteger("fileLen")));
+//            }).forEach(e -> {
+//                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
+//                        , "gw:" + e.getString("gwId")).addHeader("qos", "1")
+//                        .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
+//                vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
+//                        , deliveryOptions);
+//
+//                JsonObject final_JsonObject = new JsonObject(e.toString());
+//                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
+//            });
+            if (rs.result().body().size() > 0) {
+                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("qos", "1").setSendTimeout(15000);
+                JsonObject jsonObject = new JsonObject().put("ids", rs.result().body()).put("func", "otaNotify")
                         .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", "SYS")
                         .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))
                                 .put("childCode", message.body().getString("childCode")).put("fileUrl"
                                         , message.body().getString("filePathUrl")).put("SW"
-                                        , message.body().getString("SW")).put("deviceList"
-                                        , new JsonArray().add(jsonObject.getString("SN")))
+                                        , message.body().getString("SW"))
                                 .put("fileMd5", message.body().getString("fileMd5")).put("fileLen"
                                         , message.body().getInteger("fileLen")));
-            }).forEach(e -> {
-                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
-                        , "gw:" + e.getString("gwId")).addHeader("qos", "1")
-                        .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
-                vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
+                vertx.eventBus().send(MessageAddr.class.getName() + SEND_VERSION_UPGRADE_MSG, jsonObject
                         , deliveryOptions);
-
-                JsonObject final_JsonObject = new JsonObject(e.toString());
-                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
-            });
+            }
         }
     }
 

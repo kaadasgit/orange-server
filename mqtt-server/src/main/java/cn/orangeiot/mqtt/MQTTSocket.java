@@ -238,7 +238,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case SUBSCRIBE:
                 if (checkConnected(session)) {
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
 
                     SubscribeMessage subscribeMessage = (SubscribeMessage) msg;
                     PromMetrics.mqtt_subscribe_total.labels(session.getClientID()).inc();
@@ -278,7 +278,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case UNSUBSCRIBE:
                 if (checkConnected(session)) {
                     PromMetrics.mqtt_unsubscribe_total.labels(session.getClientID()).inc();
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
 
                     UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage) msg;
                     session.handleUnsubscribeMessage(unsubscribeMessage);
@@ -289,7 +289,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBLISH:
                 if (checkConnected(session)) {
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
 
                     PublishMessage publish = (PublishMessage) msg;
 
@@ -310,7 +310,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBREC:
                 if (checkConnected(session)) {
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
 
                     PubRecMessage pubRec = (PubRecMessage) msg;
                     PubRelMessage prelResp = new PubRelMessage();
@@ -335,7 +335,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBREL:
                 if (checkConnected(session)) {
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
                     PubRelMessage pubRel = (PubRelMessage) msg;
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
@@ -349,7 +349,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case PUBACK:
                 if (checkConnected(session)) {
                     session.getMessageFromQueue();
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
                     PubAckMessage pubAckMessage = (PubAckMessage) msg;
 
                     //接收确认
@@ -373,7 +373,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case PUBCOMP:
                 if (checkConnected(session)) {
                     session.getMessageFromQueue();
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
 
                     PubCompMessage pubCompMessage = (PubCompMessage) msg;
                     vertx.eventBus().send(LogAddr.class.getName() + CONSUME_PUBREL, new JsonObject().put("relId", pubCompMessage.getMessageID())
@@ -389,7 +389,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PINGREQ:
                 if (checkConnected(session)) {
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
                     PingRespMessage pingResp = new PingRespMessage();
                     sendMessageToClient(pingResp);
                 }
@@ -398,7 +398,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 if (checkConnected(session)) {
                     PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
                     checkDevice(session.getClientID(), "offline");//离线狀態
-                    session.resetKeepAliveTimer();
+//                    session.resetKeepAliveTimer();
                     DisconnectMessage disconnectMessage = (DisconnectMessage) msg;
                     handleDisconnect(disconnectMessage);
                 }

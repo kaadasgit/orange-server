@@ -72,6 +72,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
         deviceState();
         sendPubRel();
         kickOut();
+        sendUpgradeMessage();
     }
 
     /**
@@ -89,17 +90,48 @@ public class RegistEvenProcessHandler implements EventbusAddr {
     }
 
     /**
-     * @Description qos发送升级消息
+     * @Description qos发送消息
      * @author zhang bo
      * @date 18-9-27
      * @version 1.0
      */
+    @SuppressWarnings("Duplicates")
     private void sendGWMessage() {
         vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_UPGRADE_MSG, (Message<JsonObject> rs) -> {
             String topicName = rs.headers().get("topic");
             if (Objects.nonNull(topicName))
                 rs.headers().set("topicName", topicName);
             sendMessageProcess(rs);
+        });
+    }
+
+
+    /**
+     * @Description qos发送升級消息
+     * @author zhang bo
+     * @date 18-9-27
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    private void sendUpgradeMessage() {
+        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_VERSION_UPGRADE_MSG, (Message<JsonObject> rs) -> {
+            String topicName = rs.headers().get("topic");
+            if (Objects.nonNull(topicName))
+                rs.headers().set("topicName", topicName);
+
+            vertx.executeBlocking(e -> {
+                JsonArray jsonArray = rs.body().getJsonArray("ids");
+                int size = jsonArray.size();
+                rs.body().remove("ids");
+                for (int i = 0; i < size; i++) {
+                    String SN = jsonArray.getString(i);
+                    rs.headers().add("uid"
+                            , "gw:" + SN).add("topicName", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", SN));
+                    rs.body().put("gwId", SN).put("deviceId", SN).put("deviceList", new JsonArray().add(SN));
+                    sendMessageProcess(rs);
+                }
+                e.complete();
+            }, null);
         });
     }
 

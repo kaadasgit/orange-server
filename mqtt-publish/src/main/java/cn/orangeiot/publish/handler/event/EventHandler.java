@@ -146,7 +146,9 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                                 return false;
                         }
                     } else if (Objects.nonNull(message.getJsonObject("eventparams").getValue("devecode"))
-                            && message.getJsonObject("eventparams").getInteger("devecode") == 2) {//开门
+                            && message.getJsonObject("eventparams").getInteger("devecode") == 2
+                            && Objects.nonNull(message.getJsonObject("eventparams").getValue("devetype"))
+                            && message.getJsonObject("eventparams").getString("devetype").equals("lockop")) {//开门
                         deviceHandler.openLock(message);
                         return true;
                     } else {

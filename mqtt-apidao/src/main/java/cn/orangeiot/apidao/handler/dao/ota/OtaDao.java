@@ -217,18 +217,19 @@ public class OtaDao {
                         }
                     });
         } else {
-            jsonObject.put("SN", new JsonObject().put("$in", new JsonArray(ids)));
-            MongoClient.client.findWithOptions("kdsProductInfoList", jsonObject
-                    , new FindOptions().setFields(new JsonObject().put("SN", 1)
-                            .put("_id", 0)), as -> {
-                        if (as.failed()) {
-                            logger.error(as.cause().getMessage(), as);
-                            message.reply(null);
-                        } else {
-                            message.reply(new JsonArray(
-                                    as.result().stream().distinct().collect(Collectors.toList())));
-                        }
-                    });
+//            jsonObject.put("SN", new JsonObject().put("$in", new JsonArray(ids)));
+//            MongoClient.client.findWithOptions("kdsProductInfoList", jsonObject
+//                    , new FindOptions().setFields(new JsonObject().put("SN", 1)
+//                            .put("_id", 0)), as -> {
+//                        if (as.failed()) {
+//                            logger.error(as.cause().getMessage(), as);
+//                            message.reply(null);
+//                        } else {
+//                            message.reply(new JsonArray(
+//                                    as.result().stream().distinct().collect(Collectors.toList())));
+//                        }
+//                    });
+            message.reply(new JsonArray(ids));
         }
     }
 

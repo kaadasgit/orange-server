@@ -4,17 +4,17 @@
 }
 //{
 //  //connection db
-//  "host":"172.18.251.24",
+//  "host":"121.201.57.214",
 //  "port": 27017,
-//  "username": "zhangbo",
-//  "password": "564739784",
-//  "db_name":"test",
+//  "username": "oegrt",
+//  "password": "qweqwecz123dsfs12shawe",
+//  "db_name":"orangeiot",
 //  "useObjectId": true,
 //  "authMechanism": "SCRAM-SHA-1",
 //
 //  //Connection Pool Settings
 //  "maxPoolSize" : 150,
-//  "minPoolSize" : 25,
+//  "minPoolSize" : 150,
 //  "waitQueueMultiple"  : 1000,
 //  "waitQueueTimeoutMS" : 5000,
 //  "serverSelectionTimeoutMS" : 2000

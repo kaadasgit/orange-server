@@ -180,7 +180,7 @@ public class FuncHandler {
                 });
                 break;
             case "otaApprovateResult"://审批ota升级请求
-                approvateService.approvateOTA(message.body(), rs -> {
+                approvateService.approvateOTA(message.body(), message.headers().get("qos"), message.headers().get("messageId"), rs -> {
                     handler.handle(rs);
                 });
                 break;

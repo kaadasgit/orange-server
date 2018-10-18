@@ -26,7 +26,9 @@ public interface MessageAddr {
 
     String SAVE_OFFLINE_MSG = "saveOfflineMessage";//存储离线消息
 
-    String SEND_UPGRADE_MSG = "sendUpgradeMsg";//發送升級消息
+    String SEND_UPGRADE_MSG = "sendGatewayMsg";//發送網關消息
+
+    String SEND_VERSION_UPGRADE_MSG = "sendUpgradeMsg";//發送升級消息
 
     String SEND_STORAGE_MSG = "sendStorageMsg";//發送存儲消息
 

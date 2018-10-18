@@ -13,5 +13,5 @@ import io.vertx.core.json.JsonObject;
  */
 public interface ApprovateService extends OtaAddr {
 
-    void approvateOTA(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+    void approvateOTA(JsonObject jsonObject, String qos, String messageId, Handler<AsyncResult<JsonObject>> handler);
 }
