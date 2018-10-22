@@ -127,7 +127,8 @@ public class RegistEvenProcessHandler implements EventbusAddr {
                     String SN = jsonArray.getString(i);
                     rs.headers().add("uid"
                             , "gw:" + SN).add("topicName", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", SN));
-                    rs.body().put("gwId", SN).put("deviceId", SN).put("deviceList", new JsonArray().add(SN));
+                    rs.body().put("gwId", SN).put("deviceId", SN);
+                    rs.body().getJsonObject("params").put("deviceList", new JsonArray().add(SN));
                     sendMessageProcess(rs);
                 }
                 e.complete();

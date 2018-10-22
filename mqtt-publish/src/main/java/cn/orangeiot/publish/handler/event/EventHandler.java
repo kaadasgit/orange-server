@@ -152,7 +152,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                         deviceHandler.openLock(message);
                         return true;
                     } else {
-                        return false;
+                        return true;
                     }
                 case "gatewayReset"://网关重置
                     deviceHandler.resetDevice(message, headers, jsonObject);
@@ -162,7 +162,7 @@ public class EventHandler implements EventAddr, MessageAddr, UserAddr {
                     return false;
                 default:
                     logger.warn("==EventHandler=redirectProcess not case func -> " + message.getString(""));
-                    return false;
+                    return true;
             }
         } else {
             logger.warn("==EventHandler=redirectProcess func is null -> " + message.getValue("func"));

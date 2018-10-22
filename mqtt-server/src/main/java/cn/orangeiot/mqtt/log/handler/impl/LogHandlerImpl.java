@@ -192,7 +192,7 @@ public class LogHandlerImpl implements LogHandler {
         Objects.requireNonNull(msg);
         Objects.requireNonNull(topic);
         Objects.requireNonNull(partition);
-        logger.info("params : msg -> {} , topic -> {} , paratition -> {}", msg, topic, partition);
+        logger.debug("params : msg -> {} , topic -> {} , paratition -> {}", msg, topic, partition);
         return KafkaProducerRecord.create(topic, null, msg, partition);
     }
 

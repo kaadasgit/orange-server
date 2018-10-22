@@ -56,6 +56,8 @@ public enum ErrorType {
     APPROVATE_MIMI_BIND_GATEWAY_FAIL(947, "審批mimi绑定网关失败"),
     APPROVAL_FAIL(816, "审批失败"),
     GET_GATEWAY_BIND_FAIL(819, "获取列表失败"),
+    NO_GATEWAY_ADMIN_FAIL(847, "不是网关管理员"),
+    UNBIND_GATEWAY_BIND_FAIL(845, "解绑失败"),
     GET_GATEWAY_DEVICE_FAIL(820, "获取网关设备列表失败"),
     GET_GATEWAY_DEVICE_LOCK_RECORD(823, "获取開鎖記錄失敗"),
     DATA_MAP_FAIL(436, "数据不是映射关系"),

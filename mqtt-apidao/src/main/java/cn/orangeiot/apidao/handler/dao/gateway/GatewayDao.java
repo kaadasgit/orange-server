@@ -96,7 +96,8 @@ public class GatewayDao implements GatewayAddr {
                                                 if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                             });
                                         } else {
-
+                                            logger.info("onbindGatewayByUser is press , uid -> {} , gwId -> {} , approvaluid -> {}" + jsonObject.getString("_id")
+                                                    , message.body().getString("devuuid"), as.result().getString("adminuid"));
                                         }
                                     }
                                 });
@@ -697,6 +698,7 @@ public class GatewayDao implements GatewayAddr {
                 (AsyncResult<JsonObject> rs) -> {// 1 上线, 2 下线
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().getValue("deviceList"))) {
                             message.reply(new JsonObject().put("deviceList",
@@ -936,7 +938,7 @@ public class GatewayDao implements GatewayAddr {
                                         JsonObject resultJsonObject = new JsonObject(e.toString());
                                         if (!hashSet.add(resultJsonObject.getString("deviceId"))) {//清除重复数据
                                             cleanDistinctGatewayinDev(message.body().getString("devuuid"), resultJsonObject.getString("deviceId")
-                                                    , message.body().getString("uid"),resultJsonObject.getString("time"));
+                                                    , message.body().getString("uid"), resultJsonObject.getString("time"));
                                             return null;
                                         } else {
                                             resultJsonObject.remove("time");
@@ -954,18 +956,18 @@ public class GatewayDao implements GatewayAddr {
     /**
      * @param deviceSN 网关SN
      * @param deviceId 设备id
-     * @param uid 用户id
-     * @param time 时间
+     * @param uid      用户id
+     * @param time     时间
      * @Description 清理重复数据网关设备数据
      * @author zhang bo
      * @date 18-10-11
      * @version 1.0
      */
-    public void cleanDistinctGatewayinDev(String deviceSN, String deviceId, String uid,String time) {
+    public void cleanDistinctGatewayinDev(String deviceSN, String deviceId, String uid, String time) {
         MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN", deviceSN)
                         .put("uid", uid),
                 new JsonObject().put("$pull", new JsonObject().put("deviceList"
-                        , new JsonObject().put("deviceId", deviceId).put("time",time))), as -> {
+                        , new JsonObject().put("deviceId", deviceId).put("time", time))), as -> {
                     if (as.failed())
                         logger.error(as.cause().getMessage(), as);
                 });

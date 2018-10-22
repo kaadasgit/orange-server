@@ -290,7 +290,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                                     .addHeader("uid", as.result().getString("devuuid")).addHeader("redict", "1"));
                             } else {
                                 handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                        new ResultInfo<>().setErrorMessage(ErrorType.GET_GATEWAY_BIND_FAIL.getKey(), ErrorType.GET_GATEWAY_BIND_FAIL.getValue()
+                                        new ResultInfo<>().setErrorMessage(ErrorType.UNBIND_GATEWAY_BIND_FAIL.getKey(), ErrorType.UNBIND_GATEWAY_BIND_FAIL.getValue()
                                                 , jsonObject.getString("func")))));
                             }
                         });
@@ -328,7 +328,7 @@ public class GatewayDeviceServiceImpl extends BaseService implements GatewayDevi
                                         , SendOptions.getInstance());
                             } else {
                                 handler.handle(Future.succeededFuture(JsonObject.mapFrom(
-                                        new ResultInfo<>().setErrorMessage(ErrorType.GET_GATEWAY_BIND_FAIL.getKey(), ErrorType.GET_GATEWAY_BIND_FAIL.getValue()
+                                        new ResultInfo<>().setErrorMessage(ErrorType.NO_GATEWAY_ADMIN_FAIL.getKey(), ErrorType.NO_GATEWAY_ADMIN_FAIL.getValue()
                                                 , jsonObject.getString("func")))));
                             }
                         });

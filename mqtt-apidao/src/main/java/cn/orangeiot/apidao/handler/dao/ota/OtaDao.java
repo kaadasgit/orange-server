@@ -176,7 +176,7 @@ public class OtaDao {
                                 message.reply(null);
                                 return;
                         }
-                        MongoClient.client.findWithOptions("kdsGatewayDeviceList", pnJsonObject
+                        MongoClient.client.findWithOptions("kdsGatewayDeviceList", pnJsonObject.put("isAdmin", 1)
                                 , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
                                         .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
                                         .put("adminuid", 1)), as -> {
@@ -184,9 +184,8 @@ public class OtaDao {
                                         logger.error(as.cause().getMessage(), as);
                                         message.reply(null);
                                     } else {
-                                        message.reply(new JsonArray(
-                                                as.result().stream().distinct().collect(Collectors.toList()))
-                                        ,new DeliveryOptions().addHeader("matchIds", new JsonArray(_ids).toString()));
+                                        message.reply(new JsonArray(as.result())
+                                                , new DeliveryOptions().addHeader("matchIds", new JsonArray(_ids).toString()));
                                     }
                                 });
                     }
@@ -203,7 +202,8 @@ public class OtaDao {
     @SuppressWarnings("Duplicates")
     public void getDeviceByGateway(JsonObject jsonObject, Message<JsonObject> message, List<String> ids) {
         if (message.body().getInteger("type") == 1) {//用户确认升级
-            jsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(ids)));
+            jsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(ids)))
+                    .put("isAdmin", 1);//管理员
             MongoClient.client.findWithOptions("kdsGatewayDeviceList", jsonObject
                     , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
                             .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
@@ -212,8 +212,7 @@ public class OtaDao {
                             logger.error(as.cause().getMessage(), as);
                             message.reply(null);
                         } else {
-                            message.reply(new JsonArray(
-                                    as.result().stream().distinct().collect(Collectors.toList())));
+                            message.reply(new JsonArray(as.result()));
                         }
                     });
         } else {
@@ -250,8 +249,7 @@ public class OtaDao {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
-                message.reply(new JsonArray(
-                        rs.result().stream().distinct().collect(Collectors.toList())));
+                message.reply(new JsonArray(rs.result()));
             }
         });
     }
