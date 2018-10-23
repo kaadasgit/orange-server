@@ -87,7 +87,7 @@ public class MessageHandler implements UserAddr {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);
                     } else {
-                        String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
+                        String regex = "[\\w-]+(\\.[\\w-]+)*@[\\w-]+(\\.[\\w-]+)+$";
                         if (asyncResult.result().getString("mail").matches(regex)) //检验是否是合法的邮箱地址
                             eventBus.send(UserAddr.class.getName() + MAIL_CODE, asyncResult.result(), SendOptions.getInstance()
                                     , rs -> {
