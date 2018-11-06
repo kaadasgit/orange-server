@@ -4,7 +4,7 @@
       "tcp_port": 1883,
       "socket_idle_timeout": 60,
       "authenticator_address": "mqtt.authenticator.oauth2.apifest",
-      "dirPath": "",
+      "dirPath": "/home/app/MQTT/dir/",
       "segmentSize": 134217728,
       "expireTime":604800000,
       "periodicTime":3600000,
