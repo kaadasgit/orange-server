@@ -3,13 +3,19 @@ package cn.orangeiot.mqtt.event;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.MQTTSession;
 import cn.orangeiot.mqtt.MQTTSocket;
+import cn.orangeiot.mqtt.log.handler.LogService;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
+import cn.orangeiot.mqtt.util.LogFileUtils;
 import cn.orangeiot.mqtt.util.QOSConvertUtils;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.gateway.GatewayAddr;
 import cn.orangeiot.reg.log.LogAddr;
 import cn.orangeiot.reg.message.MessageAddr;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.googlecode.concurrentlinkedhashmap.EvictionListener;
+import com.googlecode.concurrentlinkedhashmap.Weighers;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -22,8 +28,11 @@ import org.apache.logging.log4j.Logger;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.EXACTLY_ONCE;
@@ -52,9 +61,14 @@ public class RegistEvenProcessHandler implements EventbusAddr {
 
     private final String GATEWAY_PREFIX = "gw:";//网关前綴
 
-    public RegistEvenProcessHandler(Vertx vertx, Map<String, MQTTSession> sessions) {
+    private LogFileUtils logFileUtils;
+
+    private final int BATCH_COUNT = 100;//批次次數
+
+    public RegistEvenProcessHandler(Vertx vertx, Map<String, MQTTSession> sessions, LogFileUtils logFileUtils) {
         this.vertx = vertx;
         this.sessions = sessions;
+        this.logFileUtils = logFileUtils;
     }
 
 
@@ -85,7 +99,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
         vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_ADMIN_MSG, (Message<JsonObject> rs) -> {
             String topicName = SEND_USER_REPLAY.replace("clientId", rs.headers().get("uid").replace("app:", ""));
             rs.headers().set("topicName", topicName);
-            sendMessageProcess(rs);
+            sendMessageProcess(rs.body(), rs.headers(), true, true);
         });
     }
 
@@ -101,7 +115,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
             String topicName = rs.headers().get("topic");
             if (Objects.nonNull(topicName))
                 rs.headers().set("topicName", topicName);
-            sendMessageProcess(rs);
+            sendMessageProcess(rs.body(), rs.headers(), true, true);
         });
     }
 
@@ -119,20 +133,43 @@ public class RegistEvenProcessHandler implements EventbusAddr {
             if (Objects.nonNull(topicName))
                 rs.headers().set("topicName", topicName);
 
-            vertx.executeBlocking(e -> {
-                JsonArray jsonArray = rs.body().getJsonArray("ids");
-                int size = jsonArray.size();
-                rs.body().remove("ids");
-                for (int i = 0; i < size; i++) {
-                    String SN = jsonArray.getString(i);
-                    rs.headers().add("uid"
-                            , "gw:" + SN).add("topicName", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", SN));
-                    rs.body().put("gwId", SN).put("deviceId", SN);
-                    rs.body().getJsonObject("params").put("deviceList", new JsonArray().add(SN));
-                    sendMessageProcess(rs);
+            JsonArray jsonArray = rs.body().getJsonArray("ids");
+            int size = jsonArray.size();
+            rs.body().remove("ids");
+            JsonObject payload = new JsonObject(rs.body().toString());
+            MultiMap headers = rs.headers();
+            rs.body().clear();
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+            int count;//次数
+            if (size > BATCH_COUNT) {
+                count = size % BATCH_COUNT == 0 ? size / BATCH_COUNT : size / BATCH_COUNT + 1;
+            } else {
+                count = 1;
+            }
+            vertx.setPeriodic(1500, res -> {
+                if (atomicInteger.get() == count) {
+                    vertx.cancelTimer(res);
+                    jsonArray.clear();
+                    return;
                 }
-                e.complete();
-            }, null);
+                int cycle;
+                if (count == 1 && size <= BATCH_COUNT) {
+                    cycle = size;
+                } else if (count > 1 && atomicInteger.get() == count - 1) {
+                    cycle = size % BATCH_COUNT == 0 ? BATCH_COUNT : size % BATCH_COUNT;
+                } else {
+                    cycle = BATCH_COUNT;
+                }
+                for (int i = 0; i < cycle; i++) {
+                    String SN = jsonArray.getString(i + (atomicInteger.get() * BATCH_COUNT));
+                    headers.add("uid"
+                            , "gw:" + SN).add("topicName", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", SN));
+                    payload.put("gwId", SN).put("deviceId", SN);
+                    payload.getJsonObject("params").put("deviceList", new JsonArray().add(SN));
+                    sendMessageProcess(payload, headers, true, false);
+                }
+                atomicInteger.incrementAndGet();
+            });
         });
     }
 
@@ -147,7 +184,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
         vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_STORAGE_MSG, (Message<JsonObject> rs) -> {
             String topicName = rs.headers().get("topic");
             rs.headers().set("topicName", topicName);
-            sendMessageProcess(rs);
+            sendMessageProcess(rs.body(), rs.headers(), false, false);
         });
     }
 
@@ -274,89 +311,97 @@ public class RegistEvenProcessHandler implements EventbusAddr {
 
 
     /**
+     * @param payload         负荷内容
+     * @param headers         头部集合
+     * @param persistenceFlag 是否持久化
+     * @param retryflag       是否重發
      * @Description 發送消息處理
      * @author zhang bo
      * @date 18-4-16
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    private void sendMessageProcess(Message<JsonObject> rs) {
-        logger.debug("send message body topic -> {} , msg -> {} ", rs.headers().get("topicName"), rs.body().toString());
-        if (!Objects.nonNull(rs.headers().get("uid"))) {
-            logger.warn("message body header uid is null , params -> {}", rs.body());
+    private void sendMessageProcess(JsonObject payload, MultiMap headers, boolean persistenceFlag, boolean retryflag) {
+        logger.debug("send message body topic -> {} , msg -> {} ", headers.get("topicName"), payload);
+        if (!Objects.nonNull(headers.get("uid"))) {
+            logger.warn("message body header uid is null");
             return;
         }
         PublishMessage publish = new PublishMessage();
-        publish.setTopicName(rs.headers().get("topicName"));
+        publish.setTopicName(headers.get("topicName"));
         try {
-            if (Objects.nonNull(rs.headers().get("msgId")))
-                publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-            JsonObject payload = rs.body();
+            if (Objects.nonNull(headers.get("msgId")))
+                publish.setMessageID(Integer.parseInt(headers.get("msgId")));
             payload.remove("topicName");
             payload.remove("clientId");
             publish.setPayload(payload.toString());
         } catch (UnsupportedEncodingException e) {
             logger.error(e.getMessage(), e);
         }
-        switch (Integer.parseInt(rs.headers().get("qos"))) {
+        switch (Integer.parseInt(headers.get("qos"))) {
             case 0:
                 publish.setQos(MOST_ONE);
                 publish.setMessageID(0);
-                if (rs.headers().get("uid").indexOf(":") >= 0) {
+                if (headers.get("uid").indexOf(":") >= 0) {
                     MQTTSession mqttSession;
-                    if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid"))))
-                        mqttSession.handlePublishMessage(publish, null);
+                    if (Objects.nonNull(mqttSession = sessions.get(headers.get("uid"))))
+                        mqttSession.handlePublishMessage(publish, null, false, false);
                 } else {
                     MQTTSession mqttSession;
-                    if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-                            : "app:" + rs.headers().get("uid"))))
-                        mqttSession.handlePublishMessage(publish, null);
+                    if (Objects.nonNull(mqttSession = sessions.get(headers.get("uid").length() == 13 ? "gw:" + headers.get("uid")
+                            : "app:" + headers.get("uid"))))
+                        mqttSession.handlePublishMessage(publish, null, false, false);
                 }
                 break;
             case 1:
                 publish.setQos(LEAST_ONE);
-                sendMSGToClient(rs.headers(), swapMsg(publish, rs.headers()));
+                sendMSGToClient(headers, swapMsg(publish, headers), persistenceFlag, retryflag);
                 break;
             case 2:
                 publish.setQos(EXACTLY_ONCE);
-                sendMSGToClient(rs.headers(), swapMsg(publish, rs.headers()));
+                sendMSGToClient(headers, swapMsg(publish, headers), persistenceFlag, retryflag);
                 break;
             default:
-                logger.error("qos not in (0,1,2) , value -> {}", rs.headers().get("qos"));
+                logger.error("qos not in (0,1,2) , value -> {}", headers.get("qos"));
 
         }
     }
 
 
     /**
+     * @param persistenceFlag 是否持久化
+     * @param retryflag       是否重發
+     * @param multiMap        header key/value
+     * @param publish         消息体
      * @Description 发送消息到client
      * @author zhang bo
      * @date 18-9-28
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public void sendMSGToClient(MultiMap multiMap, PublishMessage publish) {
+    public void sendMSGToClient(MultiMap multiMap, PublishMessage publish, boolean persistenceFlag, boolean retryflag) {
         if (multiMap.get("uid").indexOf(":") >= 0) {
             MQTTSession mqttSession;
             if (Objects.nonNull(mqttSession = sessions.get(multiMap.get("uid")))) {
-                mqttSession.handlePublishMessage(publish, permitted -> {
-                });
-            } else
+                mqttSession.handlePublishMessage(publish, null, persistenceFlag, retryflag);
+            } else {
                 try {
-                    writeLog(multiMap.get("uid"), publish);
+                    if (persistenceFlag)
+                        defaultWriteLog(multiMap.get("uid"), publish);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
+            }
         } else {
             String clientId = multiMap.get("uid").length() == 13 ? "gw:" + multiMap.get("uid")
                     : "app:" + multiMap.get("uid");
             MQTTSession mqttSession;
             if (Objects.nonNull(mqttSession = sessions.get(clientId))) {
-                mqttSession.handlePublishMessage(publish, permitted -> {
-                });
+                mqttSession.handlePublishMessage(publish, null, persistenceFlag, retryflag);
             } else {
                 try {
-                    writeLog(clientId, publish);
+                    if (persistenceFlag)
+                        defaultWriteLog(clientId, publish);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -388,8 +433,8 @@ public class RegistEvenProcessHandler implements EventbusAddr {
      * @date 18-8-31
      * @version 1.0
      */
-
     @SuppressWarnings("Duplicates")
+    @Deprecated
     private void writeLog(String clientId, PublishMessage publishMessage) throws Exception {
         DeliveryOptions opt = new DeliveryOptions().addHeader("tenant", clientId);
 
@@ -411,6 +456,15 @@ public class RegistEvenProcessHandler implements EventbusAddr {
                     logger.error(rs.cause().getMessage(), rs.cause());
                 }
             });
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    private void defaultWriteLog(String clientId, PublishMessage publishMessage) throws Exception {
+        if (publishMessage.getMessageID() != 0) {
+            logFileUtils.writeOfflineLog(clientId, publishMessage.getMessageID(), publishMessage.getPayloadAsString(),
+                    QOSConvertUtils.toByte(publishMessage.getQos()));
         }
     }
 

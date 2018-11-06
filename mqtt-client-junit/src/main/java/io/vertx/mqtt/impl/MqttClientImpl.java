@@ -527,7 +527,6 @@ public class MqttClientImpl implements MqttClient {
 
         io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
-
 //        try {
 //            Thread.sleep(5000);
 //        } catch (InterruptedException e) {

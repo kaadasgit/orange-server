@@ -5,7 +5,9 @@ import cn.orangeiot.mqtt.bridge.EventBusBridgeClientVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeServerVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeWebsocketServerVerticle;
 import cn.orangeiot.mqtt.event.RegistEvenProcessHandler;
+import cn.orangeiot.mqtt.log.timer.CleanOverExpireTimer;
 import cn.orangeiot.mqtt.persistence.StoreVerticle;
+import cn.orangeiot.mqtt.util.LogFileUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpServer;
@@ -22,6 +24,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -182,12 +185,16 @@ public class MQTTBroker extends AbstractVerticle {
         }
         NetServer netServer = vertx.createNetServer(opt);
         Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
-        new RegistEvenProcessHandler(vertx, sessions).initHandle();
+        LogFileUtils logFileUtils = new LogFileUtils(c.getDirPath(), vertx, c.getSegmentSize(), c.getExpireTime());
+        new RegistEvenProcessHandler(vertx, sessions, logFileUtils).initHandle();
         netServer.connectHandler(netSocket -> {
             NetSocketInternal soi = (NetSocketInternal) netSocket;
-            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME, soi, vertx, c, netSocket, sessions);
+            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME, soi, vertx, c, netSocket, sessions, logFileUtils);
             mqttNetSocket.start();
         }).listen();
+        //啓動clean定時器
+        new CleanOverExpireTimer(vertx, c.getPeriodicTime(), c.getDirPath(), c.getExpireTime());
+
 
     }
 

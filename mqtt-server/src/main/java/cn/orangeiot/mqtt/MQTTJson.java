@@ -14,8 +14,8 @@ public class MQTTJson {
 
     public boolean isDeserializable(JsonObject json) {
         boolean ret = (
-               json.containsKey("topicName")
-            && json.containsKey("payload")
+                json.containsKey("topicName")
+                        && json.containsKey("payload")
         );
         return ret;
     }
@@ -26,11 +26,12 @@ public class MQTTJson {
         ret.put("topicName", publishMessage.getTopicName());
         ret.put("qos", publishMessage.getQos().name());
         ret.put("payload", publishMessage.getPayload().array());
-        if(publishMessage.getQos() == AbstractMessage.QOSType.LEAST_ONE || publishMessage.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
+        if (publishMessage.getQos() == AbstractMessage.QOSType.LEAST_ONE || publishMessage.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
             ret.put("messageID", publishMessage.getMessageID());
         }
         return ret;
     }
+
     public PublishMessage deserializePublishMessage(JsonObject json) {
         PublishMessage ret = new PublishMessage();
         ret.setTopicName(json.getString("topicName"));
@@ -38,8 +39,8 @@ public class MQTTJson {
         ret.setQos(qos);
         byte[] payload = json.getBinary("payload");
         ret.setPayload(ByteBuffer.wrap(payload));
-        if(qos == AbstractMessage.QOSType.LEAST_ONE || qos == AbstractMessage.QOSType.EXACTLY_ONCE) {
-            ret.setMessageID(json.getInteger("messageID"));
+        if (qos == AbstractMessage.QOSType.LEAST_ONE || qos == AbstractMessage.QOSType.EXACTLY_ONCE) {
+            ret.setMessageID(Integer.parseInt(json.getInteger("messageID").toString()));
         }
         return ret;
     }

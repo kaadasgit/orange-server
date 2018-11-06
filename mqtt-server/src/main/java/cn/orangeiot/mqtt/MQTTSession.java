@@ -1,6 +1,8 @@
 package cn.orangeiot.mqtt;
 
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.mqtt.log.handler.LogService;
+import cn.orangeiot.mqtt.log.handler.impl.LogServiceImpl;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.persistence.StoreManager;
@@ -9,8 +11,10 @@ import cn.orangeiot.mqtt.security.AuthorizationClient;
 import cn.orangeiot.mqtt.util.QOSConvertUtils;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.log.LogAddr;
-import cn.orangeiot.reg.storage.StorageAddr;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -18,13 +22,12 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import javax.mail.Session;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -43,7 +46,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
 
-    private final int DEFAULT_SENDMSG_TIMES = 3;//发送次数
+    private final int DEFAULT_SENDMSG_TIMES = 2;//发送次数
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -66,20 +69,17 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private PublishMessage willMessage;
     private String publish;
 
-    private long keepAliveTimerID = -1;
-    private boolean keepAliveTimeEnded;
-    private Handler<String> keepaliveErrorHandler;
     private NetSocket netSocket;
     private int sendTimes;
-    private final String USER_PREFIX = "app";//用戶前綴
-    private final String GATEWAY_PREFIX = "gw";//网关前綴
-    private final String REPLY_MESSAGE = "/clientId/rpc/reply";
+    private String user_prefix;//用戶前綴
+    private String gateway_prefix;//网关前綴
+    private LogService logService;//log服务
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
     private Queue<PublishMessage> queue;
 
-    public MQTTSession(Vertx vertx, ConfigParser config, NetSocket netSocket) {
+    public MQTTSession(Vertx vertx, ConfigParser config, NetSocket netSocket, String clientID) {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
@@ -90,6 +90,10 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.publish = config.getPublish();
         this.netSocket = netSocket;
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
+        this.clientID = clientID;
+        this.user_prefix = config.getUser_prefix();
+        this.gateway_prefix = config.getGateway_prefix();
+        logService = new LogServiceImpl(config.getDirPath(), vertx, clientID, config.getSegmentSize(), config.getExpireTime());
 
         PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<String, List<Subscription>>
                 expirePeriod = new PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<>(
@@ -112,6 +116,11 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public void closeConnect() {
         if (Objects.nonNull(netSocket))
             netSocket.close();
+    }
+
+
+    public LogService getLogService() {
+        return logService;
     }
 
     public void addMessageToQueue(PublishMessage pm) {
@@ -142,11 +151,6 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
     public void setPublishMessageHandler(Handler<PublishMessage> publishMessageHandler) {
         this.publishMessageHandler = publishMessageHandler;
-    }
-
-    @Deprecated
-    public void setKeepaliveErrorHandler(Handler<String> keepaliveErrorHandler) {
-        this.keepaliveErrorHandler = keepaliveErrorHandler;
     }
 
     public PublishMessage getWillMessage() {
@@ -215,7 +219,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public boolean verifyClientId(String clientId) {
         if (StringUtils.isNotBlank(clientId)) {
             String[] arrs = clientId.split(":");
-            if (arrs.length == 2 && (arrs[0].equals(USER_PREFIX) || arrs[0].equals(GATEWAY_PREFIX))) {
+            if (arrs.length == 2 && (arrs[0].equals(user_prefix) || arrs[0].equals(gateway_prefix))) {
                 return true;
             } else
                 return false;
@@ -266,63 +270,32 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         logger.debug("New connection client : " + getClientInfo());
     }
 
-    private void startKeepAliveTimer(int keepAliveSeconds) {
-        if (keepAliveSeconds > 0) {
-//            stopKeepAliveTimer();
-            keepAliveTimeEnded = true;
-            /*
-             * If the Keep Alive value is non-zero and the Server does not receive a Control Packet from the Client
-             * within one and a half times the Keep Alive time period, it MUST disconnect
-             */
-            long keepAliveMillis = keepAliveSeconds * 1500;
-            keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
-                if (keepAliveTimeEnded) {
-                    logger.debug("keep-alive timer end " + getClientInfo());
-                    handleWillMessage();
-                    if (keepaliveErrorHandler != null) {
-                        keepaliveErrorHandler.handle(clientID);
-                    }
-                    stopKeepAliveTimer();
-                }
-                // next time, will close connection
-                keepAliveTimeEnded = true;
-            });
-        }
-    }
-
-    private void stopKeepAliveTimer() {
-        try {
-            logger.debug("keep-alive cancel old timer: " + keepAliveTimerID + " " + getClientInfo());
-            boolean removed = vertx.cancelTimer(keepAliveTimerID);
-            if (!removed) {
-                logger.warn("keep-alive cancel old timer not removed ID: " + keepAliveTimerID + " " + getClientInfo());
-            }
-        } catch (Throwable e) {
-            logger.error("Cannot stop keep-alive timer with ID: " + keepAliveTimerID + " " + getClientInfo(), e);
-        }
-    }
-
-    public void resetKeepAliveTimer() {
-        keepAliveTimeEnded = false;
-    }
-
-
-    public void handlePublishMessage(PublishMessage publishMessage, Handler<Boolean> completedHandler) {
-        if (authorizationToken != null) {
+    /**
+     * @param persistenceFlag  是否持久化
+     * @param retryflag        是否重發
+     * @param publishMessage   消息体
+     * @param completedHandler future函数
+     * @Description 发送消息
+     * @author zhang bo
+     * @date 18-10-28
+     * @version 1.0
+     */
+    public void handlePublishMessage(PublishMessage publishMessage, Handler<Boolean> completedHandler, boolean persistenceFlag, boolean retryflag) {
+        if (authorizationToken != null && vertx != null) {
             AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
             auth.authorizePublish(authorizationToken, publishMessage.getTopicName(), permitted -> {
                 if (permitted) {
-                    _handlePublishMessage(publishMessage);
+                    _handlePublishMessage(publishMessage, persistenceFlag, retryflag);
                 }
                 if (completedHandler != null) completedHandler.handle(permitted);
             });
         } else {
-            _handlePublishMessage(publishMessage);
+            _handlePublishMessage(publishMessage, persistenceFlag, retryflag);
             if (completedHandler != null) completedHandler.handle(Boolean.TRUE);
         }
     }
 
-    private void _handlePublishMessage(PublishMessage publishMessage) {
+    private void _handlePublishMessage(PublishMessage publishMessage, boolean persistenceFlag, boolean retryflag) {
         try {
             // publish always have tenant, if session is not tenantized, tenant is retrieved from topic ([tenant]/to/pi/c)
             String publishTenant = calculatePublishTenant(publishMessage.getTopicName());
@@ -348,40 +321,30 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
              * because it matches an established subscription
              * regardless of how the flag was set in the message it received. */
             publishMessage.setRetainFlag(false);
-            Buffer msg = encoder.enc(publishMessage);
+//            Buffer msg = encoder.enc(publishMessage);
             if (tenant == null)
                 tenant = "";
-
-//             opt;
-//            if (publishTenant.indexOf("orangeiot") < 0) {
-//                opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientID);
-//            } else {
-//                String[] topics = publishMessage.getTopicName().split("/");
-//                opt = new DeliveryOptions().addHeader(TENANT_HEADER, "gw:" + topics[2]);
-//            }
 
             String clientId = getClienId(publishMessage.getTopicName());
             DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, clientId);
 
-            if (publishMessage.getMessageID() == null)
+            if (!Objects.nonNull(publishMessage.getMessageID()))
                 publishMessage.setMessageID(0);
 
-            if (publishMessage.getMessageID() != 0)
-                writeLog(publishMessage, opt, msg, rs -> {
+            if (publishMessage.getMessageID() != 0 && persistenceFlag) {
+                defaultWriteLogRetry(publishMessage, retryflag, rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
                         if (rs.result()) {
-                            vertx.eventBus().publish(ADDRESS, msg, opt);
+//                            vertx.eventBus().publish(ADDRESS, msg, opt);
+                            handlePublishMessageReceived(publishMessage);
                         }
                     }
                 });
-            else
-                vertx.eventBus().publish(ADDRESS, msg, opt);
-
-
-//            if (publishMessage.getMessageID() != 0)
-//                flushStorage(publishMessage, publishTenant);
+            } else {
+                handlePublishMessageReceived(publishMessage);
+            }
         } catch (Throwable e) {
             e.printStackTrace();
             logger.error(e.getMessage());
@@ -422,6 +385,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
+    @Deprecated
     public void writeLog(PublishMessage publishMessage, DeliveryOptions opt, Buffer msg, Handler<AsyncResult<Boolean>> handler) {
         //周期发送
         AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -455,32 +419,91 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
 
     /**
-     * @Description 持久化消息
+     * @Description 延遲重試
      * @author zhang bo
-     * @date 18-5-17
+     * @date 18-11-6
      * @version 1.0
      */
-    protected void flushStorage(PublishMessage publishMessage, String publishTenant) {
-        //持久化数据
-        String topic = publishMessage.getTopicName();
-        JsonObject request = new JsonObject()
-                .put("topic", topic)
-                .put("message", publishMessage.getPayloadAsString())
-                .put("qos", publishMessage.getMessageID().toString());
-        vertx.eventBus().publish(StorageAddr.class.getName() + PUT_STORAGE_DATA, request
-                , new DeliveryOptions().addHeader("clientId"
-                        , publishTenant).addHeader("msgId", publishMessage.getMessageID().toString()));
-        if (publishTenant.indexOf(":") < 0) {
-            String clientId = publishTenant.length() == 13 ? "gw:" + publishTenant : "app:" + publishTenant;
-            vertx.eventBus().send(StorageAddr.class.getName() + PUT_STORAGE_DATA
-                    , request, new DeliveryOptions().addHeader("clientId"
-                            , clientId)
-                            .addHeader("msgId", publishMessage.getMessageID().toString()));
-        } else {
-            vertx.eventBus().send(StorageAddr.class.getName() + PUT_STORAGE_DATA, request
-                    , new DeliveryOptions().addHeader("clientId"
-                            , publishTenant).addHeader("msgId", publishMessage.getMessageID().toString()));
+    public long delayRetry(PublishMessage publishMessage) {
+        long timerId = vertx.setTimer(2000, id -> {
+            logger.debug("timer send -> {} , timeId -> {}", publishMessage.getTopicName(), id);
+            handlePublishMessageReceived(publishMessage);
+        });
+        return timerId;
+    }
+
+
+    /**
+     * @param publishMessage 消息体
+     * @param retryFlag      是否重發
+     * @Description 写入log和重發機制  重發次數 1次
+     * @author zhang bo
+     * @date 18-10-23
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void defaultWriteLogRetry(PublishMessage publishMessage, boolean retryFlag, Handler<AsyncResult<Boolean>> handler) {
+        logger.debug("defaultWriteLogRetry , clientId -> {} , msgId -> {}", clientID, publishMessage.getMessageID());
+        //周期发送
+//        AtomicInteger atomicInteger = new AtomicInteger(0);
+//        Long timeId = vertx.setPeriodic(2000, id -> {
+//            logger.debug("periodic send -> " + publishMessage.getTopicName());
+////            vertx.eventBus().publish(ADDRESS, msg, opt);
+//            handlePublishMessageReceived(publishMessage);
+//            atomicInteger.incrementAndGet();
+//            if (atomicInteger.get() == sendTimes && vertx != null) {
+//                vertx.cancelTimer(id);
+//            }
+//        });
+        if (vertx != null) {
+            long timeId;
+            if (retryFlag)
+                timeId = delayRetry(publishMessage);
+            else
+                timeId = 0;
+            logService.writeLog(publishMessage.getPayloadAsString(), publishMessage.getMessageID(), timeId,
+                    QOSConvertUtils.toByte(publishMessage.getQos()), res -> {
+                        if (res.failed()) {
+                            handler.handle(res);
+                            if (vertx != null) vertx.cancelTimer(timeId);
+                        } else {
+                            handler.handle(res);
+                        }
+                    });
         }
+    }
+
+    /**
+     * @param publishMessage 消息体
+     * @param opt            附加信息体
+     * @Description 重試機制
+     * @author zhang bo
+     * @date 18-10-30
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void defaultRetryPublish(PublishMessage publishMessage, DeliveryOptions opt, Handler<AsyncResult<Boolean>> handler) {
+        logger.debug("defaultRetryPublish , clientId -> {} , msgId -> {}", clientID, publishMessage.getMessageID());
+        //周期发送
+        AtomicInteger atomicInteger = new AtomicInteger(0);
+        Long timeId = vertx.setPeriodic(2000, id -> {
+            logger.debug("periodic send -> " + publishMessage.getTopicName());
+//            vertx.eventBus().publish(ADDRESS, msg, opt);
+            handlePublishMessageReceived(publishMessage);
+            atomicInteger.incrementAndGet();
+            if (atomicInteger.get() == sendTimes) {
+                vertx.cancelTimer(id);
+            }
+        });
+        logService.updateTimerId(publishMessage.getMessageID(), timeId, res -> {
+            if (res.failed()) {
+                handler.handle(res);
+                vertx.cancelTimer(timeId);
+            } else {
+                handler.handle(res);
+            }
+        });
+
     }
 
 
@@ -512,7 +535,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     }
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage, Handler<JsonArray> completedHandler) {
-        if (authorizationToken != null) {
+        if (authorizationToken != null && vertx != null) {
             AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
             auth.authorizeSubscribe(authorizationToken, subscribeMessage.subscriptions(), permitted -> {
                 _handleSubscribeMessage(subscribeMessage, permitted);
@@ -531,7 +554,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private void _handleSubscribeMessage(SubscribeMessage subscribeMessage, JsonArray permitted) {
         try {
             final int messageID = subscribeMessage.getMessageID();
-            if (this.messageConsumer == null) {
+            if (this.messageConsumer == null && vertx != null) {
                 messageConsumer = vertx.eventBus().consumer(ADDRESS);
                 messageConsumer.handler(this);
             }
@@ -700,6 +723,61 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     }
 
     /**
+     * @Description 創建分區log
+     * @author zhang bo
+     * @date 18-10-23
+     * @version 1.0
+     */
+    public void createPartitionLog(Handler<AsyncResult<Boolean>> handler) {
+        logService.createPartitionLog(handler);
+    }
+
+
+    /**
+     * @Description 創建分區log
+     * @author zhang bo
+     * @date 18-10-23
+     * @version 1.0
+     */
+    public void consumLog(int msgId, Handler<AsyncResult<Long>> handler) {
+        logService.consumLog(msgId, handler);
+    }
+
+
+    /**
+     * @Description 處理離線消息
+     * @author zhang bo
+     * @date 18-10-23
+     * @version 1.0
+     */
+    public void processOfflineLog() {
+        logService.processOfflineMsg();
+    }
+
+
+    /**
+     * @Description 釋放資源
+     * @author zhang bo
+     * @date 18-11-2
+     * @version 1.0
+     */
+    public void release() {
+        logService.release();
+    }
+
+
+    /**
+     * @Description 關閉狀態
+     * @author zhang bo
+     * @date 18-10-30
+     * @version 1.0
+     */
+    public void closeState() {
+        logService.closeState();
+    }
+
+
+    /**
      * @Description publish处理
      * @author zhang bo
      * @date 17-12-11
@@ -710,23 +788,24 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         DeliveryOptions deliveryOptions = new DeliveryOptions();
         deliveryOptions.addHeader("qos", QOSConvertUtils.toStr(publishMessage.getQos()));
         if (Objects.nonNull(publishMessage.getMessageID())) {
-            deliveryOptions.addHeader("messageId", publishMessage.getMessageID().toString());
+            deliveryOptions.addHeader("messageId", String.valueOf(publishMessage.getMessageID()));
         } else {
             deliveryOptions.addHeader("messageId", "0");
         }
-        vertx.eventBus().send(publish, new JsonObject(publishMessage.getPayloadAsString())
-                        .put("topicName", publishMessage.getTopicName()).put("clientId", clientId),
-                deliveryOptions.setSendTimeout(2000), (AsyncResult<Message<JsonObject>> rs) -> {
-                    if (rs.failed()) {
-                        asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
-                    } else {
-                        if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().body())) {
-                            asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
+        if (vertx != null)
+            vertx.eventBus().send(publish, new JsonObject(publishMessage.getPayloadAsString())
+                            .put("topicName", publishMessage.getTopicName()).put("clientId", clientId),
+                    deliveryOptions.setSendTimeout(2000), (AsyncResult<Message<JsonObject>> rs) -> {
+                        if (rs.failed()) {
+                            asyncResultHandler.handle(Future.failedFuture(rs.cause().getMessage()));
                         } else {
-                            asyncResultHandler.handle(Future.failedFuture("return data is null"));
+                            if (Objects.nonNull(rs.result()) && Objects.nonNull(rs.result().body())) {
+                                asyncResultHandler.handle(Future.succeededFuture(rs.result().body()));
+                            } else {
+                                asyncResultHandler.handle(Future.failedFuture("return data is null"));
+                            }
                         }
-                    }
-                });
+                    });
 
     }
 
@@ -746,11 +825,13 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 //        stopKeepAliveTimer();
 
         // deallocate this instance ...
-        if (messageConsumer != null && cleanSession) {
+        if (messageConsumer != null) {
             messageConsumer.unregister();
             messageConsumer = null;
+            this.matchingSubscriptionsCache.clear();
+            this.subscriptions.forEach((key, val) -> suscribeMap.remove(key, val));
         }
-//        vertx = null;
+        vertx = null;
     }
 
 
@@ -772,7 +853,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         // publish will message if present ...
         if (willMessage != null) {
             logger.debug("publish will message ... topic[" + willMessage.getTopicName() + "]");
-            handlePublishMessage(willMessage, null);
+            handlePublishMessage(willMessage, null, true, false);
         }
     }
 
@@ -782,7 +863,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     }
 
     public String getClientID() {
-        return clientID;
+        return this.clientID;
     }
 
     public MQTTSession setClientID(String clientID) {

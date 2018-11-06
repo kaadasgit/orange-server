@@ -1,49 +1,37 @@
 package cn.orangeiot.mqtt;
 
-import cn.orangeiot.common.genera.Result;
 import cn.orangeiot.common.options.SendOptions;
+import cn.orangeiot.mqtt.parser.MQTTDecoder;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import cn.orangeiot.mqtt.prometheus.PromMetrics;
-import cn.orangeiot.mqtt.parser.MQTTDecoder;
-import cn.orangeiot.mqtt.util.QOSConvertUtils;
+import cn.orangeiot.mqtt.util.LogFileUtils;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.gateway.GatewayAddr;
-import cn.orangeiot.reg.log.LogAddr;
-import cn.orangeiot.reg.message.MessageAddr;
-import cn.orangeiot.reg.storage.StorageAddr;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dna.mqtt.moquette.proto.messages.*;
-import scala.util.parsing.json.JSONObject;
-import sun.rmi.runtime.Log;
 
-import javax.mail.Session;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
-import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.EXACTLY_ONCE;
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.LEAST_ONE;
-import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType.MOST_ONE;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -70,9 +58,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private final String REPLY_MESSAGE = "/clientId/rpc/reply";
     private ChannelHandlerContext chctx;
     private int timeout;
+    private LogFileUtils logFileUtils;
 
 
-    public MQTTSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions, NetSocket netSocket) {
+    public MQTTSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions, NetSocket netSocket, LogFileUtils logFileUtils) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTPacketTokenizer();
@@ -84,13 +73,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
         this.chctx = soi.channelHandlerContext();
         this.timeout = timeout;
-//        sendMessage();
-//        sendGWMessage();
-//        sendStorage();
-//        getloginAll();
-//        sendPubRel();
-//        kickOut();
-//        deviceState();
+        this.logFileUtils = logFileUtils;
     }
 
     public MQTTSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, Map<String, MQTTSession> sessions) {
@@ -104,13 +87,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.sendTimes = DEFAULT_SENDMSG_TIMES;
         this.chctx = soi.channelHandlerContext();
         this.timeout = timeout;
-//        sendMessage();
-//        sendGWMessage();
-//        sendStorage();
-//        getloginAll();
-//        sendPubRel();
-//        kickOut();
-//        deviceState();
     }
 
     abstract protected void sendMessageToClient(Buffer bytes);
@@ -150,6 +126,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", Bad error in processing the message", ex);
             closeConnection();
+            if (this.session != null) {
+                this.session.closeState();
+                this.session.release();
+            }
+            shutdown();
         }
     }
 
@@ -159,6 +140,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         logger.error(clientInfo + ", " + e.getMessage(), e);
 //        if(e instanceof CorruptedFrameException) {
         closeConnection();
+        if (this.session != null) {
+            this.session.closeState();
+            this.session.release();
+        }
+        shutdown();
 //        }
     }
 
@@ -171,54 +157,23 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 ConnAckMessage connAck = new ConnAckMessage();
                 String connectedClientID = connect.getClientID();
                 PromMetrics.mqtt_connect_total.labels(connectedClientID).inc();
-//                if (!connect.isCleanSession() && sessions.containsKey(connectedClientID)) {
-                if (sessions.containsKey(connectedClientID)) {
-                    session = sessions.get(connectedClientID);
-                }
-                //重复连接
-                if (session == null) {
-                    session = new MQTTSession(vertx, config, netSocket);
-                    session.setClientID(connectedClientID);
-                    PromMetrics.mqtt_sessions_total.inc();
-                    connAck.setSessionPresent(false);
-                } else {
-                    logger.debug("Session alredy allocated ...");
-                    /*
-                     The Server MUST process a second CONCT Packet sent from a Client as a protocol violation and disconnect the Client
-                      */
-//                    connAck.setSessionPresent(true);
-//                    connAck.setReturnCode(ConnAckMessage.NOT_AUTHORIZED);
-//                    sendMessageToClient(connAck);
-//                    closeConnection();
-//                    break;
-
-                    /**挤掉上一个用户*/
-                    sessions.remove(connectedClientID);
-                    session.closeConnect();
-
-                    session = new MQTTSession(vertx, config, netSocket);
-                    session.setClientID(connectedClientID);
-                    PromMetrics.mqtt_sessions_total.inc();
-                    connAck.setSessionPresent(false);
-                }
-                session.setPublishMessageHandler(this::sendMessageToClient);
-                //移除KeepaliveError 处理
-                session.setKeepaliveErrorHandler(clientID -> {
-                    String cinfo = clientID;
-                    String cliId = clientID;
-                    if (session != null) {
-                        cinfo = session.getClientInfo();
-                        cliId = session.getClientID();
-                    }
-                    logger.debug("keep alive exausted! closing connection for client[" + cinfo + "] ...");
-                    checkDevice(null, "offline");//离线狀態
-                    closeConnection();
-                });
-                session.handleConnectMessage(connect, authenticated -> {
+                this.session = new MQTTSession(vertx, config, netSocket, connectedClientID);
+                this.session.setPublishMessageHandler(this::sendMessageToClient);
+                this.session.handleConnectMessage(connect, authenticated -> {//验证
                     if (authenticated.getBoolean("state")) {
                         connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
-                        sessions.put(connectedClientID, session);
+                        MQTTSession currentSession = sessions.putIfAbsent(connectedClientID, this.session);
+                        if (Objects.nonNull(currentSession)) { //踢掉上個用戶
+                            currentSession.shutdown();
+                            currentSession.closeConnect();
+                            currentSession.release();//釋放資源
+                            sessions.remove(connectedClientID, currentSession);
+                            sessions.putIfAbsent(connectedClientID, session);
+                            sendMessageToClient(connAck);
+                        }
+                        logFileUtils.remove(connectedClientID);//移除离线实例
                         sendMessageToClient(connAck);
+                        PromMetrics.mqtt_sessions_total.inc();
                         if (!session.isCleanSession()) {
                             session.sendAllMessagesFromQueue();
                         }
@@ -262,23 +217,33 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 	                    If there is no retained message, nothing is sent
 	                    */
                         }
-                        sendMessageToClient(subAck);
+                        if (session != null)
+                            session.createPartitionLog(res -> {
+                                if (res.failed()) {
+                                    logger.error(res.cause().getMessage());
+                                    subAck.addType(QOSType.FAILURE);
+                                    sendMessageToClient(subAck);
+                                } else {
+                                    if (res.result()) {
+                                        sendMessageToClient(subAck);
+                                        if (session != null) session.processOfflineLog();
+                                    } else {
+                                        subAck.addType(QOSType.FAILURE);
+                                        sendMessageToClient(subAck);
+                                    }
+                                }
+                            });
 
-                        checkDevice(session.getClientID(), "online");//在線狀態
-                        checkUser(session.getClientID(), "online");//在線狀態
-                        //推送持久化记录
-//                    vertx.eventBus().send(StorageAddr.class.getName() + GET_STORAGE_DATA, null
-//                            , new DeliveryOptions().addHeader("clientId", session.getClientID()));
-
-                        vertx.eventBus().send(LogAddr.class.getName() + READ_LOG, new JsonObject().put("topic", session.getClientID().split(":")[1]));
-                        vertx.eventBus().send(LogAddr.class.getName() + SEND_PUBREL, new JsonObject().put("topic", session.getClientID()));
+                        if (session != null) {
+                            checkDevice(session.getClientID(), "online");//在線狀態
+                            checkUser(session.getClientID(), "online");//在線狀態
+                        }
                     });
                 }
                 break;
             case UNSUBSCRIBE:
                 if (checkConnected(session)) {
                     PromMetrics.mqtt_unsubscribe_total.labels(session.getClientID()).inc();
-//                    session.resetKeepAliveTimer();
 
                     UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage) msg;
                     session.handleUnsubscribeMessage(unsubscribeMessage);
@@ -289,8 +254,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBLISH:
                 if (checkConnected(session)) {
-//                    session.resetKeepAliveTimer();
-
                     PublishMessage publish = (PublishMessage) msg;
 
                     logger.debug("client publish topic -> {}", publish.getTopicName());
@@ -310,79 +273,59 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBREC:
                 if (checkConnected(session)) {
-//                    session.resetKeepAliveTimer();
-
                     PubRecMessage pubRec = (PubRecMessage) msg;
                     PubRelMessage prelResp = new PubRelMessage();
                     prelResp.setMessageID(pubRec.getMessageID());
                     prelResp.setQos(LEAST_ONE);
-//                sendMessageToClient(prelResp);
-
-                    //停止发送
-                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubRec.getMessageID())
-                            .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
-                        if (rs.failed()) {
-                            logger.error(rs.cause().getMessage(), rs);
-                        } else {
-                            if (Objects.nonNull(rs.result().body())) {
-                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
-                                saveRel(prelResp);
-                            }
-                        }
-                    });
+                    sendMessageToClient(prelResp);
                 }
 
                 break;
             case PUBREL:
                 if (checkConnected(session)) {
-//                    session.resetKeepAliveTimer();
                     PubRelMessage pubRel = (PubRelMessage) msg;
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
-
-                    //接收确认
-//                vertx.eventBus().send(StorageAddr.class.getName() + DEL_STORAGE_DATA, null, new DeliveryOptions()
-//                        .addHeader("clientId", session.getClientID()).addHeader("msgId", pubRel.getMessageID().toString()));
                 }
                 break;
             case PUBACK:
                 if (checkConnected(session)) {
                     session.getMessageFromQueue();
-//                    session.resetKeepAliveTimer();
                     PubAckMessage pubAckMessage = (PubAckMessage) msg;
 
-                    //接收确认
-//                vertx.eventBus().send(StorageAddr.class.getName() + DEL_STORAGE_DATA, null, new DeliveryOptions()
-//                        .addHeader("clientId", session.getClientID()).addHeader("msgId", pubAckMessage.getMessageID().toString()));
-
-                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_LOG, new JsonObject().put("msgId", pubAckMessage.getMessageID())
-                            .put("topic", session.getClientID().split(":")[1]), (AsyncResult<Message<String>> rs) -> {
-                        if (rs.failed()) {
-                            logger.error(rs.cause().getMessage(), rs);
+                    //确认到达
+                    session.consumLog(pubAckMessage.getMessageID(), res -> {
+                        if (res.failed()) {
+                            logger.error(res.cause().getMessage(), res);
                         } else {
-                            if (Objects.nonNull(rs.result().body()))
-                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
+                            if (Objects.nonNull(res.result()) && vertx != null && res.result() != 0) {
+                                vertx.cancelTimer(res.result());
+                            } else {
+                                logger.warn("receive ACK package , msgId timerId is null , clienid-> {} , AckMsgId -> {}"
+                                        , session != null ? session.getClientID() : "empty", pubAckMessage.getMessageID());
+                            }
                         }
                     });
-                    // A PUBACK message is the response to a PUBLISH message with QoS level 1.
-                    // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
-                    // and by a subscriber in response to a PUBLISH message from the server.
                 }
                 break;
             case PUBCOMP:
                 if (checkConnected(session)) {
                     session.getMessageFromQueue();
-//                    session.resetKeepAliveTimer();
 
                     PubCompMessage pubCompMessage = (PubCompMessage) msg;
-                    vertx.eventBus().send(LogAddr.class.getName() + CONSUME_PUBREL, new JsonObject().put("relId", pubCompMessage.getMessageID())
-                            .put("topic", session.getClientID()), (AsyncResult<Message<String>> rs) -> {
-                        if (rs.failed()) {
-                            logger.error(rs.cause().getMessage(), rs);
+
+                    //确认到达
+                    session.consumLog(pubCompMessage.getMessageID(), res -> {
+                        if (res.failed()) {
+                            logger.error(res.cause().getMessage(), res);
                         } else {
-                            if (Objects.nonNull(rs.result().body()))
-                                vertx.cancelTimer(Long.parseLong(rs.result().body()));
+                            if (Objects.nonNull(res.result()) && vertx != null && res.result() != 0) {
+                                vertx.cancelTimer(res.result());
+                            } else {
+                                logger.warn("receive ACK package , msgId timerId is null , clienid-> {} , AckMsgId -> {}"
+                                        , session != null ? session.getClientID() : "empty", pubCompMessage.getMessageID());
+                            }
                         }
                     });
                 }
@@ -397,8 +340,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case DISCONNECT:
                 if (checkConnected(session)) {
                     PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
-                    checkDevice(session.getClientID(), "offline");//离线狀態
-//                    session.resetKeepAliveTimer();
+                    if (session != null) {
+                        checkDevice(session.getClientID(), "offline");//离线狀態
+                        session.closeState();
+                        session.release();
+                    }
                     DisconnectMessage disconnectMessage = (DisconnectMessage) msg;
                     handleDisconnect(disconnectMessage);
                 }
@@ -409,10 +355,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
         }
 
-
-        // : forward mqtt message to backup server
-
     }
+
 
     /**
      * @Description 添加心跳处理
@@ -460,6 +404,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         if (Objects.nonNull(session)) {
             return true;
         } else {
+            shutdown();
             this.netSocket.close();
             logger.warn("session is null , from message");
             return false;
@@ -473,7 +418,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @version 1.0
      */
     public void checkDevice(String clientId, String state) {
-        if (Objects.nonNull(clientId) && clientId.indexOf(GATEWAY_PREFIX) >= 0) {//網關
+        if (Objects.nonNull(clientId) && clientId.indexOf(GATEWAY_PREFIX) >= 0 && vertx != null) {//網關
             logger.debug("gwID -> {}", clientId);
             String gwId = clientId.split(":")[1];
             vertx.eventBus().send(GatewayAddr.class.getName() + GET_GATWWAY_USERALL, new JsonObject().put("clientId", gwId)
@@ -494,7 +439,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @version 1.0
      */
     public void checkUser(String clientId, String state) {
-        if (Objects.nonNull(clientId) && clientId.indexOf(USER_PREFIX) >= 0) {//網關
+        if (Objects.nonNull(clientId) && clientId.indexOf(USER_PREFIX) >= 0 && vertx != null) {//網關
             logger.debug("userID -> {}", clientId);
             String userId = clientId.split(":")[1];
             vertx.eventBus().send(GatewayAddr.class.getName() + GET_USER_GATEWAYLIST, new JsonObject().put("clientId", userId)
@@ -507,20 +452,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     });
         }
     }
-
-    /**
-     * @Description 設備狀態
-     * @author zhang bo
-     * @date 18-9-13
-     * @version 1.0
-     */
-//    public void deviceState() {
-//        vertx.eventBus().consumer(GatewayAddr.class.getName() + SEND_GATEWAY_STATE, (Message<JsonObject> rs) -> {
-//            if (Objects.nonNull(rs.body()) && Objects.nonNull(rs.body().getValue("_id")) && Objects.nonNull(rs.body().getValue("gwId")))
-//                sendDeviceState(rs.body().getString("_id"), new JsonArray().add(new JsonObject().put("deviceSN", rs.body().getString("gwId"))
-//                        .put("uid", rs.body().getString("_id"))), "online", true);
-//        });
-//    }
 
 
     /**
@@ -584,35 +515,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
 
     /**
-     * @Description 保存rel包
-     * @author zhang bo
-     * @date 18-8-1
-     * @version 1.0
-     */
-    public void saveRel(PubRelMessage prel) {
-        //保存relid
-        AtomicInteger atomicInteger = new AtomicInteger(0);
-        Long timeId = vertx.setPeriodic(2000, id -> {
-            sendMessageToClient(prel);
-            atomicInteger.incrementAndGet();
-            if (atomicInteger.get() == sendTimes) {
-                vertx.cancelTimer(id);
-            }
-        });
-        vertx.eventBus().send(LogAddr.class.getName() + SAVE_PUBREL, new JsonObject().put("pubRelId", prel.getMessageID())
-                .put("topic", session.getClientID()).put("timeId", timeId), (AsyncResult<Message<Boolean>> rs) -> {
-            if (rs.failed()) {
-                vertx.cancelTimer(timeId);
-            } else {
-                if (!rs.result().body())
-                    vertx.cancelTimer(timeId);
-                sendMessageToClient(prel);
-            }
-        });
-    }
-
-
-    /**
      * @Description 回复确认包
      * @author zhang bo
      * @date 18-6-29
@@ -622,10 +524,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     public void publishReplyPackage(PublishMessage publish) {
         switch (publish.getQos()) {
             case RESERVED:
-                session.handlePublishMessage(publish, null);
+                session.handlePublishMessage(publish, null, false, false);
                 break;
             case MOST_ONE:
-                session.handlePublishMessage(publish, null);
+                session.handlePublishMessage(publish, null, false, false);
                 break;
             case LEAST_ONE:
                 PubAckMessage pubAck = new PubAckMessage();
@@ -664,264 +566,30 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             PromMetrics.mqtt_publish_total.labels(session.getClientID(), qos.name(), topic).inc();
             switch (publish.getQos()) {
                 case RESERVED:
-                    session.handlePublishMessage(publish, null);
+                    session.handlePublishMessage(publish, null, false, false);
                     break;
                 case MOST_ONE:
-                    session.handlePublishMessage(publish, null);
+                    session.handlePublishMessage(publish, null, false, false);
                     break;
                 case LEAST_ONE:
                     session.handlePublishMessage(publish, permitted -> {
                         PubAckMessage pubAck = new PubAckMessage();
                         pubAck.setMessageID(publish.getMessageID());
                         sendMessageToClient(pubAck);
-                    });
+                    }, true, true);
                     break;
                 case EXACTLY_ONCE:
                     session.handlePublishMessage(publish, permitted -> {
                         PubRecMessage pubRec = new PubRecMessage();
                         pubRec.setMessageID(publish.getMessageID());
                         sendMessageToClient(pubRec);
-                    });
+                    }, true, true);
                     break;
             }
         }
     }
 
 
-    //踢出
-//    public void kickOut() {
-//        vertx.eventBus().consumer(MessageAddr.class.getName() + KICK_OUT, (Message<JsonObject> rs) -> {
-//            MQTTSession session = null;
-//            if (Objects.nonNull(rs.headers().get("clientId")) && Objects.nonNull(session = sessions.get(rs.headers().get("clientId")))) {
-//                session.closeConnect();
-//            }
-//        });
-//    }
-
-
-    //qos发送消息
-//    public void sendMessage() {
-//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_ADMIN_MSG, (Message<JsonObject> rs) -> {
-//            String topicName = SEND_USER_REPLAY.replace("clientId", rs.headers().get("uid").replace("app:", ""));
-//            rs.headers().set("topicName", topicName);
-//            sendMsgToClient(rs);
-//        });
-//    }
-
-
-    //qos发送升级消息
-//    public void sendGWMessage() {
-//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_UPGRADE_MSG, (Message<JsonObject> rs) -> {
-//            String topicName = rs.headers().get("topic");
-//            rs.headers().set("topicName", topicName);
-//            sendMsgToClient(rs);
-//        });
-//    }
-
-
-    //发送storage消息
-//    public void sendStorage() {
-//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_STORAGE_MSG, (Message<JsonObject> rs) -> {
-//            String topicName = rs.headers().get("topic");
-//            rs.headers().set("topicName", topicName);
-//            sendMsgToClient(rs);
-//        });
-//    }
-
-    //发送pubRel消息
-//    public void sendPubRel() {
-//        vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_PUBREL_MSG, (Message<JsonObject> rs) -> {
-//            PubRelMessage prelResp = new PubRelMessage();
-//            prelResp.setMessageID(Integer.parseInt(rs.body().getString("relId")));
-//            prelResp.setQos(LEAST_ONE);
-//            sendMessageToClient(prelResp);
-//            if (Objects.nonNull(sessions.get(rs.body().getString("clientid"))))
-//                sessions.get(rs.body().getString("clientid")).sendMessageToClient(prelResp);
-//        });
-//    }
-
-
-//    /**
-//     * @Description 發送消息到客戶端
-//     * @author zhang bo
-//     * @date 18-4-16
-//     * @version 1.0
-//     */
-//    @SuppressWarnings("Duplicates")
-//    public void sendMsgToClient(Message<JsonObject> rs) {
-//        PublishMessage publish = new PublishMessage();
-//        publish.setTopicName(rs.headers().get("topicName"));
-//        try {
-//            if (Objects.nonNull(rs.headers().get("msgId")))
-//                publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-//            publish.setPayload(rs.body().toString());
-//        } catch (UnsupportedEncodingException e) {
-//            logger.error(e.getMessage(), e);
-//        }
-//        switch (Integer.parseInt(rs.headers().get("qos"))) {
-//            case 0:
-//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-//                    session.handlePublishMessage(publish, null);
-//                } else {
-//                    publish.setQos(MOST_ONE);
-//                    publish.setMessageID(0);
-//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-//                        sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, null);
-//                    } else {
-//                        sessions.get(rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-//                                : "app:" + rs.headers().get("uid")).handlePublishMessage(publish, null);
-//                    }
-//                }
-//                break;
-//            case 1:
-//                publish.setQos(LEAST_ONE);
-//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-//                    if (!Objects.nonNull(publish.getMessageID()))
-//                        publish.setMessageID(1);
-//                    session.handlePublishMessage(publish, permitted -> {
-//                        PubAckMessage pubAck = new PubAckMessage();
-//                        pubAck.setMessageID(publish.getMessageID());
-//                        if (Objects.nonNull(pubAck))
-//                            sendMessageToClient(pubAck);
-//                    });
-//                } else {
-//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-//                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
-//                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-//                    } else {
-//                        publish.setMessageID(1);
-//                    }
-//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-//                        if (Objects.nonNull(rs.headers().get("uid"))) {
-//                            MQTTSession mqttSession;
-//                            if (Objects.nonNull(mqttSession = sessions.get(rs.headers().get("uid")))) {
-//                                mqttSession.handlePublishMessage(publish, permitted -> {
-//                                    PubAckMessage pubAck = new PubAckMessage();
-//                                    pubAck.setMessageID(publish.getMessageID());
-//                                    sendMessageToClient(pubAck);
-//                                });
-//                            } else {
-//                                try {
-//                                    writeLog(rs.headers().get("uid"), publish);
-//                                } catch (Exception e) {
-//                                    logger.error(e.getMessage(), e);
-//                                }
-//                            }
-//                        } else
-//                            try {
-//                                writeLog(rs.headers().get("uid"), publish);
-//                            } catch (Exception e) {
-//                                logger.error(e.getMessage(), e);
-//                            }
-//                    } else {
-//                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-//                                : "app:" + rs.headers().get("uid");
-//                        if (Objects.nonNull(sessions.get(clientId))) {
-//                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
-//                                PubAckMessage pubAck = new PubAckMessage();
-//                                pubAck.setMessageID(publish.getMessageID());
-//                                sendMessageToClient(pubAck);
-//                            });
-//                        } else
-//                            try {
-//                                writeLog(rs.headers().get("uid"), publish);
-//                            } catch (Exception e) {
-//                                logger.error(e.getMessage(), e);
-//                            }
-//                    }
-//                }
-//                break;
-//            case 2:
-//                publish.setQos(EXACTLY_ONCE);
-//                if (Objects.nonNull(session) && !Objects.nonNull(rs.headers().get("redict"))) {
-//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-//                    } else {
-//                        publish.setMessageID(1);
-//                    }
-//                    session.handlePublishMessage(publish, permitted -> {
-//                        PubRecMessage pubRec = new PubRecMessage();
-//                        pubRec.setMessageID(publish.getMessageID());
-//                        if (Objects.nonNull(pubRec))
-//                            sendMessageToClient(pubRec);
-//                    });
-//
-//                } else {
-//                    if (Objects.nonNull(rs.headers().get("messageId"))) {
-//                        publish.setMessageID(Integer.parseInt(rs.headers().get("messageId")));
-//                    } else if (Objects.nonNull(rs.headers().get("msgId"))) {
-//                        publish.setMessageID(Integer.parseInt(rs.headers().get("msgId")));
-//                    } else {
-//                        publish.setMessageID(1);
-//                    }
-//                    if (rs.headers().get("uid").indexOf(":") >= 0) {
-//                        if (Objects.nonNull(sessions.get(rs.headers().get("uid")))) {
-//                            sessions.get(rs.headers().get("uid")).handlePublishMessage(publish, permitted -> {
-//                                PubRecMessage pubRec = new PubRecMessage();
-//                                pubRec.setMessageID(publish.getMessageID());
-//                                sendMessageToClient(pubRec);
-//                            });
-//                        } else
-//                            try {
-//                                writeLog(rs.headers().get("uid"), publish);
-//                            } catch (Exception e) {
-//                                logger.error(e.getMessage(), e);
-//                            }
-//                    } else {
-//                        String clientId = rs.headers().get("uid").length() == 13 ? "gw:" + rs.headers().get("uid")
-//                                : "app:" + rs.headers().get("uid");
-//                        if (Objects.nonNull(sessions.get(clientId))) {
-//                            sessions.get(clientId).handlePublishMessage(publish, permitted -> {
-//                                PubRecMessage pubRec = new PubRecMessage();
-//                                pubRec.setMessageID(publish.getMessageID());
-//                                sendMessageToClient(pubRec);
-//                            });
-//                        } else
-//                            try {
-//                                writeLog(clientId, publish);
-//                            } catch (Exception e) {
-//                                logger.error(e.getMessage(), e);
-//                            }
-//                    }
-//                }
-//                break;
-//            default:
-//                logger.error("qos not in (0,1,2) , value -> {}", rs.headers().get("qos"));
-//        }
-//
-//    }
-
-    /**
-     * @Description 寫日志
-     * @author zhang bo
-     * @date 18-8-31
-     * @version 1.0
-     */
-//    @SuppressWarnings("Duplicates")
-//    public void writeLog(String clientId, PublishMessage publishMessage) throws Exception {
-//        DeliveryOptions opt = new DeliveryOptions().addHeader("tenant", clientId);
-//
-//        publishMessage.setRetainFlag(false);
-//        Buffer msg = new MQTTEncoder().enc(publishMessage);
-//        if (publishMessage.getMessageID() != 0) {
-//            //持久化数据
-//            String[] arr = opt.getHeaders().get("tenant").split(":");
-//            JsonObject request = new JsonObject().put("msg", new JsonObject()
-//                    .put("message", publishMessage.getPayloadAsString())
-//                    .put("qos", QOSConvertUtils.toStr(publishMessage.getQos()))
-//                    .put("msgId", publishMessage.getMessageID())
-//                    .put("dst", arr[0]))
-//                    .put("msgId", publishMessage.getMessageID())
-//                    .put("topic", arr[1]).put("timeId", 0L);
-//
-//            vertx.eventBus().send(LogAddr.class.getName() + WRITE_LOG, request, SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
-//                if (rs.failed()) {
-//                    logger.error(rs.cause().getMessage(), rs.cause());
-//                }
-//            });
-//        }
-//    }
     public void sendMessageToClient(AbstractMessage message) {
         try {
             logger.debug(">>> " + message);
@@ -941,8 +609,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private void removeCurrentSessionFromMap() {
         String cid = session.getClientID();
 //        if (sessions != null && session.isCleanSession() && sessions.containsKey(cid)) {
-        if (sessions != null && sessions.containsKey(cid)) {
-            sessions.remove(cid);
+        if (sessions != null) {
+            sessions.remove(cid, session);
         }
     }
 
@@ -970,5 +638,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //            msg.reply(new JsonArray(sessions.keySet().stream().collect(Collectors.toList())));
 //        });
 //    }
+
 
 }

@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.mqtt.util.LogFileUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -10,6 +11,7 @@ import io.vertx.core.net.NetSocket;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -21,8 +23,9 @@ public class MQTTNetSocket extends MQTTSocket {
     private NetSocket netSocket;
 
 
-    public MQTTNetSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions) {
-        super(timeout, soi, vertx, config, sessions, netSocket);
+    public MQTTNetSocket(int timeout, NetSocketInternal soi, Vertx vertx, ConfigParser config, NetSocket netSocket, Map<String, MQTTSession> sessions
+            , LogFileUtils logFileUtils) {
+        super(timeout, soi, vertx, config, sessions, netSocket,logFileUtils);
         this.netSocket = netSocket;
     }
 
@@ -33,16 +36,24 @@ public class MQTTNetSocket extends MQTTSocket {
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage(), event.getCause());
             handleWillMessage();
-            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID()))
+            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID())) {
                 checkDevice(session.getClientID(), "offline");//离线狀態
+
+                session.closeState();
+                session.release();
+            }
             shutdown();
         });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
             logger.debug(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
             handleWillMessage();
-            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID()))
+            if (Objects.nonNull(session) && Objects.nonNull(session.getClientID())) {
                 checkDevice(session.getClientID(), "offline");//离线狀態
+
+                session.closeState();
+                session.release();
+            }
             shutdown();
         });
     }

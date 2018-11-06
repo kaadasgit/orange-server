@@ -160,6 +160,13 @@
             <version>1.6.1</version>
             <!-- <scope>test</scope> -->
         </dependency>
+
+        <!--緩存組件-->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+        </dependency>
     </dependencies>
 
 
@@ -214,6 +221,7 @@
                     <exclude>redis-conf.json</exclude>
                     <exclude>vertx-default-jul-logging.properties</exclude>
                     <exclude>zkConf.json</exclude>
+                    <exclude>config.json</exclude>
                 </excludes>
             </resource>
             <resource>

@@ -1,5 +1,6 @@
 package cn.orangeiot.message.handler.ota;
 
+import cn.orangeiot.common.utils.KdsCreateRandom;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.ota.OtaAddr;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +35,10 @@ public class OtaUpgradeHandler implements EventbusAddr {
     private Vertx vertx;
 
     private JsonObject config;
+
+    private final int MIN_RANGE = 65525;//最小值
+
+    private final int MAX_RANGE = 65535;//最大值
 
     public OtaUpgradeHandler(Vertx vertx, JsonObject config) {
         this.config = config;
@@ -107,6 +113,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
 
             DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                     , "app:" + k).addHeader("qos", "1")
+                    .addHeader("messageId", String.valueOf(KdsCreateRandom.getRandomNumberInRange(MIN_RANGE, MAX_RANGE)))
                     .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", k.toString()));
             vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, pushJsonObject
                     , deliveryOptions);
@@ -163,6 +170,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                 if (Objects.nonNull(e)) {
                     DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                             , "app:" + e.getString("userId")).addHeader("qos", "1")
+                            .addHeader("messageId", String.valueOf(KdsCreateRandom.getRandomNumberInRange(MIN_RANGE, MAX_RANGE)))
                             .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", e.getString("userId")));
                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                             , deliveryOptions);
@@ -186,6 +194,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
             }).forEach(e -> {
                 DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                         , "app:" + e.getString("userId")).addHeader("qos", "1")
+                        .addHeader("messageId", String.valueOf(KdsCreateRandom.getRandomNumberInRange(MIN_RANGE, MAX_RANGE)))
                         .addHeader("topic", MessageAddr.SEND_USER_REPLAY.replace("clientId", e.getString("userId")));
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                         , deliveryOptions);
@@ -234,6 +243,7 @@ public class OtaUpgradeHandler implements EventbusAddr {
                 if (Objects.nonNull(e)) {
                     DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                             , "gw:" + e.getString("gwId")).addHeader("qos", "1")
+                            .addHeader("messageId", String.valueOf(KdsCreateRandom.getRandomNumberInRange(MIN_RANGE, MAX_RANGE)))
                             .addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", e.getString("gwId")));
                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, e
                             , deliveryOptions);
@@ -266,7 +276,8 @@ public class OtaUpgradeHandler implements EventbusAddr {
 //                recordOTA(final_JsonObject.put("OTAOrderNo", message.body().getString("OTAOrderNo")));
 //            });
             if (rs.result().body().size() > 0) {
-                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("qos", "1").setSendTimeout(15000);
+                DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("qos", "1").setSendTimeout(15000)
+                        .addHeader("messageId", String.valueOf(KdsCreateRandom.getRandomNumberInRange(MIN_RANGE, MAX_RANGE)));
                 JsonObject jsonObject = new JsonObject().put("ids", rs.result().body()).put("func", "otaNotify")
                         .put("timestamp", System.currentTimeMillis()).put("msgId", 00001L).put("userId", "SYS")
                         .put("params", new JsonObject().put("modelCode", message.body().getString("modelCode"))

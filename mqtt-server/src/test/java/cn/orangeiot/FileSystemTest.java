@@ -38,12 +38,24 @@ public class FileSystemTest extends AbstractVerticle {
 //            fileSystem.createFile("/home/linuxzhangbo/file/" + i + ".index", null);
 //        }
 
+        fileSystem.open("/home/linuxzhangbo/dir/app:5902aca835736f21ae1e7a82/app:5902aca835736f21ae1e7a82.state", new OpenOptions().setWrite(true).setRead(true).setAppend(true), res -> {
+            if (res.failed()) {
+                res.cause().printStackTrace();
+            } else {
+                res.result().write(Buffer.buffer(4).appendShort((short) 65536).appendShort((short) 65533), 0, result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    }
+                });
+            }
+        });
 
-        JsonObject jsonObject = new JsonObject().put("func", "bindGatewayByUser").put("uid", "5902aca835736f21ae1e7a82").put("devuuid", "IO01181911117");
 
-        JsonObject jsonObject1 = new JsonObject().put("func", "gatewayBindList").put("uid", "5902aca835736f21ae1e7a82");
-
-
+//        JsonObject jsonObject = new JsonObject().put("func", "bindGatewayByUser").put("uid", "5902aca835736f21ae1e7a82").put("devuuid", "IO01181911117");
+//
+//        JsonObject jsonObject1 = new JsonObject().put("func", "gatewayBindList").put("uid", "5902aca835736f21ae1e7a82");
+//
+//
 //        for (int i = 0; i < 10000; i++) {
 //            AsyncFile indexFile = fileSystem.openBlocking("/home/linuxzhangbo/file/" + i + ".index", new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 //            AsyncFile logFile = fileSystem.openBlocking("/home/linuxzhangbo/file/" + i + ".log", new OpenOptions().setAppend(true).setRead(true).setWrite(true));
@@ -82,8 +94,25 @@ public class FileSystemTest extends AbstractVerticle {
 //            });
 //        });
 
-
-        boolean[] cc = new boolean[65535];
+//        AsyncFile logFile = fileSystem.openBlocking("/home/linuxzhangbo/file/7.log", new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+//
+//        byte[] bytes = jsonObject.toString().getBytes("UTF-8");
+//        logFile.write(Buffer.buffer(bytes.length).appendBytes(bytes), 0, rs -> {
+//            if (rs.failed()) {
+//                rs.cause().printStackTrace();
+//            } else {
+//                System.out.println("ok");
+//
+//                int size = jsonObject.toString().getBytes().length;
+//                logFile.read(Buffer.buffer(size), 0, 0, size, ars -> {
+//                    if (ars.failed()) {
+//                        ars.cause().printStackTrace();
+//                    } else {
+//                        System.out.println(ars.result().toString("UTF-8"));
+//                    }
+//                });
+//            }
+//        });
 
     }
 
@@ -111,16 +140,44 @@ public class FileSystemTest extends AbstractVerticle {
 
     public static void main(String[] args) {
 //        Vertx.vertx().deployVerticle(FileSystemTest.class.getName());
-        long startTime = System.currentTimeMillis();
-        FileSystemTest fileSystemTest = new FileSystemTest();
-        for (int j = 0; j < 100000; j++) {
-            boolean[] arrs = new boolean[65535];
-            for (int i = 0; i < 65535; i++) {
-                boolean currentVal = new Random().nextBoolean();
-                arrs[i] = currentVal;
-            }
-            fileSystemTest.valid(arrs);
-        }
-        System.out.println("process time -> " + (System.currentTimeMillis() - startTime));
+//        long startTime = System.currentTimeMillis();
+//        FileSystemTest fileSystemTest = new FileSystemTest();
+//        for (int j = 0; j < 100000; j++) {
+//            boolean[] arrs = new boolean[65535];
+//            for (int i = 0; i < 65535; i++) {
+//                boolean currentVal = new Random().nextBoolean();
+//                arrs[i] = currentVal;
+//            }
+//            fileSystemTest.valid(arrs);
+//        }
+//        System.out.println("process time -> " + (System.currentTimeMillis() - startTime));
+
+//2148300 225
+//        Vertx vertx = Vertx.vertx();
+//
+//        vertx.fileSystem().open("/home/linuxzhangbo/dir/app:5902aca835736f21ae1e7a82/app:5902aca835736f21ae1e7a82-1.log", new OpenOptions().setAppend(true).setRead(true).setWrite(true), res -> {
+//            if (res.failed()) {
+//                res.cause().printStackTrace();
+//            } else {
+//                res.result().read(Buffer.buffer(225), 0, 2148300, 225, buffer -> {
+//                    if (buffer.failed()) {
+//                        buffer.cause().printStackTrace();
+//                    } else {
+////                        System.out.println("msgid -> " + (buffer.result().getShort(0) & 0x0FFFF) + " , count -> "
+////                                + (buffer.result().getShort(2) & 0x0FFFF) + " , partition -> "
+////                                + buffer.result().getShort(4));
+//                        System.out.println("content -> "+buffer.result().toString());
+//                        res.result().close();
+//                    }
+//                });
+//            }
+//        });
+        Vertx vertx = Vertx.vertx();
+
+        long timerId = vertx.setTimer(1000, timeId -> {
+            System.out.println("ok");
+        });
+        vertx.cancelTimer(timerId);
+
     }
 }

@@ -31,7 +31,7 @@ public class AuthorizationClient {
 
     public void authorize(String username, String password, String clientID, Handler<ValidationInfo> authHandler) {
         // AUTHENTICATION START
-        logger.info("==AuthorizationClient==authorize==username:" + username + "==password:" + password + "==clientId:" + clientID);
+        logger.debug("==AuthorizationClient==authorize==username:" + username + "==password:" + password + "==clientId:" + clientID);
         JsonObject oauth2_token_info = new JsonObject()
                 .put("username", username)
                 .put("password", password)
@@ -62,7 +62,7 @@ public class AuthorizationClient {
     }
 
     public void authorizePublish(String token, String topic, Handler<Boolean> authHandler) {
-        logger.info("==AuthorizationClient==authorizePublish==token:" + token + "==topic:" + topic);
+        logger.debug("==AuthorizationClient==authorizePublish==token:" + token + "==topic:" + topic);
         JsonObject info = new JsonObject();
         info.put("token", token);
         info.put("topic", topic);
@@ -84,7 +84,7 @@ public class AuthorizationClient {
     }
 
     public void authorizeSubscribe(String token, List<Couple> topics, Handler<JsonArray> authHandler) {
-        logger.info("==AuthorizationClient==authorizeSubscribe==token:" + token + "==topics:" + topics);
+        logger.debug("==AuthorizationClient==authorizeSubscribe==token:" + token + "==topics:" + topics);
         JsonArray topicArray = new JsonArray();
         topics.forEach(topic -> {
             topicArray.add(topic.getTopicFilter());

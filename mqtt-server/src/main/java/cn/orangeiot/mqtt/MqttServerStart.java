@@ -109,6 +109,9 @@ public class MqttServerStart {
             System.exit(1);
         }
         if (Objects.nonNull(zkConfig)) {
+            if (Objects.nonNull(System.getProperty("CLUSTER")))
+                zkConfig.put("rootPath", System.getProperty("CLUSTER"));
+
             System.setProperty("vertx.zookeeper.hosts", zkConfig.getString("hosts.zookeeper"));
             ClusterManager mgr = new ZookeeperClusterManager(zkConfig);
             VertxOptions options = new VertxOptions().setClusterManager(mgr);
@@ -124,7 +127,7 @@ public class MqttServerStart {
 
                     vertx.deployVerticle(SubscibeVerticle.class.getName(), deploymentOptions);
                     vertx.deployVerticle(PublishVerticle.class.getName(), deploymentOptions);
-                    vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
+//                    vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
 
                 } else {
                     // failed!
@@ -204,7 +207,7 @@ public class MqttServerStart {
 
             vertx.deployVerticle(SubscibeVerticle.class.getName(), deploymentOptions);
             vertx.deployVerticle(PublishVerticle.class.getName(), deploymentOptions);
-            vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
+//            vertx.deployVerticle(LogVerticle.class.getName(), deploymentOptions);
         }
 
     }

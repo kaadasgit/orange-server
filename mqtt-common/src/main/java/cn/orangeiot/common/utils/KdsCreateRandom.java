@@ -131,6 +131,20 @@ public class KdsCreateRandom {
 
 
     /**
+     * @param min 最小值
+     * @param max 最大数
+     * @Description 生产指定范围的随机数
+     * @author zhang bo
+     * @date 18-10-28
+     * @version 1.0
+     */
+    public static int getRandomNumberInRange(int min, int max) {
+        Random r = new Random();
+        return r.ints(min, (max + 1)).findFirst().getAsInt();
+    }
+
+
+    /**
      * 字符串转换为16进制字符串
      *
      * @param s

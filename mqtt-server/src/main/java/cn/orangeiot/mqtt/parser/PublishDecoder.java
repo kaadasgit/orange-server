@@ -101,7 +101,7 @@ class PublishDecoder extends DemuxDecoder {
 
         if (message.getQos() == AbstractMessage.QOSType.LEAST_ONE ||
                 message.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
-            message.setMessageID(in.readUnsignedShort());
+            message.setMessageID( in.readUnsignedShort());
         }
         int stopPos = in.readerIndex();
 

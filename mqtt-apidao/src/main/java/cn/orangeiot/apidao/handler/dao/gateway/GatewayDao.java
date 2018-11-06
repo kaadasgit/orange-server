@@ -895,7 +895,7 @@ public class GatewayDao implements GatewayAddr {
     @SuppressWarnings("Duplicates")
     public void updateDevNickName(Message<JsonObject> message) {
         MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
-                message.body().getString("devuuid")).put("deviceList.deviceId", new JsonObject()
+                message.body().getString("devuuid")).put("uid",message.body().getString("uid")).put("deviceList.deviceId", new JsonObject()
                         .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.nickName"
                         , message.body().getString("nickName"))), as -> {

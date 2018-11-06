@@ -394,7 +394,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                 .put("items", Objects.nonNull(jsonObject.getValue("items")) ? jsonObject.getJsonArray("items")
                         : new JsonArray().add("0").add("0").add("0").add("0").add("0").add("0").add("0")));
         MongoClient.client.updateCollection("kdsNormalLock", new JsonObject().put("uname", jsonObject.getString("dev_username"))
-                .put("lockName", jsonObject.getString("devname")), paramsJsonObject, rs -> {
+                .put("lockName", jsonObject.getString("devname")).put("adminuid", jsonObject.getString("admin_id")), paramsJsonObject, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);

@@ -156,8 +156,16 @@ public class FileHandler implements EventbusAddr {
                         if (rs.failed()) {
                             handler.handle(Future.failedFuture(rs.cause()));
                         } else {
-                            routingContext.put("uid", rs.result().headers().get("uid"));
-                            handler.handle(Future.succeededFuture(rs.result().body()));
+                            if (rs.result() != null && rs.result().body()) {
+                                routingContext.put("uid", rs.result().headers().get("uid"));
+                                handler.handle(Future.succeededFuture(rs.result().body()));
+                            } else {
+                                routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
+                                routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
+                                        , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
+                                        ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
+                                )).toString());
+                            }
                         }
                     });
         } else {

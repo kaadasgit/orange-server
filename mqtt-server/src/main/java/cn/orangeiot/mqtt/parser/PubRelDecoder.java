@@ -29,7 +29,7 @@ class PubRelDecoder extends DemuxDecoder {
         }
 
         //read  messageIDs
-        message.setMessageID(in.readUnsignedShort());
+        message.setMessageID( in.readUnsignedShort());
         out.add(message);
     }
 

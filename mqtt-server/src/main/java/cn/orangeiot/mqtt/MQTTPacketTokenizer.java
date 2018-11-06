@@ -139,6 +139,7 @@ public class MQTTPacketTokenizer {
     }
 
     public MqttTokenizerState process(byte[] data) {
+        //判斷長度
         int processed = 0;
         while (processed < data.length) {
             int temp = process(data, processed, data.length);

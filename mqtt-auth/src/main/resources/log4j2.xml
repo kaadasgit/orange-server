@@ -7,38 +7,38 @@
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
         </Console>
 
-        <!--写入kafka   topic订阅的主题-->
-        <Kafka name="kafkaAppender" topic="my-log" ignoreExceptions="false">
-            <PatternLayout
-                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [mqtt-auth] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/><!--显示信息格式-->
-            <Property name="bootstrap.servers">localhost:9092</Property><!--kafka地址-->
-            <Property name="timeout.ms">2000</Property><!--写入超时时间-->
-        </Kafka>
+        <!--&lt;!&ndash;写入kafka   topic订阅的主题&ndash;&gt;-->
+        <!--<Kafka name="kafkaAppender" topic="my-log" ignoreExceptions="false">-->
+            <!--<PatternLayout-->
+                    <!--pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [mqtt-auth] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>&lt;!&ndash;显示信息格式&ndash;&gt;-->
+            <!--<Property name="bootstrap.servers">localhost:9092</Property>&lt;!&ndash;kafka地址&ndash;&gt;-->
+            <!--<Property name="timeout.ms">2000</Property>&lt;!&ndash;写入超时时间&ndash;&gt;-->
+        <!--</Kafka>-->
 
-        <RollingFile name="failoverKafkaLog" fileName="./logs/mqtt-auth.log"
-                     filePattern="./logs/mqtt-auth/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz" immediateFlush="false"
-                     ignoreExceptions="false">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:127.0.0.1:8090/ebcuiy] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n
-                </Pattern>
-            </PatternLayout>
-            <Policies>
-                <TimeBasedTriggeringPolicy/>
-            </Policies>
-        </RollingFile>
+        <!--<RollingFile name="failoverKafkaLog" fileName="./logs/mqtt-auth.log"-->
+                     <!--filePattern="./logs/mqtt-auth/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz" immediateFlush="false"-->
+                     <!--ignoreExceptions="false">-->
+            <!--<PatternLayout>-->
+                <!--<Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:127.0.0.1:8090/ebcuiy] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n-->
+                <!--</Pattern>-->
+            <!--</PatternLayout>-->
+            <!--<Policies>-->
+                <!--<TimeBasedTriggeringPolicy/>-->
+            <!--</Policies>-->
+        <!--</RollingFile>-->
 
-        <!--kafka写入失败触发写入本地日志-->
-        <Failover name="Failover" primary="kafkaAppender" retryIntervalSeconds="600">
-            <Failovers>
-                <AppenderRef ref="failoverKafkaLog"/>
-            </Failovers>
-        </Failover>
+        <!--&lt;!&ndash;kafka写入失败触发写入本地日志&ndash;&gt;-->
+        <!--<Failover name="Failover" primary="kafkaAppender" retryIntervalSeconds="600">-->
+            <!--<Failovers>-->
+                <!--<AppenderRef ref="failoverKafkaLog"/>-->
+            <!--</Failovers>-->
+        <!--</Failover>-->
     </Appenders>
     <Loggers>
         <!--配置日志的根节点-->
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="Failover"/>
+            <!--<AppenderRef ref="Failover"/>-->
         </Root>
     </Loggers>
 </Configuration>

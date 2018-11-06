@@ -120,10 +120,16 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 704  //验证码发送次数过多",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -155,10 +161,16 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 704  //验证码发送次数过多",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -190,10 +202,19 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 101 //账号或密码错误",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -225,10 +246,19 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 101 //账号或密码错误",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -260,10 +290,19 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 204 //注册账户失败 , code -> 405 //用户重复注册 , code -> 445 //无效的随机码",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -295,10 +334,19 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 204 //注册账户失败 , code -> 405 //用户重复注册 , code -> 445 //无效的随机码",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -341,10 +389,25 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,code -> 607 //上传文件失败",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "413": {
+            "description": "code -> 413 //图像体积过大  最大 1 Mb"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -381,11 +444,23 @@
           }
         ],
         "responses": {
-          "default": {
-            "description": "success",
+          "200": {
+            "description": "code -> 200  //成功 , code -> 601 //获取昵称失败",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -423,10 +498,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  ,  code -> 601 //修改昵称失敗",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -464,10 +551,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 208 //修改密码失败 ,  code ->  435  //密码只能数字和字母组合，6-15位",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -499,10 +598,19 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 208 //修改密码失败 , code ->  435  //密码只能数字和字母组合，6-15位  , code -> 445 //无效的随机码 , code -> 408 //賬戶不存在",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -568,10 +676,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 780 //登出失败",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -609,10 +729,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 301 //字符长度超出限制,最大300字符, code -> 302 //留言失败",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -650,10 +782,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 409 //设备重复注册 , code ->  202 //已绑定",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -691,10 +835,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -732,10 +888,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -773,10 +941,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 785 //开锁失败,沒有這把鎖  , code -> 803 //开锁上傳,当前时间没有权限",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -814,10 +994,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 785 //鑑權失败,沒有這把鎖 , code -> 803 //当前时间没有权限",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -855,10 +1047,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -896,10 +1100,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -937,10 +1153,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -978,10 +1206,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1019,10 +1259,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1060,10 +1312,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1101,10 +1365,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,  code -> 782 //操作失敗",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1142,10 +1418,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,  code -> 782 //操作失敗",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1183,10 +1471,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,  code -> 782 //操作失敗",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1224,10 +1524,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,  code -> 782 //操作失敗",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1265,10 +1577,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1306,10 +1630,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 ,code ->  412 //设备信息注冊失敗 ,code ->  409 //已经存在用户 , code -> 433//不是管理员 , code -> 401 //要赋权用户没找到",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1347,10 +1683,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功 , code -> 413//设备信息不存在",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1388,10 +1736,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1429,10 +1789,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1470,10 +1842,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1511,10 +1895,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 782  //操作失敗 , code -> 404 //device not found",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
@@ -1552,10 +1948,22 @@
         ],
         "responses": {
           "200": {
-            "description": "成功",
+            "description": "code -> 200  //成功  , code -> 419 //没有数据，参数不匹配",
             "schema": {
               "$ref": "#/definitions/ApiResponse"
             }
+          },
+          "400": {
+            "description": "code -> 401  数据参数不对"
+          },
+          "401": {
+            "description": "code -> 444 //没有登录"
+          },
+          "500": {
+            "description": "code -> 501  业务处理失败"
+          },
+          "504": {
+            "description": "code -> 509  服務請求處理超時"
           }
         }
       }
