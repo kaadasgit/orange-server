@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt.event;
 
+import cn.orangeiot.common.constant.NotifyConf;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.MQTTSession;
 import cn.orangeiot.mqtt.MQTTSocket;
@@ -87,6 +88,33 @@ public class RegistEvenProcessHandler implements EventbusAddr {
         sendPubRel();
         kickOut();
         sendUpgradeMessage();
+    }
+
+
+    /**
+     * @param jsonObject 結構體
+     * @Description 过滤处理
+     * @author zhang bo
+     * @date 18-11-8
+     * @version 1.0
+     */
+    private void filterProcess(JsonObject jsonObject, MultiMap headers, Handler<Boolean> handler) {
+        if (jsonObject.getValue("func") != null && jsonObject.getString("func").equals("gwevent")
+                && jsonObject.getValue("eventtype") != null && jsonObject.getString("eventtype").equals("alarm")
+                && jsonObject.getValue("eventparams") != null) {
+            if (jsonObject.getJsonObject("eventparams").getValue("alarmCode") != null && jsonObject.getJsonObject("eventparams").getInteger("alarmCode") == 9
+                    && jsonObject.getJsonObject("eventparams").getValue("clusterID") != null && jsonObject.getJsonObject("eventparams").getInteger("clusterID") == 257) {//脅迫開門鎖
+                vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid",
+                        headers.get("uid")).put("title", NotifyConf.ALRAM_OPENLOCK_TITLE).put("content", NotifyConf.ALRAM_OPENLOCK_CONTERNT
+                        .replace("deviceId", jsonObject.getString("deviceId")))
+                        .put("time_to_live",864000).put("extras",new JsonObject().put("func","alarmOpenLockRisk")));
+                handler.handle(false);
+            } else {
+                handler.handle(true);
+            }
+        } else {
+            handler.handle(true);
+        }
     }
 
     /**
@@ -387,7 +415,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
             } else {
                 try {
                     if (persistenceFlag)
-                        defaultWriteLog(multiMap.get("uid"), publish);
+                        defaultWriteLog(multiMap.get("uid"), multiMap, publish);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -401,7 +429,7 @@ public class RegistEvenProcessHandler implements EventbusAddr {
             } else {
                 try {
                     if (persistenceFlag)
-                        defaultWriteLog(clientId, publish);
+                        defaultWriteLog(clientId, multiMap, publish);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -461,10 +489,14 @@ public class RegistEvenProcessHandler implements EventbusAddr {
 
 
     @SuppressWarnings("Duplicates")
-    private void defaultWriteLog(String clientId, PublishMessage publishMessage) throws Exception {
+    private void defaultWriteLog(String clientId, MultiMap multiMap, PublishMessage publishMessage) throws Exception {
         if (publishMessage.getMessageID() != 0) {
-            logFileUtils.writeOfflineLog(clientId, publishMessage.getMessageID(), publishMessage.getPayloadAsString(),
-                    QOSConvertUtils.toByte(publishMessage.getQos()));
+            filterProcess(new JsonObject(publishMessage.getPayloadAsString()), multiMap, flag -> {
+                if (flag) {
+                    logFileUtils.writeOfflineLog(clientId, publishMessage.getMessageID(), publishMessage.getPayloadAsString(),
+                            QOSConvertUtils.toByte(publishMessage.getQos()));
+                }
+            });
         }
     }
 

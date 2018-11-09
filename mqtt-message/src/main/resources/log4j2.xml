@@ -28,7 +28,7 @@
             <!--<AppenderRef ref="RollingFile"/>-->
         <!--</AsyncLogger>-->
         <!--配置日志的根节点-->
-        <Root level="info">
+        <Root level="all">
             <AppenderRef ref="Console" />
         </Root>
     </Loggers>

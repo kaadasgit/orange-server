@@ -49,13 +49,14 @@ public class MessagePushHandler implements MessageAddr {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as);
             } else {
-                if (Objects.nonNull(as.result().body().getValue("JPushId"))
-                        && Objects.nonNull(as.result().body().getValue("type"))) {
+                if (Objects.nonNull(as.result()) && as.result().body() != null) {
                     if (as.result().body().getInteger("type") == 1) {//ios
                         sendAPNS(message.body(), as.result().body());
                     } else {//android
                         sendJpush(message.body(), as.result().body());
                     }
+                } else {
+                    logger.warn("pushId is null , not upload , uid -> {}", message.body().getString("uid"));
                 }
             }
         });
@@ -72,9 +73,11 @@ public class MessagePushHandler implements MessageAddr {
         JsonObject params = new JsonObject().put("platform", "all")
                 .put("audience", new JsonObject().put("segment"
                         , new JsonArray().add(jpush.getString("JPushId"))))
-                .put("notification", new JsonObject().put("alert", message.getString("content")));
+                .put("notification", new JsonObject().put("alert", message.getString("content"))
+                        .put("title", message.getString("title")) .put("extras",message.getJsonObject("extras")))
+                .put("options", new JsonObject().put("time_to_live", message.getInteger("time_to_live")));;//最大十天有效時間,单位second
 
-        logger.debug("request uri /v3/push , header.Authorization -> {} , body -> {}"
+        logger.debug("request android uri /v3/push , header.Authorization -> {} , body -> {}"
                 , jpush.getString("JPushId"), Authorization, params.toString());
         PushClient.androidClient.post("/v3/push")
                 .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
@@ -83,7 +86,7 @@ public class MessagePushHandler implements MessageAddr {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
-                        logger.info("request url /v3/push , JPushId -> {} , result -> {}",
+                        logger.debug("request android result url /v3/push , JPushId -> {} , result -> {}",
                                 jpush.getString("JPushId"), rs.result().body().toString());
                     }
                 });
@@ -97,26 +100,23 @@ public class MessagePushHandler implements MessageAddr {
      * @version 1.0
      */
     public void sendAPNS(JsonObject message, JsonObject jpush) {
-        for (int i = 0; i < 100; i++) {
-            JsonObject params = new JsonObject().put("aps", new JsonObject().put("alert", message.getString("content")));
-            String uuid = UUID.randomUUID().toString();
-            logger.info("request uri /3/device/{} , header.apns-id -> {} , body -> {}"
-                    , jpush.getString("JPushId"), uuid, params.toString());
-            PushClient.iosClient.post("/3/device/" + jpush.getString("JPushId"))
-                    .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
-                    .putHeader("apns-topic", ConstantConf.APNS_TOPIC)
-                    .putHeader("apns-id", uuid)
-                    .putHeader("Content-length", String.valueOf(params.toString().getBytes().length))
-                    .sendJsonObject(params, rs -> {
-                        if (rs.failed()) {
-                            logger.error(rs.cause().getMessage(), rs);
-                        } else {
-                            logger.info("status -> {} ,  header.apns-id -> {}", rs.result().statusCode(),
-                                    rs.result().getHeader("apns-id"));
-                            if (Objects.nonNull(rs.result().body()))
-                                logger.info(rs.result().body().toString());
-                        }
-                    });
-        }
+        JsonObject params = new JsonObject().put("aps", new JsonObject().put("alert", new JsonObject().put("body", message.getString("content"))
+                .put("title", message.getString("title"))).put("sound", "default")).put("extras",message.getJsonObject("extras"));
+        String uuid = UUID.randomUUID().toString();
+        logger.debug("request apple uri /3/device/{} , header.apns-id -> {} , body -> {}"
+                , jpush.getString("JPushId"), uuid, params.toString());
+        PushClient.iosClient.post("/3/device/" + jpush.getString("JPushId"))
+                .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
+                .putHeader("apns-topic", ConstantConf.APNS_TOPIC)
+                .putHeader("apns-id", uuid)
+                .putHeader("Content-length", String.valueOf(params.toString().getBytes().length))
+                .sendJsonObject(params, rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                    } else {
+                        logger.debug("request apple result status -> {} ,  header.apns-id -> {}", rs.result().statusCode(),
+                                rs.result().getHeader("apns-id"));
+                    }
+                });
     }
 }

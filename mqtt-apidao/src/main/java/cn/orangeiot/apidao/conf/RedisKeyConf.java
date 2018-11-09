@@ -39,5 +39,7 @@ public class RedisKeyConf {
 
     public final static String USER_VAL_INFO = "info";//信息
 
+    public final static String USER_PUSH_ID = "pushId";//應用推送唯一標識
+
     public final static String USER_VAL_OLDTOKEN = "oldToken";//old token
 }

@@ -257,7 +257,7 @@ public class GatewayDao implements GatewayAddr {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1).put("isAdmin", 1)), rs -> {
+                .put("deviceNickName", 1).put("isAdmin", 1).put("adminuid",1).put("adminName",1).put("adminNickname",1)), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);

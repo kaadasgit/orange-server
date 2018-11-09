@@ -242,20 +242,20 @@ public class FuncHandler {
      */
     public void onRpcGatewayResponseMessage(Message<JsonObject> message, Handler<AsyncResult<JsonObject>> handler) {
         if (Objects.nonNull(message.body().getValue("func"))) {
-            switch (message.body().getString("func")) {
-                case "openLock"://开门
-                    if (message.body().getString("clientId").indexOf("gw:") >= 0
-                            && Objects.nonNull(message.body().getValue("params"))
-                            && message.body().getJsonObject("params").getString("optype").equals("unlock")
-                            && Objects.nonNull(message.body().getValue("returnCode"))
-                            && message.body().getString("returnCode").equals("200"))
-                        lockService.openLock(message.body());
-                    handler.handle(Future.succeededFuture());
-                    break;
-                default:
-                    handler.handle(Future.succeededFuture());
-                    break;
-            }
+//            switch (message.body().getString("func")) {
+//                case "openLock"://开门
+//                    if (message.body().getString("clientId").indexOf("gw:") >= 0
+//                            && Objects.nonNull(message.body().getValue("params"))
+//                            && message.body().getJsonObject("params").getString("optype").equals("unlock")
+//                            && Objects.nonNull(message.body().getValue("returnCode"))
+//                            && message.body().getString("returnCode").equals("200"))
+//                        lockService.openLock(message.body());
+//                    handler.handle(Future.succeededFuture());
+//                    break;
+//                default:
+//                    handler.handle(Future.succeededFuture());
+//                    break;
+//            }
         } else {
             handler.handle(Future.failedFuture("onRpcMessage func is null"));
         }

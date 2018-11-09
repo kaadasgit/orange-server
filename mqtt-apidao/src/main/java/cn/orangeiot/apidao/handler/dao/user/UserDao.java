@@ -606,7 +606,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void suggestMsg(Message<JsonObject> message) {
-        MongoClient.client.insert("kdsSuggest", message.body().put("time",LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
+        MongoClient.client.insert("kdsSuggest", message.body().put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
@@ -813,26 +813,15 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void uploadPushId(Message<JsonObject> message) {
         logger.info("==params -> " + message.body());
-        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
-            if (rs.failed()) {
-                logger.error(rs.cause().getMessage(), rs.cause());
-                message.reply(null);
-            } else {
-                if (Objects.nonNull(rs.result())) {
-                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO,
-                            new JsonObject(rs.result()).put("JPushId", message.body().getString("JPushId"))
-                                    .put("type", message.body().getInteger("type")).toString(),
-                            as -> {
-                                if (as.failed()) {
-                                    logger.error(as.cause().getMessage(), as.cause());
-                                    message.reply(null);
-                                } else {
-                                    message.reply(as.result());
-                                }
-                            });
-                }
-            }
-        });
+        RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_PUSH_ID,
+                new JsonObject().put("JPushId", message.body().getString("JPushId")).put("type", message.body().getInteger("type")).toString(), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs.cause());
+                        message.reply(null);
+                    } else {
+                        message.reply(new JsonObject());
+                    }
+                });
     }
 
     /**
@@ -844,17 +833,20 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void getPushId(Message<JsonObject> message) {
         logger.info("==params -> " + message.body());
-        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
-            if (rs.failed()) {
-                logger.error(rs.cause().getMessage(), rs.cause());
-                message.reply(null);
-            } else {
-                if (Objects.nonNull(rs.result()))
-                    message.reply(new JsonObject(rs.result()));
-                else
+        if (message.body().getValue("uid") != null)
+            RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_PUSH_ID, rs -> {
+                if (rs.failed()) {
+                    logger.error(rs.cause().getMessage(), rs.cause());
                     message.reply(null);
-            }
-        });
+                } else {
+                    if (Objects.nonNull(rs.result()))
+                        message.reply(new JsonObject(rs.result()));
+                    else
+                        message.reply(null);
+                }
+            });
+        else
+            message.reply(null);
     }
 
 }
