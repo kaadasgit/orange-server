@@ -547,7 +547,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
 
     public void publishMsg(PublishMessage publish, JsonObject rs) {
-        if (Objects.nonNull(rs)) {
+        if (Objects.nonNull(rs) && this.session != null) {
             String tempTopic = publish.getTopicName();
             QOSType qos = publish.getQos();
             if (Objects.nonNull(rs.getValue("topicName")))

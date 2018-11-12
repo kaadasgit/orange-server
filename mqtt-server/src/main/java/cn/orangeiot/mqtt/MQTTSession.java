@@ -311,9 +311,9 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
                     }
                 }
                 if (payloadIsEmpty) {
-                    storeManager.deleteRetainMessage(publishTenant, publishMessage.getTopicName());
+//                    storeManager.deleteRetainMessage(publishTenant, publishMessage.getTopicName());
                 } else {
-                    storeManager.saveRetainMessage(publishTenant, publishMessage);
+//                    storeManager.saveRetainMessage(publishTenant, publishMessage);
                 }
             }
 
@@ -427,7 +427,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     public long delayRetry(PublishMessage publishMessage) {
         long timerId = vertx.setTimer(2000, id -> {
             logger.debug("timer send -> {} , timeId -> {}", publishMessage.getTopicName(), id);
-            handlePublishMessageReceived(publishMessage);
+            if (this != null)
+                handlePublishMessageReceived(publishMessage);
         });
         return timerId;
     }
@@ -457,9 +458,9 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 //        });
         if (vertx != null) {
             long timeId;
-            if (retryFlag)
-                timeId = delayRetry(publishMessage);
-            else
+//            if (retryFlag)
+//                timeId = delayRetry(publishMessage);
+//            else
                 timeId = 0;
             logService.writeLog(publishMessage.getPayloadAsString(), publishMessage.getMessageID(), timeId,
                     QOSConvertUtils.toByte(publishMessage.getQos()), res -> {
@@ -676,7 +677,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
             AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
             publishMessage.setQos(qos);
             if (!cleanSession && iSentQos > 0) {
-                addMessageToQueue(publishMessage);
+//                addMessageToQueue(publishMessage);
             }
             sendPublishMessage(publishMessage);
         }
@@ -691,9 +692,11 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         // check if topic of published message pass at least one of the subscriptions
         for (Subscription c : subscriptions.values()) {
             String topicFilter = c.getTopicFilter();
-            boolean match = topicsManager.match(topic, topicFilter);
-            if (match) {
-                ret.add(c);
+            if (topicsManager != null) {
+                boolean match = topicsManager.match(topic, topicFilter);
+                if (match) {
+                    ret.add(c);
+                }
             }
         }
         matchingSubscriptionsCache.put(topic, ret);

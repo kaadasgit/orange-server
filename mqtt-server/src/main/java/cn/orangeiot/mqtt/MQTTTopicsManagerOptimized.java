@@ -1,5 +1,6 @@
 package cn.orangeiot.mqtt;
 
+
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -7,30 +8,6 @@ import java.util.regex.Pattern;
  * Created by giovanni on 10/05/2014. Manages subscritpions and MQTT topic rules
  */
 public class MQTTTopicsManagerOptimized implements ITopicsManager {
-    public static class SubscriptionTopic {
-        private String topic;
-        private Pattern regexPattern;
-
-        public SubscriptionTopic(String topic) {
-            this.topic = topic;
-        }
-
-        public Pattern getRegexPattern() {
-            return regexPattern;
-        }
-
-        public void setRegexPattern(Pattern regexPattern) {
-            this.regexPattern = regexPattern;
-        }
-
-        public String getTopic() {
-            return topic;
-        }
-
-        public void setTopic(String topic) {
-            this.topic = topic;
-        }
-    }
 
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
 

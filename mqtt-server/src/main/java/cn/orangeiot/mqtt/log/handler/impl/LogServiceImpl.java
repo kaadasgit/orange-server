@@ -439,31 +439,38 @@ public class LogServiceImpl implements LogService, MessageAddr {
     @Override
     public void consumLog(int msgId, Handler<AsyncResult<Long>> handler) {
         logger.debug("consum log , clientId -> {} , msgId -> {}", clientId, msgId);
-        indexFile.read(Buffer.buffer(9), 0, getOffsetAddr(msgId) + 10, 9, res -> {
-            if (res.failed()) {
-                handler.handle(Future.failedFuture(res.cause()));
-            } else {
-                byte valid = res.result().getByte(0);
-                long timerId = res.result().getLong(1);
-                if (valid == 0) {//有效消費,有可能是重發
-                    indexFile.write(Buffer.buffer(1).appendByte((byte) 1), getOffsetAddr(msgId) + 10, rs -> {
-                        if (rs.failed()) {
-                            handler.handle(Future.failedFuture(rs.cause()));
-                        } else {
-                            handler.handle(Future.succeededFuture(timerId));
-                            logger.debug("consum log gettimerId , clientId -> {} , msgId -> {} , timerId -> {} , noconsumCout -> {}"
-                                    , clientId, msgId, timerId, count.get());
-                            stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) (count.get() <= 0 ? 0 : count.decrementAndGet())), 0, writeRes -> {
-                                if (writeRes.failed())
-                                    logger.error(writeRes.cause().getMessage(), "consum stateFile fail , clientId -> " + clientId, writeRes);
-                            });
-                        }
-                    });
+        if (this.indexFile != null)
+            this.indexFile.read(Buffer.buffer(9), 0, getOffsetAddr(msgId) + 10, 9, res -> {
+                if (res.failed()) {
+                    handler.handle(Future.failedFuture(res.cause()));
                 } else {
-                    handler.handle(Future.succeededFuture(timerId));
+                    byte valid = res.result().getByte(0);
+                    long timerId = res.result().getLong(1);
+                    if (valid == 0) {//有效消費,有可能是重發
+                        if (this.indexFile != null)
+                            this.indexFile.write(Buffer.buffer(1).appendByte((byte) 1), getOffsetAddr(msgId) + 10, rs -> {
+                                if (rs.failed()) {
+                                    handler.handle(Future.failedFuture(rs.cause()));
+                                } else {
+                                    handler.handle(Future.succeededFuture(timerId));
+                                    logger.debug("consum log gettimerId , clientId -> {} , msgId -> {} , timerId -> {} , noconsumCout -> {}"
+                                            , clientId, msgId, timerId, count.get());
+                                    if (this.stateFile != null)
+                                        this.stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) (count.get() <= 0 ? 0 : count.decrementAndGet())), 0, writeRes -> {
+                                            if (writeRes.failed())
+                                                logger.error(writeRes.cause().getMessage(), "consum stateFile fail , clientId -> " + clientId, writeRes);
+                                        });
+                                }
+                            });
+                        else
+                            handler.handle(Future.succeededFuture(0L));
+                    } else {
+                        handler.handle(Future.succeededFuture(timerId));
+                    }
                 }
-            }
-        });
+            });
+        else
+            handler.handle(Future.succeededFuture(0L));
     }
 
 
