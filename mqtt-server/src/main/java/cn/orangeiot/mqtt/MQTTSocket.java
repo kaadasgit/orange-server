@@ -169,13 +169,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                             currentSession.release();//釋放資源
                             sessions.remove(connectedClientID, currentSession);
                             sessions.putIfAbsent(connectedClientID, session);
-                            sendMessageToClient(connAck);
                         }
+                        session.setState(true);//有效狀態
                         logFileUtils.remove(connectedClientID);//移除离线实例
                         sendMessageToClient(connAck);
                         PromMetrics.mqtt_sessions_total.inc();
                         if (!session.isCleanSession()) {
-                            session.sendAllMessagesFromQueue();
+//                            session.sendAllMessagesFromQueue();
                         }
                         AddheartIdle(connect);
                     } else {
@@ -401,7 +401,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
      * @version 1.0
      */
     private boolean checkConnected(MQTTSession session) {
-        if (Objects.nonNull(session)) {
+        if (Objects.nonNull(session) && session.isState()) {
             return true;
         } else {
             shutdown();

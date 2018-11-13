@@ -74,6 +74,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private String user_prefix;//用戶前綴
     private String gateway_prefix;//网关前綴
     private LogService logService;//log服务
+    private boolean state = false;//状态
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
@@ -105,6 +106,14 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.authenticatorAddress = config.getAuthenticatorAddress();
 
         this.queue = new LinkedList<>();
+    }
+
+    public boolean isState() {
+        return state;
+    }
+
+    public void setState(boolean state) {
+        this.state = state;
     }
 
     /**
@@ -461,7 +470,7 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 //            if (retryFlag)
 //                timeId = delayRetry(publishMessage);
 //            else
-                timeId = 0;
+            timeId = 0;
             logService.writeLog(publishMessage.getPayloadAsString(), publishMessage.getMessageID(), timeId,
                     QOSConvertUtils.toByte(publishMessage.getQos()), res -> {
                         if (res.failed()) {

@@ -218,17 +218,20 @@ public class LogServiceImpl implements LogService, MessageAddr {
      * @version 1.0
      */
     private void checkExistsOrCreateLog(Handler<AsyncResult<Boolean>> handler) {
-        this.fileSystem.exists(CLIENT_DIR, rs -> {
-            if (rs.failed()) {
-                handler.handle(Future.failedFuture(rs.cause().getMessage()));
-            } else {
-                if (!rs.result()) {//不存在
-                    mkdirAndLogFile(handler);
+        if (this.fileSystem != null)
+            this.fileSystem.exists(CLIENT_DIR, rs -> {
+                if (rs.failed()) {
+                    handler.handle(Future.failedFuture(rs.cause().getMessage()));
                 } else {
-                    loadCurrentInfo(handler);
+                    if (!rs.result()) {//不存在
+                        mkdirAndLogFile(handler);
+                    } else {
+                        loadCurrentInfo(handler);
+                    }
                 }
-            }
-        });
+            });
+        else
+            handler.handle(Future.failedFuture("fileSystem is null"));
     }
 
 
