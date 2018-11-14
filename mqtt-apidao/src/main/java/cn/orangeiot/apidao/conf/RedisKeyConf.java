@@ -23,6 +23,8 @@ public class RedisKeyConf {
 
     public final static String REGISTER_USER = "sipAcc:";//保存用户注册信息
 
+    public final static String SESSION_BRANCH = "branch:";//会话节点
+
     public final static String REGISTER_SIP_HEARTS = "sipheart:";//sip心跳包地址
 
     public final static String CALLIDADDR = "addr:callIdAddr";//保存用户注册信息

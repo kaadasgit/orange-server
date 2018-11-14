@@ -56,5 +56,11 @@ public interface UserAddr {
 
      String GET_CALL_ID="getCallIdAddr";//獲取用戶地址映射
 
+     String SAVE_SESSION_BRANCH="saveSessionBranch";//保存会话节点
+
+     String GET_SESSION_BRANCH="getSessionBranch";//获取会话节点
+
+     String REMOVE_SESSION_BRANCH="removeSessionBranch";//移除会话节点
+
      String GET_GW_ADMIN="getGatewayAdmin";//獲取網關管理員
 }

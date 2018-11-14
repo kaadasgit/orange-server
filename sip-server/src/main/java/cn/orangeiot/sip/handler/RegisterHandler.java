@@ -4,25 +4,21 @@ import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
 import gov.nist.javax.sip.address.SipUri;
-import gov.nist.javax.sip.header.Expires;
 import gov.nist.javax.sip.header.To;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.sip.address.Address;
+import javax.sip.address.SipURI;
 import javax.sip.address.URI;
 import javax.sip.header.ContactHeader;
-import javax.sip.header.HeaderFactory;
-import javax.sip.header.ToHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Response;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -55,6 +51,9 @@ public class RegisterHandler implements UserAddr {
         To to = (To) request.getHeader(To.NAME);
         Address toAddress = to.getAddress();
         URI toURI = toAddress.getURI();
+
+        SipURI uri = (SipURI) to.getAddress().getURI();
+        String uid = uri.getUser();
         ContactHeader contactHeader = (ContactHeader) request.getHeader("Contact");
         Address contactAddr = contactHeader.getAddress();
         SipUri contactURI = (SipUri) contactAddr.getURI();
@@ -69,9 +68,10 @@ public class RegisterHandler implements UserAddr {
 //            vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
 //                    new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
 //                            .put("expires", expires));
+            expires = expires > conf.getInteger("maxHeartIdleTime") ? conf.getInteger("maxHeartIdleTime") : expires;
             vertx.eventBus().send(UserAddr.class.getName() + SAVE_REGISTER_USER,
-                    new JsonObject().put("uri", toURI.toString()).put("socketAddress", socketAddress.toString())
-                            .put("expires", conf.getInteger("heartIdleTime")));
+                    new JsonObject().put("uri", uid).put("socketAddress", socketAddress.toString())
+                            .put("expires", expires));
             logger.debug("register user " + toURI);
         } else {
             flag = false;
@@ -87,9 +87,9 @@ public class RegisterHandler implements UserAddr {
             if (Objects.nonNull(request.getExpires()))
                 response.setExpires(request.getExpires());
             if (flag)
-                ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
+                ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions, uid);
             else
-                ResponseMsgUtil.sendMessageAndClean(vertx, toURI.toString(), response.toString(), sipOptions);
+                ResponseMsgUtil.sendMessageAndClean(vertx, toURI.toString(), response.toString(), sipOptions, uid);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
         }

@@ -263,6 +263,9 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(UserAddr.class.getName() + DEL_REGISTER_USER, registerDao::delRegisterInfo);
         vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_CALL_ID, registerDao::saveCallIdAddr);
         vertx.eventBus().consumer(UserAddr.class.getName() + GET_CALL_ID, registerDao::getCallIdAddr);
+        vertx.eventBus().consumer(UserAddr.class.getName() + SAVE_SESSION_BRANCH, registerDao::saveSessionBranch);
+        vertx.eventBus().consumer(UserAddr.class.getName() + GET_SESSION_BRANCH, registerDao::getSessionBranch);
+        vertx.eventBus().consumer(UserAddr.class.getName() + REMOVE_SESSION_BRANCH, registerDao::removeSessionBranch);
     }
 
 

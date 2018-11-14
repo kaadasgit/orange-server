@@ -1,11 +1,11 @@
 package cn.orangeiot.sip.handler;
 
 import cn.orangeiot.common.constant.NotifyConf;
+import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.sip.constant.SipOptions;
 import cn.orangeiot.sip.message.ResponseMsgUtil;
-import gov.nist.javax.sip.address.AddressImpl;
 import gov.nist.javax.sip.header.CallID;
 import gov.nist.javax.sip.header.To;
 import gov.nist.javax.sip.header.Via;
@@ -14,7 +14,6 @@ import gov.nist.javax.sip.message.SIPRequest;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.SocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +25,6 @@ import javax.sip.address.URI;
 import javax.sip.header.ContactHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
-import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.text.ParseException;
 import java.util.Objects;
@@ -67,7 +65,7 @@ public class InviteHandler implements UserAddr, MessageAddr {
     public void getPushIdAndProcessNotify(Vertx vertx, String uid, Handler<Boolean> handler) {
         if (uid == null || uid.length() < 1)
             handler.handle(false);
-        vertx.eventBus().send(MessageAddr.class.getName() + GET_PUSHID, new JsonObject().put("uid", uid), res -> {
+        vertx.eventBus().send(MessageAddr.class.getName() + GET_PUSHID, new JsonObject().put("uid", uid), SendOptions.getInstance(), res -> {
             if (res.failed()) {
                 logger.error(res.cause().getMessage(), res);
                 handler.handle(false);
@@ -90,9 +88,11 @@ public class InviteHandler implements UserAddr, MessageAddr {
     public void replySuccess(SIPRequest request, SipOptions sipOptions) {
         //回复100 Trying
         try {
+            SipURI uri = (SipURI) request.getFrom().getAddress().getURI();
+            String uid = uri.getUser();
             Response response = msgFactory.createResponse(Response.TRYING, request);
             ResponseMsgUtil.sendMessage(request.getFrom().getAddress().getURI().toString()
-                    , response.toString(), sipOptions);
+                    , response.toString(), sipOptions, uid);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
         }
@@ -164,7 +164,9 @@ public class InviteHandler implements UserAddr, MessageAddr {
         To to = (To) request.getHeader(To.NAME);
         Via via = (Via) request.getHeader(Via.NAME);
 
-        vertx.eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER, to.getAddress().getURI().toString(), rs -> {
+        SipURI uri = (SipURI) to.getAddress().getURI();
+        String uid = uri.getUser();
+        vertx.eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER, uid, SendOptions.getInstance(), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 notExistsUser(request, sipOptions);
@@ -178,14 +180,17 @@ public class InviteHandler implements UserAddr, MessageAddr {
 
                     SIPRequest newRequest = warpRequest(request, sipOptions, to, via);
 
-                    ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), newRequest.toString(), sipOptions);
+                    SipURI fromUri = (SipURI) newRequest.getFrom().getAddress().getURI();
+                    String fromUid = fromUri.getUser();
+
+                    ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), newRequest.toString(), sipOptions, uid);
 //            RePlayCallTime.callPeriodic(request.toString(), to.getAddress().getURI().toString());
 
-                    PorcessHandler.getBranchs().put(via.getBranch(), newRequest.getFrom().getAddress().getURI().toString());//加入會畫管理branch
-                    PorcessHandler.getTransactions().put(callID.getCallIdentifer().getLocalId(), via.getBranch());//加入會畫管理
+//                    PorcessHandler.getBranchs().put(via.getBranch(), fromUid);//加入會畫管理branch
+//                    PorcessHandler.getTransactions().put(callID.getCallIdentifer().getLocalId(), via.getBranch());//加入會畫管理
+                    vertx.eventBus().send(UserAddr.class.getName() + SAVE_SESSION_BRANCH, new JsonObject().put("branch"
+                            , callID.getCallIdentifer().toString()).put("uid", fromUid).put("expire", jsonObject.getInteger("branchExpire")));//加入會畫管理branch
                 } else {
-                    SipURI uri = (SipURI) to.getAddress().getURI();
-                    String uid = uri.getUser();
                     getPushIdAndProcessNotify(vertx, uid, flag -> {
                         if (!flag) {
                             notExistsUser(request, sipOptions);
@@ -212,9 +217,11 @@ public class InviteHandler implements UserAddr, MessageAddr {
     public void notExistsUser(SIPRequest request, SipOptions sipOptions) {
         //回复404 用户不存在
         try {
+            SipURI uri = (SipURI) request.getFrom().getAddress().getURI();
+            String uid = uri.getUser();
             Response response = msgFactory.createResponse(Response.NOT_FOUND, request);
             ResponseMsgUtil.sendMessage(request.getFrom().getAddress().getURI().toString()
-                    , response.toString(), sipOptions);
+                    , response.toString(), sipOptions, uid);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
         }

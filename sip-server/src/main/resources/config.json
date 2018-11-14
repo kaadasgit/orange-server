@@ -1,6 +1,6 @@
 {
   "port": 5061,
-  "host": "192.168.1.105",
+  "host": "192.168.1.100",
   "startHost": "0.0.0.0",
   "receBufferSize": 16384,
   "idleTimeout": 1200,
@@ -10,5 +10,7 @@
   "audioHost": "192.168.1.105",
   "videoPort": 7091,
   "videoHost": "192.168.1.105",
-  "heartIdleTime": 100
+  "heartIdleTime": 100,
+  "maxHeartIdleTime": 7200,
+  "branchExpire":1200
 }

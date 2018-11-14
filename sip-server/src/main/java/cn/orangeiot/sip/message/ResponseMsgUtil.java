@@ -38,14 +38,14 @@ public class ResponseMsgUtil implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public static void sendMessage(String username, String msg, SipOptions sipOptions) {
+    public static void sendMessage(String username, String msg, SipOptions sipOptions, String uid) {
         SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                     if (as.failed()) {
                         logger.error(as.cause().getMessage(), as.cause());
                     } else {
                         if (Objects.nonNull(as.result().body())) {
-                            logger.info("==ResponseMsgUtil==sendMessage send  username->\n" + username);
+                            logger.debug("==ResponseMsgUtil==sendMessage send  username->\n" + username);
                             logger.debug("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
                             if (sipOptions == SipOptions.UDP) {
                                 String[] address = as.result().body().split(":");
@@ -54,9 +54,9 @@ public class ResponseMsgUtil implements UserAddr {
                                     if (rs.failed()) {
                                         logger.error(rs.cause().getMessage(), rs.cause());
                                     } else {
-                                        logger.info("send success ->" + rs.succeeded());
+                                        logger.debug("send success ->" + rs.succeeded());
                                         if (rs.failed())
-                                            reSend(msg, username);
+                                            reSend(msg, username, uid);
                                     }
                                 });
                             } else {
@@ -80,14 +80,14 @@ public class ResponseMsgUtil implements UserAddr {
      * @date 18-7-5
      * @version 1.0
      */
-    public static void sendMessageAndClean(Vertx vertx, String username, String msg, SipOptions sipOptions) {
+    public static void sendMessageAndClean(Vertx vertx, String username, String msg, SipOptions sipOptions, String uid) {
         SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                     if (as.failed()) {
                         logger.error(as.cause().getMessage(), as.cause());
                     } else {
                         if (Objects.nonNull(as.result().body())) {
-                            logger.info("==ResponseMsgUtil==sendMessage send  username->\n" + username);
+                            logger.debug("==ResponseMsgUtil==sendMessage send  username->\n" + username);
                             logger.debug("==ResponseMsgUtil==sendMessage send  package->\n" + msg);
                             if (sipOptions == SipOptions.UDP) {
                                 String[] address = as.result().body().split(":");
@@ -97,12 +97,12 @@ public class ResponseMsgUtil implements UserAddr {
                                     if (rs.failed()) {
                                         logger.error(rs.cause().getMessage(), rs.cause());
                                     } else {
-                                        logger.info("send success ->" + rs.succeeded());
+                                        logger.debug("send success ->" + rs.succeeded());
                                         if (rs.failed())
-                                            reSendAndClean(vertx, msg, username);
+                                            reSendAndClean(vertx, msg, username, uid);
                                         else {
                                             vertx.eventBus().send(UserAddr.class.getName() + DEL_REGISTER_USER,
-                                                    new JsonObject().put("uri", username));
+                                                    new JsonObject().put("uri", uid));
                                             logger.warn("unregister user " + username);
                                         }
                                     }
@@ -130,12 +130,12 @@ public class ResponseMsgUtil implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public static void reSendAndClean(Vertx vertx, String msg, String username) {
+    public static void reSendAndClean(Vertx vertx, String msg, String username, String uid) {
         // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                    username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                    uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
                             logger.error(as.cause().getMessage(), as.cause());
                         } else {
@@ -154,7 +154,7 @@ public class ResponseMsgUtil implements UserAddr {
                                         SipVertxFactory.getVertx().cancelTimer(rs);//取消周期定时
                                         vertx.eventBus().send(UserAddr.class.getName() + DEL_REGISTER_USER,
                                                 new JsonObject().put("uri", username));
-                                        logger.info("unregister user " + username);
+                                        logger.debug("unregister user " + username);
                                     }
                                 });
                             }
@@ -171,13 +171,13 @@ public class ResponseMsgUtil implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public static void reSend(String msg, String username) {
+    public static void reSend(String msg, String username, String uid) {
         logger.debug("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
         // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                    username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                    uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
                             logger.error(as.cause().getMessage(), as.cause());
                         } else {

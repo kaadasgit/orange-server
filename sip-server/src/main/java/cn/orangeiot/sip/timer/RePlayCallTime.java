@@ -31,13 +31,13 @@ public class RePlayCallTime implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public static void callPeriodic(String msg, String username) {
+    public static void callPeriodic(String msg, String username,String uid) {
         logger.debug("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
         // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                    username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                    uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
                             logger.error(as.cause().getMessage(), as.cause());
                         } else {

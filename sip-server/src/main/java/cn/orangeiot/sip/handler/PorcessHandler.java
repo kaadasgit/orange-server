@@ -10,6 +10,7 @@ import gov.nist.javax.sip.header.*;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sip.InvalidArgumentException;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
+import javax.sip.address.SipURI;
 import javax.sip.address.URI;
 import javax.sip.header.*;
 import javax.sip.message.MessageFactory;
@@ -43,10 +45,6 @@ public class PorcessHandler implements UserAddr {
     private final InviteHandler inviteHandler;
 
     private final ResponseHandler responseHandler;
-
-    private static Map<String, String> branchs = new HashMap<>();//保存会话branch
-
-    private static Map<String, String> transactions = new HashMap<>();//保存會畫
 
     private MessageFactory msgFactory;
 
@@ -72,27 +70,6 @@ public class PorcessHandler implements UserAddr {
 
 
     /**
-     * @Description 獲取會畫事務
-     * @author zhang bo
-     * @date 18-2-2
-     * @version 1.0
-     */
-    public static Map<String, String> getTransactions() {
-        return transactions;
-    }
-
-
-    /**
-     * @Description 获取会话branch
-     * @author zhang bo
-     * @date 18-2-28
-     * @version 1.0
-     */
-    public static Map<String, String> getBranchs() {
-        return branchs;
-    }
-
-    /**
      * 服务处理tcp
      */
     public void processTcp(NetSocket netSocket) {
@@ -102,7 +79,7 @@ public class PorcessHandler implements UserAddr {
             logger.debug("SERVER body(string):\n " + new String(buffer.getBytes()));
 
             // 消息协议解析
-            MsgParserDecode.parseSIPMessage(buffer.getBytes(), true, false, rs -> {
+            MsgParserDecode.parseSIPMessage(buffer, true, false, rs -> {
                 if (rs.failed()) {//不是sip标准协议
                     logger.error(rs.cause().getMessage(), rs.cause());
                     netSocket.close();
@@ -150,7 +127,7 @@ public class PorcessHandler implements UserAddr {
         logger.debug("SERVER body(string):\n " + new String(datagramPacket.data().getBytes()));
 
         // 消息协议解析
-        MsgParserDecode.parseSIPMessage(datagramPacket.data().getBytes(), true, false, rs -> {
+        MsgParserDecode.parseSIPMessage(datagramPacket.data(), true, false, rs -> {
             if (rs.failed()) {//不是sip标准协议
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
@@ -160,7 +137,7 @@ public class PorcessHandler implements UserAddr {
                     else
                         redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
 
-                    heartbeatProcess(datagramPacket);
+//                    heartbeatProcess(datagramPacket);
                 } else {//心跳包
                     heartbeatProcess(datagramPacket);
                 }
@@ -174,10 +151,17 @@ public class PorcessHandler implements UserAddr {
      * @date 18-9-11
      * @version 1.0
      */
-    public void heartbeatProcess(DatagramPacket datagramPacket){
-        vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
-                new JsonObject().put("socketAddress", datagramPacket.sender().toString())
-                        .put("expires", jsonObject.getInteger("heartIdleTime")));
+    public void heartbeatProcess(DatagramPacket datagramPacket) {
+        Buffer buffer = datagramPacket.data();
+        if (buffer.length() > 7) {
+            int heartIdleTime = buffer.getInt(2);
+            String uid = new String(buffer.getBytes(6, buffer.length()));
+            heartIdleTime = heartIdleTime > jsonObject.getInteger("maxHeartIdleTime") ? jsonObject.getInteger("maxHeartIdleTime") : heartIdleTime;
+            vertx.eventBus().send(UserAddr.class.getName() + HEARTBEAT_REGISTER_USER,
+                    new JsonObject().put("uri", uid)
+                            .put("expires", heartIdleTime));
+
+        }
     }
 
 
@@ -188,7 +172,8 @@ public class PorcessHandler implements UserAddr {
      * @version 1.0
      */
 
-    public void redirectSwitch(SIPRequest sipMessage, NetSocket netSocket, SipOptions sipOptions, SocketAddress socketAddress) {
+    public void redirectSwitch(SIPRequest sipMessage, NetSocket netSocket, SipOptions sipOptions, SocketAddress
+            socketAddress) {
         if (!Objects.nonNull(sipMessage)) {
             logger.error("processRequest request is null.");
             return;
@@ -231,8 +216,13 @@ public class PorcessHandler implements UserAddr {
             // 发送CANCEL 200 OK消息
             To to = (To) request.getHeader(To.NAME);
             From from = (From) request.getHeader(From.NAME);
+            SipURI resUri = (SipURI) to.getAddress().getURI();
+            String resUid = resUri.getUser();
+
+            SipURI requUri = (SipURI) from.getAddress().getURI();
+            String reqUuid = requUri.getUser();
             Response response = msgFactory.createResponse(Response.OK, request);
-            ResponseMsgUtil.sendMessage(from.getAddress().getURI().toString(), response.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(from.getAddress().getURI().toString(), response.toString(), sipOptions, reqUuid);
 
             // 向对端发送CANCEL消息
             Request cancelReq = null;
@@ -250,12 +240,13 @@ public class PorcessHandler implements UserAddr {
                     (ToHeader) request.getHeader(ToHeader.NAME),
                     list,
                     (MaxForwardsHeader) request.getHeader(MaxForwardsHeader.NAME));
-            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), cancelReq.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), cancelReq.toString(), sipOptions, resUid);
 
             //回收废数据
             CallID callID = (CallID) request.getHeader(CallID.NAME);
-            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
-            transactions.remove(callID.getCallIdentifer().toString());
+//            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
+//            transactions.remove(callID.getCallIdentifer().toString());
+            vertx.eventBus().send(UserAddr.class.getName() + REMOVE_SESSION_BRANCH, callID.getCallIdentifer().toString());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -272,6 +263,8 @@ public class PorcessHandler implements UserAddr {
         Request byeReq = null;
         try {
             To to = (To) request.getHeader(To.NAME);
+            SipURI resUri = (SipURI) to.getAddress().getURI();
+            String resUid = resUri.getUser();
             byeReq = msgFactory.createRequest(request.toString());
             // 拷贝相应的消息体
             ContentLength contentLen = (ContentLength) request.getContentLength();
@@ -287,12 +280,13 @@ public class PorcessHandler implements UserAddr {
             } else {
                 logger.info("sdp is null");
             }
-            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), byeReq.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), byeReq.toString(), sipOptions, resUid);
 
             //回收废数据
             CallID callID = (CallID) request.getHeader(CallID.NAME);
-            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
-            transactions.remove(callID.getCallIdentifer().toString());
+//            branchs.remove(transactions.get(callID.getCallIdentifer().toString()));
+//            transactions.remove(callID.getCallIdentifer().toString());
+            vertx.eventBus().send(UserAddr.class.getName() + REMOVE_SESSION_BRANCH, callID.getCallIdentifer().toString());
         } catch (Exception e) {
             //  Auto-generated catch block
             logger.error(e.getMessage(), e);
@@ -309,6 +303,8 @@ public class PorcessHandler implements UserAddr {
     private void processSubscribe(Request request, SipOptions sipOptions) {
         try {
             ToHeader head = (ToHeader) request.getHeader(ToHeader.NAME);
+            SipURI resUri = (SipURI) head.getAddress().getURI();
+            String resUid = resUri.getUser();
             Address toAddress = head.getAddress();
             URI toURI = toAddress.getURI();
             Response response = null;
@@ -317,7 +313,7 @@ public class PorcessHandler implements UserAddr {
                 ExpiresHeader expireHeader = headerFactory.createExpiresHeader(30);
                 response.setExpires(expireHeader);
             }
-            ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(toURI.toString(), response.toString(), sipOptions, resUid);
 
         } catch (ParseException e) {
             //  Auto-generated catch block
@@ -336,7 +332,7 @@ public class PorcessHandler implements UserAddr {
      * @version 1.0
      */
     public void responseSwitch(SIPResponse response, SipOptions sipOptions, SocketAddress socketAddress) {
-        responseHandler.processResponse(response, sipOptions, socketAddress);
+        responseHandler.processResponse(response, sipOptions, socketAddress, vertx);
     }
 
 
@@ -351,6 +347,8 @@ public class PorcessHandler implements UserAddr {
             SIPRequest sipRequest = new SIPRequest();
             sipRequest.setMethod(Request.ACK);
             ToHeader head = (ToHeader) request.getHeader(ToHeader.NAME);
+            SipURI resUri = (SipURI) head.getAddress().getURI();
+            String resUid = resUri.getUser();
             Address toAddress = head.getAddress();
             URI toURI = toAddress.getURI();
             sipRequest.setRequestURI(toURI);
@@ -376,7 +374,7 @@ public class PorcessHandler implements UserAddr {
             sipRequest.setTo((To) request.getHeader(To.NAME));
             sipRequest.setMaxForwards((MaxForwards) request.getHeader(MaxForwards.NAME));
 
-            ResponseMsgUtil.sendMessage(toURI.toString(), sipRequest.toString(), sipOptions);
+            ResponseMsgUtil.sendMessage(toURI.toString(), sipRequest.toString(), sipOptions, resUid);
         } catch (Exception e) {
             //  Auto-generated catch block
             logger.error(e.getMessage(), e);

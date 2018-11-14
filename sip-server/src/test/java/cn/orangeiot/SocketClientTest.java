@@ -39,62 +39,21 @@ public class SocketClientTest {
 //            logger.error(e.getMessage(), e)();
 //        }
 
-        String sendStr = "INVITE sip:zwz222@192.168.1.100 SIP/2.0\n" +
-                "Via: SIP/2.0/UDP 192.168.1.100:52744;branch=z9hG4bK.pgb17jekJ;rport\n" +
-                "Via: SIP/2.0/UDP 192.168.1.100:52743;branch=z9hDFbK.erb17jekJ;rport\n" +
-                "From: <sip:18680369651@192.168.1.100>;tag=wbfj8Om30\n" +
-                "To: \"zwz222\" <sip:zwz222@192.168.1.100>\n" +
-                "CSeq: 20 INVITE\n" +
-                "Call-ID: assi2b5a24\n" +
+        String sendStr = "REGISTER sip:sip-kaadas.juziwulian.com SIP/2.0\r\n" +
+                "Via: SIP/2.0/UDP 192.168.1.100:56860;branch=z9hG4bK.wmiGgi3Jt;rport\n" +
+                "From: <sip:123@192.168.1.100>;tag=hZzBnIxXr\n" +
+                "To: sip:123@192.168.1.100\n" +
+                "CSeq: 20 REGISTER\n" +
+                "Call-ID: bDMChfDXg-\n" +
                 "Max-Forwards: 70\n" +
                 "Supported: replaces, outbound\n" +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO, UPDATE\n" +
-                "Content-Type: application/sdp\n" +
-                "Content-Length: 1363\n" +
-                "Contact: <sip:18680369651@192.168.1.102:54685;transport=udp>;+sip.instance=\"<urn:uuid:56300f5f-3a7e-45a1-b784-c68a7b8e51a8>\"\n" +
-                "User-Agent: Linphone_iPhone10.3_iOS11.2.6/3.16.5 (belle-sip/1.6.3)\n" +
-                "\n" +
-                "v=0\n" +
-                "o=18680369651 134 3691 IN IP4 192.168.1.102\n" +
-                "s=Talk\n" +
-                "c=IN IP4 192.168.1.102\n" +
-                "t=0 0\n" +
-                "a=ice-pwd:d4ac7a39ec4b0b2e1297ee1f\n" +
-                "a=ice-ufrag:76e745bb\n" +
-                "a=rtcp-xr:rcvr-rtt=all:10000 stat-summary=loss,dup,jitt,TTL voip-metrics\n" +
-                "m=audio 55244 RTP/AVP 96 97 98 0 8 18 101 99 100\n" +
-                "c=IN IP4 183.15.178.246\n" +
-                "a=rtpmap:96 opus/48000/2\n" +
-                "a=fmtp:96 useinbandfec=1\n" +
-                "a=rtpmap:97 speex/16000\n" +
-                "a=fmtp:97 vbr=on\n" +
-                "a=rtpmap:98 speex/8000\n" +
-                "a=fmtp:98 vbr=on\n" +
-                "a=fmtp:18 annexb=yes\n" +
-                "a=rtpmap:101 telephone-event/48000\n" +
-                "a=rtpmap:99 telephone-event/16000\n" +
-                "a=rtpmap:100 telephone-event/8000\n" +
-                "a=rtcp:55244\n" +
-                "a=candidate:1 1 UDP 2130706431 240.0.2.1 7216 typ host\n" +
-                "a=candidate:1 2 UDP 2130706430 240.0.2.1 7217 typ host\n" +
-                "a=candidate:2 1 UDP 1694498815 183.15.178.246 55244 typ srflx raddr 240.0.2.1 rport 7216\n" +
-                "a=candidate:2 2 UDP 1694498814 183.15.178.246 55244 typ srflx raddr 240.0.2.1 rport 7217\n" +
-                "a=rtcp-fb:* trr-int 5000\n" +
-                "a=rtcp-fb:* ccm tmmbr\n" +
-                "m=video 55244 RTP/AVP 96\n" +
-                "c=IN IP4 183.15.178.246\n" +
-                "a=rtpmap:96 H264/90000\n" +
-                "a=fmtp:96 profile-level-id=42801F\n" +
-                "a=rtcp:55244\n" +
-                "a=candidate:1 1 UDP 2130706431 240.0.2.1 9206 typ host\n" +
-                "a=candidate:1 2 UDP 2130706430 240.0.2.1 9207 typ host\n" +
-                "a=candidate:2 1 UDP 1694498815 183.15.178.246 55244 typ srflx raddr 240.0.2.1 rport 9206\n" +
-                "a=candidate:2 2 UDP 1694498814 183.15.178.246 55244 typ srflx raddr 240.0.2.1 rport 9207\n" +
-                "a=rtcp-fb:* trr-int 5000\n" +
-                "a=rtcp-fb:* ccm tmmbr\n" +
-                "a=rtcp-fb:96 nack pli\n" +
-                "a=rtcp-fb:96 H264/90000\n" +
-                "a=fmtp:96 profile-level-id=42801F";
+                "Accept: application/sdp\n" +
+                "Accept: text/plain\n" +
+                "Accept: application/vnd.gsma.rcs-ft-http+xml\n" +
+                "Contact: <sip:5bc08b9110fcbb5693b6de97@192.168.168.247:56860;transport=udp>;+sip.instance=\"<urn:uuid:5cc80786-6fc0-4f3d-90ab-c49a9cf79676>\"\n" +
+                "Expires: 10800\n" +
+                "User-Agent: 凯迪仕智能_iOS11.3.1/3.16-122-g79a8bb2 (belle-sip/1.6.3)\n" +
+                "\n";
 //        String netAddress = "192.168.1.100";
 //        final int PORT_NUM = 5061;
 //        DatagramSocket datagramSocket = null;
@@ -125,29 +84,60 @@ public class SocketClientTest {
 //            System.out.println(recePacket.getAddress());
 //            datagramSocket.close();
 
-
-
-        String sdp="REGISTER sip:192.168.1.100 SIP/2.0\n" +
-                "Via: SIP/2.0/UDP 172.16.1.101:37679;branch=z9hG4bK.KoW5ueigd;rport\n" +
-                "From: <sip:123@192.168.1.100>;tag=CJwpPNT8N\n" +
-                "To: sip:123@192.168.1.100\n" +
-                "CSeq: 20 REGISTER\n" +
-                "Call-ID: CBKjCjQqOU\n" +
+        String receSend = "INVITE sip:null@192.168.1.101:54420;transport=udp SIP/2.0\r\n" +
+                "From: <sip:null@192.168.1.100>;tag=VH6NLjo2Y\n" +
+                "To: <sip:123@192.168.1.100>\n" +
+                "CSeq: 20 INVITE\n" +
+                "Call-ID: btXBuXBgee\n" +
                 "Max-Forwards: 70\n" +
-                "Supported: replaces, outbound\n" +
-                "Accept: application/sdp\n" +
-                "Accept: text/plain\n" +
-                "Accept: application/vnd.gsma.rcs-ft-http+xml\n" +
-                "Contact: <sip:123@172.16.1.101:37679;transport=udp>;+sip.instance=\"<urn:uuid:e9dc736b-3e5e-4418-afbc-bf8211f86beb>\"\n" +
-                "Expires: 7200\n" +
-                "User-Agent: LinphoneAndroid/3.3.1 (belle-sip/1.6.3)";
+                "Supported: replaces,outbound\n" +
+                "Allow: INVITE,ACK,CANCEL,OPTIONS,BYE,REFER,NOTIFY,MESSAGE,SUBSCRIBE,INFO,UPDATE\n" +
+                "Content-Type: application/sdp\n" +
+                "User-Agent: LinphoneAndroid/3.3.1 (belle-sip/1.6.3)\n" +
+                "Contact: <sip:sipServer@192.168.1.105:5061>;expires=3600\n" +
+                "Via: SIP/2.0/UDP 192.168.1.101:54420;branch=z9hG4bK.1ALZzEepy;rport\n" +
+                "Content-Length: 492\n" +
+                "\n" +
+                "v=0\n" +
+                "o=null 216 711 IN IP4 192.168.1.101\n" +
+                "s=Talk\n" +
+                "c=IN IP4 192.168.1.101\n" +
+                "t=0 0\n" +
+                "a=rtcp-xr:rcvr-rtt=all:10000 stat-summary=loss,dup,jitt,TTL voip-metrics\n" +
+                "m=audio 7076 RTP/AVP 96 97 98 0 8 18 101 99 100\n" +
+                "a=rtpmap:96 opus/48000/2\n" +
+                "a=fmtp:96 useinbandfec=1\n" +
+                "a=rtpmap:97 speex/16000\n" +
+                "a=fmtp:97 vbr=on\n" +
+                "a=rtpmap:98 speex/8000\n" +
+                "a=fmtp:98 vbr=on\n" +
+                "a=fmtp:18 annexb=yes\n" +
+                "a=rtpmap:101 telephone-event/48000\n" +
+                "a=rtpmap:99 telephone-event/16000\n" +
+                "a=rtpmap:100 telephone-event/8000\n" +
+                "a=rtcp-fb:* ccm tmmbr";
+
+        String sdp = "\r\n\r\n";
 
         Vertx vertx = Vertx.vertx();
         DatagramSocket socket = vertx.createDatagramSocket(new DatagramSocketOptions());
-        Buffer buffer = Buffer.buffer(sdp);
+
+        Buffer buffer = Buffer.buffer(sendStr);
         socket.send(buffer, 5061, "127.0.0.1", asyncResult -> {
             System.out.println("Send succeeded? " + asyncResult.succeeded());
         });
+
+        Buffer bufferHeart = Buffer.buffer().appendByte((byte) 13).appendByte((byte) 10).appendInt(10800).appendString("123");
+        vertx.setPeriodic(30000, timeId -> {
+            socket.send(bufferHeart, 5061, "127.0.0.1", asyncResult -> {
+                System.out.println("Send succeeded? " + asyncResult.succeeded());
+            });
+        });
+
+        socket.handler(datagramPacket->{
+            System.out.println(new String(datagramPacket.data().toString()));
+        });
+
 
 //        } catch (SocketException e) {
 //            logger.error(e.getMessage(), e)();

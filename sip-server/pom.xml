@@ -91,6 +91,13 @@
             <artifactId>ice4j-fork</artifactId>
             <version>1.0+f.4</version>
         </dependency>
+
+        <!--緩存組件-->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+        </dependency>
     </dependencies>
 
 
