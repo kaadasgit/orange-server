@@ -256,6 +256,7 @@ public class FuncHandler {
 //                    handler.handle(Future.succeededFuture());
 //                    break;
 //            }
+            handler.handle(Future.succeededFuture());
         } else {
             handler.handle(Future.failedFuture("onRpcMessage func is null"));
         }
