@@ -102,17 +102,17 @@ public class PorcessHandler implements UserAddr {
         });
         //end
         netSocket.endHandler(socket -> {
-            logger.info("=====end====");
+            logger.debug("=====end====");
             netSocket.close();
         });
         //close
         netSocket.closeHandler(socket -> {
-            logger.info("=====close====");
+            logger.debug("=====close====");
             netSocket.close();
         });
         //exception
         netSocket.exceptionHandler(socket -> {
-            logger.info("=====exception====");
+            logger.debug("=====exception====");
             netSocket.close();
         });
     }

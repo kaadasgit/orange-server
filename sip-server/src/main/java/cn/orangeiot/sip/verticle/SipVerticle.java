@@ -59,6 +59,9 @@ public class SipVerticle extends AbstractVerticle {
                 JsonObject json = new JsonObject(zkConf);
                 jsonObject = new JsonObject(config);
 
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
+
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
