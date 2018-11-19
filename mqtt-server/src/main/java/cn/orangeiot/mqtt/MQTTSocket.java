@@ -159,25 +159,27 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 PromMetrics.mqtt_connect_total.labels(connectedClientID).inc();
                 this.session = new MQTTSession(vertx, config, netSocket, connectedClientID);
                 this.session.setPublishMessageHandler(this::sendMessageToClient);
-                this.session.handleConnectMessage(connect, authenticated -> {//验证
+                this.session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated.getBoolean("state")) {
                         connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
-                        MQTTSession currentSession = sessions.putIfAbsent(connectedClientID, this.session);
-                        if (Objects.nonNull(currentSession)) { //踢掉上個用戶
-                            currentSession.shutdown();
-                            currentSession.closeConnect();
-                            currentSession.release();//釋放資源
-                            sessions.remove(connectedClientID, currentSession);
-                            sessions.putIfAbsent(connectedClientID, session);
-                        }
-                        session.setState(true);//有效狀態
-                        logFileUtils.remove(connectedClientID);//移除离线实例
-                        sendMessageToClient(connAck);
-                        PromMetrics.mqtt_sessions_total.inc();
-                        if (!session.isCleanSession()) {
+                        if (checkConnected(this.session)) {
+                            MQTTSession currentSession = sessions.putIfAbsent(connectedClientID, this.session);
+                            this.session.setState(true);//有效狀態
+                            if (Objects.nonNull(currentSession)) { //踢掉上個用戶
+                                currentSession.shutdown();
+                                currentSession.closeConnect();
+                                currentSession.release();//釋放資源
+                                sessions.remove(connectedClientID, currentSession);
+                                sessions.putIfAbsent(connectedClientID, this.session);
+                            }
+                            logFileUtils.remove(connectedClientID);//移除离线实例
+                            sendMessageToClient(connAck);
+                            PromMetrics.mqtt_sessions_total.inc();
+                            if (!session.isCleanSession()) {
 //                            session.sendAllMessagesFromQueue();
+                            }
+                            AddheartIdle(connect);
                         }
-                        AddheartIdle(connect);
                     } else {
                         logger.warn("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
 //                        closeConnection();
@@ -369,7 +371,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         logger.debug("add idle state handle,msg ->{}", msg.getClientID());
 
         //移移除默認idle handler
-        chctx.pipeline().remove("idle");
+        if (this.chctx.pipeline().get("idle") != null) {
+            this.chctx.pipeline().remove("idle");
+        }
         int keepAlive = 0;
         // client端保活時間爲0,前置最大時間
         if (msg.getKeepAlive() != 0) {
@@ -405,6 +409,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             return true;
         } else {
             shutdown();
+            session.closeState();
+            session.release();
             this.netSocket.close();
             logger.warn("session is null , from message");
             return false;
