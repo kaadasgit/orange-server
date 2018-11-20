@@ -162,9 +162,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 this.session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated.getBoolean("state")) {
                         connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
+                        if (this.session != null) this.session.setState(true);//有效狀態
                         if (checkConnected(this.session)) {
                             MQTTSession currentSession = sessions.putIfAbsent(connectedClientID, this.session);
-                            this.session.setState(true);//有效狀態
                             if (Objects.nonNull(currentSession)) { //踢掉上個用戶
                                 currentSession.shutdown();
                                 currentSession.closeConnect();
