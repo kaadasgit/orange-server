@@ -138,9 +138,12 @@ public class LogServiceImpl implements LogService, MessageAddr {
 
                 if (currentIndexFile != null && currentLogFile != null && stateFile != null) {
                     //open 文件句柄
-                    this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    this.logFile = this.fileSystem.openBlocking(logFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    this.stateFile = this.fileSystem.openBlocking(STATEFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                    if (this.indexFile == null)
+                        this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                    if (this.logFile == null)
+                        this.logFile = this.fileSystem.openBlocking(logFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                    if (this.stateFile == null)
+                        this.stateFile = this.fileSystem.openBlocking(STATEFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 
                     this.currentSegmentposition = 0;
                     this.partition = 0;
@@ -167,11 +170,12 @@ public class LogServiceImpl implements LogService, MessageAddr {
      * @version 1.0
      */
     private void loadCurrentInfo(Handler<AsyncResult<Boolean>> handler) {
+
         String stateLogFile = CLIENT_DIR + "/" + clientId + STATE_SUFFIX;
 
         int stateSize = (int) new File(DIR_PATH + "/" + clientId + "/" + clientId + STATE_SUFFIX).length();
-
-        this.stateFile = this.fileSystem.openBlocking(stateLogFile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+        if (this.stateFile == null)
+            this.stateFile = this.fileSystem.openBlocking(stateLogFile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
         logger.debug("loadCurrentInfo params , clientId -> {} , position -> {}", clientId, stateSize);
 
         if (stateSize >= 6) {
@@ -187,8 +191,10 @@ public class LogServiceImpl implements LogService, MessageAddr {
 
                     this.currentSegmentposition = (int) new File(DIR_PATH + "/" + clientId + "/" + currentLogfile).length();
 
-                    this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                    if (this.indexFile == null)
+                        this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                    if (this.logFile == null)
+                        this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 
                     logger.debug("Msgcount , count -> {} , partition -> {}", count.get(), this.partition);
                     handler.handle(Future.succeededFuture(true));
