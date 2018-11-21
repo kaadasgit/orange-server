@@ -41,7 +41,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     private static Logger logger = LogManager.getLogger(MQTTSocket.class);
 
-    private final int DEFAULT_SENDMSG_TIMES = 5;//发送次数
+//    private final int DEFAULT_SENDMSG_TIMES = 5;//发送次数
 
     protected Vertx vertx;
     private MQTTDecoder decoder;
@@ -51,7 +51,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private ConfigParser config;
     private Map<String, MQTTSession> sessions;
     private NetSocket netSocket;
-    private int sendTimes;
+//    private int sendTimes;
     private final String USER_PREFIX = "app:";//用戶前綴
     private final String GATEWAY_PREFIX = "gw:";//网关前綴
     private final String GATEWAY_ON_OFF_STATE = "gatewayState";//網關狀態
@@ -70,7 +70,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.config = config;
         this.sessions = sessions;
         this.netSocket = netSocket;
-        this.sendTimes = DEFAULT_SENDMSG_TIMES;
+//        this.sendTimes = DEFAULT_SENDMSG_TIMES;
         this.chctx = soi.channelHandlerContext();
         this.timeout = timeout;
         this.logFileUtils = logFileUtils;
@@ -84,7 +84,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.vertx = vertx;
         this.config = config;
         this.sessions = sessions;
-        this.sendTimes = DEFAULT_SENDMSG_TIMES;
+//        this.sendTimes = DEFAULT_SENDMSG_TIMES;
         this.chctx = soi.channelHandlerContext();
         this.timeout = timeout;
     }
@@ -125,6 +125,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         } catch (Throwable ex) {
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", Bad error in processing the message", ex);
+            logger.debug("client send message  content,client -> {}, content -> {}",clientInfo,new String(token));
             closeConnection();
             if (this.session != null) {
                 this.session.closeState();
@@ -384,18 +385,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             keepAlive = this.timeout;
         }
         // 添加 channel pipeline idle handler
-        this.chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAlive, 0, 0));
-        this.chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
-            @Override
-            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                if (evt instanceof IdleStateEvent) {
-                    IdleStateEvent e = (IdleStateEvent) evt;
-                    if (e.state() == IdleState.READER_IDLE) {
-                        netSocket.close();
+        if (this.chctx != null && this.chctx.pipeline().get("handler") != null) {
+            this.chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAlive, 0, 0));
+            this.chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                    if (evt instanceof IdleStateEvent) {
+                        IdleStateEvent e = (IdleStateEvent) evt;
+                        if (e.state() == IdleState.READER_IDLE) {
+                            netSocket.close();
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     /**

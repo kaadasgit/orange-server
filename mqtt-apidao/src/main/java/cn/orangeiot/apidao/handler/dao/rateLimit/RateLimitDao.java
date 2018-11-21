@@ -22,6 +22,24 @@ public class RateLimitDao {
 
     private final long addValue = 1;//递增单位
 
+
+    /**
+     * @Description 递增值+1 和设置有效时间
+     * @author zhang bo
+     * @date 18-11-21
+     * @version 1.0
+     */
+    public void incrbyValAndExpire(Message<JsonObject> message) {
+        RedisClient.client.incrby(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), addValue, rs -> {
+            if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+            else
+                RedisClient.client.expire(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), message.body().getLong("time")
+                        , time -> {
+                            if (time.failed()) logger.error(time.cause().getMessage(), time);
+                        });
+        });
+    }
+
     /**
      * @param message params | uid 用户id
      * @Description rust请求 加
@@ -30,22 +48,16 @@ public class RateLimitDao {
      * @version 1.0
      */
     public void rustRequestAdd(Message<JsonObject> message) {
-        RedisClient.client.exists(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), exists -> {
-            if (exists.failed())
-                logger.error(exists.cause().getMessage(), exists.cause());
+        RedisClient.client.ttl(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), time -> {
+            if (time.failed())
+                logger.error(time.cause().getMessage(), time.cause());
             else {
-                if (exists.result() > 0) {//存在
-                    RedisClient.client.incrby(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), addValue, rs -> {
-                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
-                            });
-                }else{
+                if (time.result() < 3) {//key 不存在
+                    incrbyValAndExpire(message);
+                } else {
                     RedisClient.client.incrby(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), addValue, rs -> {
                         if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                     });
-                    RedisClient.client.expire(RedisKeyConf.RATE_LIMIT + message.body().getString("uid"), message.body().getLong("time")
-                            , time -> {
-                                if (time.failed()) logger.error(time.cause().getMessage(), time);
-                            });
                 }
             }
         });

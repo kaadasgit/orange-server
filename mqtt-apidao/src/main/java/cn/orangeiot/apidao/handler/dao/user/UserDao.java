@@ -359,6 +359,25 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
         });
     }
 
+    /**
+     * @Description 檢查用戶的ttl有效時間
+     * @author zhang bo
+     * @date 18-11-21
+     * @version 1.0
+     */
+    public void verifyUserTTl(String uid) {
+        RedisClient.client.ttl(RedisKeyConf.RATE_LIMIT + uid, time -> {
+            if (time.failed())
+                logger.error(time.cause().getMessage(), time.cause());
+            else {
+                if (time.result() == -1) {// key 存在但没有设置剩余生存时间时
+                    RedisClient.client.del(RedisKeyConf.RATE_LIMIT + uid, rs -> {
+                        if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+                    });
+                }
+            }
+        });
+    }
 
     /**
      * @Description 检验密码
@@ -372,6 +391,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             String jwtStr = jwtAuth.generateToken(new JsonObject().put("_id", jsonObject.getString("_id"))
                     .put("username", jsonObject.getString("username")), new JWTOptions());//jwt加密
             String[] jwts = StringUtils.split(jwtStr, ".");
+            verifyUserTTl(jsonObject.getString("_id"));
+
             message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
                     .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
 
