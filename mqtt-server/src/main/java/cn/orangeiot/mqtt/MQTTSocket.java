@@ -51,7 +51,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private ConfigParser config;
     private Map<String, MQTTSession> sessions;
     private NetSocket netSocket;
-//    private int sendTimes;
+    //    private int sendTimes;
     private final String USER_PREFIX = "app:";//用戶前綴
     private final String GATEWAY_PREFIX = "gw:";//网关前綴
     private final String GATEWAY_ON_OFF_STATE = "gatewayState";//網關狀態
@@ -125,7 +125,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         } catch (Throwable ex) {
             String clientInfo = getClientInfo();
             logger.error(clientInfo + ", Bad error in processing the message", ex);
-            logger.debug("client send message  content,client -> {}, content -> {}",clientInfo,new String(token));
+            logger.debug("client send message  content,client -> {}, content -> {}", clientInfo, new String(token));
             closeConnection();
             if (this.session != null) {
                 this.session.closeState();
@@ -411,10 +411,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         if (Objects.nonNull(session) && session.isState()) {
             return true;
         } else {
-            shutdown();
             session.closeState();
             session.release();
-            this.netSocket.close();
+            shutdown();
+            if (this.netSocket != null)
+                this.netSocket.close();
             logger.warn("session is null , from message");
             return false;
         }

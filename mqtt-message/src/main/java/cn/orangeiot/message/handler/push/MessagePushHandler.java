@@ -77,7 +77,7 @@ public class MessagePushHandler implements MessageAddr {
                         .put("title", message.getString("title")) .put("extras",message.getJsonObject("extras")))
                 .put("options", new JsonObject().put("time_to_live", message.getInteger("time_to_live")));;//最大十天有效時間,单位second
 
-        logger.debug("request android uri /v3/push , header.Authorization -> {} , body -> {}"
+        logger.info("request android uri /v3/push , header.Authorization -> {} , body -> {}"
                 , jpush.getString("JPushId"), Authorization, params.toString());
         PushClient.androidClient.post("/v3/push")
                 .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
@@ -86,7 +86,7 @@ public class MessagePushHandler implements MessageAddr {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
-                        logger.debug("request android result url /v3/push , JPushId -> {} , result -> {}",
+                        logger.info("request android result url /v3/push , JPushId -> {} , result -> {}",
                                 jpush.getString("JPushId"), rs.result().body().toString());
                     }
                 });
@@ -103,7 +103,7 @@ public class MessagePushHandler implements MessageAddr {
         JsonObject params = new JsonObject().put("aps", new JsonObject().put("alert", new JsonObject().put("body", message.getString("content"))
                 .put("title", message.getString("title"))).put("sound", "default")).put("extras",message.getJsonObject("extras"));
         String uuid = UUID.randomUUID().toString();
-        logger.debug("request apple uri /3/device/{} , header.apns-id -> {} , body -> {}"
+        logger.info("request apple uri /3/device/{} , header.apns-id -> {} , body -> {}"
                 , jpush.getString("JPushId"), uuid, params.toString());
         PushClient.iosClient.post("/3/device/" + jpush.getString("JPushId"))
                 .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
@@ -114,7 +114,7 @@ public class MessagePushHandler implements MessageAddr {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
-                        logger.debug("request apple result status -> {} ,  header.apns-id -> {}", rs.result().statusCode(),
+                        logger.info("request apple result status -> {} ,  header.apns-id -> {}", rs.result().statusCode(),
                                 rs.result().getHeader("apns-id"));
                     }
                 });

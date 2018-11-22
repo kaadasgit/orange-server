@@ -138,11 +138,11 @@ public class LogServiceImpl implements LogService, MessageAddr {
 
                 if (currentIndexFile != null && currentLogFile != null && stateFile != null) {
                     //open 文件句柄
-                    if (this.indexFile == null)
+                    if (this.indexFile == null && this.fileSystem != null)
                         this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    if (this.logFile == null)
+                    if (this.logFile == null && this.fileSystem != null)
                         this.logFile = this.fileSystem.openBlocking(logFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    if (this.stateFile == null)
+                    if (this.stateFile == null && this.fileSystem != null)
                         this.stateFile = this.fileSystem.openBlocking(STATEFilePath, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 
                     this.currentSegmentposition = 0;
@@ -174,45 +174,51 @@ public class LogServiceImpl implements LogService, MessageAddr {
         String stateLogFile = CLIENT_DIR + "/" + clientId + STATE_SUFFIX;
 
         int stateSize = (int) new File(DIR_PATH + "/" + clientId + "/" + clientId + STATE_SUFFIX).length();
-        if (this.stateFile == null)
+        if (this.stateFile == null && this.fileSystem != null)
             this.stateFile = this.fileSystem.openBlocking(stateLogFile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
         logger.debug("loadCurrentInfo params , clientId -> {} , position -> {}", clientId, stateSize);
 
-        if (stateSize >= 6) {
-            stateFile.read(Buffer.buffer(4), 0, 2, 4, res -> {
-                if (res.failed()) {
-                    handler.handle(Future.failedFuture(res.cause()));
-                } else {
-                    this.partition = res.result().getShort(2);
-                    count = new AtomicInteger(res.result().getShort(0) & 0x0FFFF);
+        if (this.stateFile != null) {
+            if (stateSize >= 6) {
+                stateFile.read(Buffer.buffer(4), 0, 2, 4, res -> {
+                    if (res.failed()) {
+                        handler.handle(Future.failedFuture(res.cause()));
+                    } else {
+                        this.partition = res.result().getShort(2);
+                        count = new AtomicInteger(res.result().getShort(0) & 0x0FFFF);
 
-                    String currentLogfile = clientId + "-" + this.partition + LOG_SUFFIX;
-                    this.logFileName = currentLogfile.substring(0, currentLogfile.length() - 4);//获取名称
+                        String currentLogfile = clientId + "-" + this.partition + LOG_SUFFIX;
+                        this.logFileName = currentLogfile.substring(0, currentLogfile.length() - 4);//获取名称
 
-                    this.currentSegmentposition = (int) new File(DIR_PATH + "/" + clientId + "/" + currentLogfile).length();
+                        this.currentSegmentposition = (int) new File(DIR_PATH + "/" + clientId + "/" + currentLogfile).length();
 
-                    if (this.indexFile == null)
-                        this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-                    if (this.logFile == null)
-                        this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                        if (this.indexFile == null && this.fileSystem != null)
+                            this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                        if (this.logFile == null && this.fileSystem != null)
+                            this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 
-                    logger.debug("Msgcount , count -> {} , partition -> {}", count.get(), this.partition);
-                    handler.handle(Future.succeededFuture(true));
-                }
-            });
+                        logger.debug("Msgcount , count -> {} , partition -> {}", count.get(), this.partition);
+                        handler.handle(Future.succeededFuture(true));
+                    }
+                });
+            } else {
+                this.partition = 0;
+                count = new AtomicInteger(0);
+
+                String currentLogfile = clientId + "-" + this.partition + LOG_SUFFIX;
+                this.logFileName = currentLogfile.substring(0, currentLogfile.length() - 4);//获取名称
+
+                this.currentSegmentposition = (int) new File(DIR_PATH + "/" + clientId + "/" + currentLogfile).length();
+
+                if (this.indexFile == null && this.fileSystem != null)
+                    this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+                if (this.logFile == null && this.fileSystem != null)
+                    this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
+
+                handler.handle(Future.succeededFuture(true));
+            }
         } else {
-            this.partition = 0;
-            count = new AtomicInteger(0);
-
-            String currentLogfile = clientId + "-" + this.partition + LOG_SUFFIX;
-            this.logFileName = currentLogfile.substring(0, currentLogfile.length() - 4);//获取名称
-
-            this.currentSegmentposition = (int) new File(DIR_PATH + "/" + clientId + "/" + currentLogfile).length();
-
-            this.indexFile = this.fileSystem.openBlocking(INDEX_FILE_PATH, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-            this.logFile = this.fileSystem.openBlocking(CLIENT_DIR + "/" + currentLogfile, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
-
-            handler.handle(Future.succeededFuture(true));
+            handler.handle(Future.failedFuture("this stateFile is null , clientId -> " + this.clientId));
         }
     }
 
@@ -308,7 +314,8 @@ public class LogServiceImpl implements LogService, MessageAddr {
 
         if (currentLogFile != null) {
             //open 文件句柄
-            this.logFile.close();//释放pre一个文件句柄
+            if (this.logFile != null)
+                this.logFile.close();//释放pre一个文件句柄
             this.logFile = this.fileSystem.openBlocking(path, new OpenOptions().setAppend(true).setRead(true).setWrite(true));
 
             updateLogFile(this.logFileName + LOG_SUFFIX);
@@ -357,7 +364,7 @@ public class LogServiceImpl implements LogService, MessageAddr {
         //释放资源
         if (logsFileHandle != null && logsFileHandle.length > 0) {
             for (int i = 0; i < this.logsFileHandle.length; i++) {
-                if (this.logsFileHandle[i] != null && !close) {
+                if (this.logsFileHandle[i] != null) {
                     this.logsFileHandle[i].close();
                 }
             }
@@ -374,15 +381,15 @@ public class LogServiceImpl implements LogService, MessageAddr {
      */
     @Override
     public synchronized void release() {
-        if (this.logFile != null && !close) {
+        if (this.logFile != null) {
             this.logFile.close();
             this.logFile = null;
         }
-        if (this.indexFile != null && !close) {
+        if (this.indexFile != null) {
             this.indexFile.close();
             this.indexFile = null;
         }
-        if (this.stateFile != null && !close) {
+        if (this.stateFile != null) {
             this.stateFile.close();
             this.indexFile = null;
         }
@@ -416,28 +423,35 @@ public class LogServiceImpl implements LogService, MessageAddr {
                 if (ars.result()) {
                     //append log
                     int startOffset = this.currentSegmentposition;
-                    this.logFile.write(Buffer.buffer(bytes), this.currentSegmentposition, res -> {
-                        if (res.failed()) {
-                            handler.handle(Future.failedFuture(res.cause()));
-                        } else {
-                            this.currentSegmentposition += bytes.length;
-                            logger.debug("writelog result , clientId -> {} , startOffset -> {} , end Offset -> {} , msgId -> {} , position -> {} , partition -> {}"
-                                    , clientId, startOffset, this.currentSegmentposition, msgId, getOffsetAddr(msgId), this.partition);
-                            this.indexFile.write(Buffer.buffer(CAPACITY).appendShort((short) msgId).appendInt(startOffset).appendInt(this.currentSegmentposition)
-                                    .appendByte((byte) 0).appendLong(timerId).appendByte((byte) this.partition)
-                                    .appendLong(System.currentTimeMillis()).appendByte(qos), getOffsetAddr(msgId), rs -> {
-                                if (rs.failed()) {
-                                    handler.handle(Future.failedFuture(rs.cause()));
-                                } else {
-                                    handler.handle(Future.succeededFuture(ars.result()));
-                                    this.stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) (count.get() >= MAX_MSGID ? MAX_MSGID : count.incrementAndGet())), 0, writeRes -> {
-                                        if (writeRes.failed())
-                                            logger.error(writeRes.cause().getMessage(), "write stateFile fail , clientId -> " + clientId, writeRes);
+                    if (this.logFile != null)
+                        this.logFile.write(Buffer.buffer(bytes), this.currentSegmentposition, res -> {
+                            if (res.failed()) {
+                                handler.handle(Future.failedFuture(res.cause()));
+                            } else {
+                                this.currentSegmentposition += bytes.length;
+                                logger.debug("writelog result , clientId -> {} , startOffset -> {} , end Offset -> {} , msgId -> {} , position -> {} , partition -> {}"
+                                        , clientId, startOffset, this.currentSegmentposition, msgId, getOffsetAddr(msgId), this.partition);
+                                if (this.indexFile != null)
+                                    this.indexFile.write(Buffer.buffer(CAPACITY).appendShort((short) msgId).appendInt(startOffset).appendInt(this.currentSegmentposition)
+                                            .appendByte((byte) 0).appendLong(timerId).appendByte((byte) this.partition)
+                                            .appendLong(System.currentTimeMillis()).appendByte(qos), getOffsetAddr(msgId), rs -> {
+                                        if (rs.failed()) {
+                                            handler.handle(Future.failedFuture(rs.cause()));
+                                        } else {
+                                            handler.handle(Future.succeededFuture(ars.result()));
+                                            if (this.stateFile != null)
+                                                this.stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) (count.get() >= MAX_MSGID ? MAX_MSGID : count.incrementAndGet())), 0, writeRes -> {
+                                                    if (writeRes.failed())
+                                                        logger.error(writeRes.cause().getMessage(), "write stateFile fail , clientId -> " + clientId, writeRes);
+                                                });
+                                        }
                                     });
-                                }
-                            });
-                        }
-                    });
+                                else
+                                    handler.handle(Future.failedFuture("writeLog method this indexFile is null , clientId -> " + this.clientId));
+                            }
+                        });
+                    else
+                        handler.handle(Future.failedFuture("writeLog method this logFile is null , clientId -> " + this.clientId));
                 } else {//fail
                     handler.handle(Future.succeededFuture(ars.result()));
                 }
@@ -509,11 +523,12 @@ public class LogServiceImpl implements LogService, MessageAddr {
      * @version 1.0
      */
     private void cleanOfflineCount(int msgId) {
-        stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) 0), 0, res -> {
-            if (res.failed()) {
-                logger.error(res.cause().getMessage(), res);
-            }
-        });
+        if (this.stateFile != null)
+            stateFile.write(Buffer.buffer(4).appendShort((short) msgId).appendShort((short) 0), 0, res -> {
+                if (res.failed()) {
+                    logger.error(res.cause().getMessage(), res);
+                }
+            });
         closeFileHandle();
     }
 
@@ -592,59 +607,69 @@ public class LogServiceImpl implements LogService, MessageAddr {
                 this.closeFileHandle();
                 return;
             }
-            indexFile.read(Buffer.buffer(CAPACITY), 0, position, CAPACITY, index -> {
-                if (index.failed()) {
-                    logger.error(index.cause().getMessage(), index);
-                } else {
-                    int startOffset = index.result().getInt(2);
-                    int endOffset = index.result().getInt(6);
-                    int length = endOffset - startOffset;
-                    byte valid = index.result().getByte(10);
-                    long validtimestamp = index.result().getLong(20);
-                    byte currentPartition = index.result().getByte(19);
-                    if (valid == 0) {//有效
-                        if (System.currentTimeMillis() - validtimestamp > liveTimeStamp) {//判断消息是否在有效时间内
-                            endIndex.incrementAndGet();
-                            processFlag(endIndex, count, msgId, max);
-                            logger.debug("consumResidueMsg timeout, clientId -> {} , msgId -> {}", clientId, msgId);
-                        } else {
-                            AsyncFile tempAsyncFile;
-                            if ((tempAsyncFile = this.logsFileHandle[currentPartition]) != null) {
-                                tempAsyncFile.read(Buffer.buffer(length), 0, startOffset, length, result -> {
-                                    if (result.failed()) {
-                                        logger.error(result.cause().getMessage(), result);
-                                        closeFileHandle();
-                                        return;
-                                    } else {
-                                        logger.debug("consumResidueMsg result , payload -> {} ,  clientId -> {} ", result.result().toString(), clientId);
-
-                                        if (startOffset == 0 && endOffset == 0) {//本消息没有消费,跳过
-                                            processFlag(endIndex, count, msgId, max);
-                                        } else {
-                                            vertx.setTimer(150 + endIndex.get(), timeId -> {
-                                                if (isOfflineConsumState() && result.result().length() > 0) {
-                                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_STORAGE_MSG,
-                                                            new JsonObject(result.result().toString()), new DeliveryOptions().addHeader("msgId"
-                                                                    , String.valueOf(index.result().getShort(0) & 0x0FFFF))
-                                                                    .addHeader("topic", getTopic())
-                                                                    .addHeader("qos", String.valueOf(index.result().getByte(28)))
-                                                                    .addHeader("uid", clientId));
-                                                }
-                                            });
-                                            endIndex.incrementAndGet();
-                                            processFlag(endIndex, count, msgId, max);
-                                        }
-                                    }
-                                });
-                            } else {
-                                logger.error("get file handle fail ,clienId -> {} , index -> {}", clientId, partition);
-                            }
-                        }
+            if (indexFile != null)
+                indexFile.read(Buffer.buffer(CAPACITY), 0, position, CAPACITY, index -> {
+                    if (index.failed()) {
+                        logger.error(index.cause().getMessage(), index);
+                        return;
                     } else {
-                        residurCall(endIndex, count, msgId, max);
+                        int startOffset = index.result().getInt(2);
+                        int endOffset = index.result().getInt(6);
+                        int length = endOffset - startOffset;
+                        byte valid = index.result().getByte(10);
+                        long validtimestamp = index.result().getLong(20);
+                        byte currentPartition = index.result().getByte(19);
+                        if (valid == 0) {//有效
+                            if (System.currentTimeMillis() - validtimestamp > liveTimeStamp) {//判断消息是否在有效时间内
+                                endIndex.incrementAndGet();
+                                processFlag(endIndex, count, msgId, max);
+                                logger.debug("consumResidueMsg timeout, clientId -> {} , msgId -> {}", clientId, msgId);
+                            } else {
+                                AsyncFile tempAsyncFile;
+                                if (this.logsFileHandle != null && (tempAsyncFile = this.logsFileHandle[currentPartition]) != null) {
+                                    tempAsyncFile.read(Buffer.buffer(length), 0, startOffset, length, result -> {
+                                        if (result.failed()) {
+                                            logger.error(result.cause().getMessage(), result);
+                                            closeFileHandle();
+                                            return;
+                                        } else {
+                                            logger.debug("consumResidueMsg result , payload -> {} ,  clientId -> {} ", result.result().toString(), clientId);
+
+                                            if (startOffset == 0 && endOffset == 0) {//本消息没有消费,跳过
+                                                processFlag(endIndex, count, msgId, max);
+                                            } else {
+                                                if (vertx != null) {
+                                                    vertx.setTimer(150 + endIndex.get(), timeId -> {
+                                                        if (isOfflineConsumState() && result.result().length() > 0) {
+                                                            if (vertx != null)
+                                                                vertx.eventBus().send(MessageAddr.class.getName() + SEND_STORAGE_MSG,
+                                                                        new JsonObject(result.result().toString()), new DeliveryOptions().addHeader("msgId"
+                                                                                , String.valueOf(index.result().getShort(0) & 0x0FFFF))
+                                                                                .addHeader("topic", getTopic())
+                                                                                .addHeader("qos", String.valueOf(index.result().getByte(28)))
+                                                                                .addHeader("uid", clientId));
+                                                        }
+                                                    });
+                                                    endIndex.incrementAndGet();
+                                                    processFlag(endIndex, count, msgId, max);
+                                                } else {
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    logger.error("get file handle fail ,clienId -> {} , index -> {}", clientId, partition);
+                                    return;
+                                }
+                            }
+                        } else {
+                            residurCall(endIndex, count, msgId, max);
+                        }
                     }
-                }
-            });
+                });
+            else
+                return;
         } else {
             if (endIndex.get() != count)
                 cleanOfflineCount(msgId);
@@ -685,43 +710,46 @@ public class LogServiceImpl implements LogService, MessageAddr {
         int stateSize = (int) new File(DIR_PATH + "/" + clientId + "/" + clientId + STATE_SUFFIX).length();
 
         if (stateSize >= 6) {
-            vertx.executeBlocking(future -> {
-                stateFile.read(Buffer.buffer(4), 0, stateSize - 6, 4, res -> {
-                    if (res.failed()) {
-                        logger.error(res.cause().getMessage(), res);
-                    } else {
-                        int count = res.result().getShort(2) & 0x0FFFF;//未消費消息條數
-                        logger.debug("processOfflineMsg ,count -> {} , clientId -> {} ", count, clientId);
-                        if (count > 0) {//存在未消費消息
-                            getofflineLog();
-                            int msgId = res.result().getShort(0) & 0x0FFFF;
-                            AtomicInteger endIndex = new AtomicInteger(0);
-                            if (!isOfflineConsumState()) {
-                                this.closeFileHandle();
-                                return;
+            if (vertx != null)
+                vertx.executeBlocking(future -> {
+                    if (this.stateFile != null)
+                        stateFile.read(Buffer.buffer(4), 0, stateSize - 6, 4, res -> {
+                            if (res.failed()) {
+                                logger.error(res.cause().getMessage(), res);
+                            } else {
+                                int count = res.result().getShort(2) & 0x0FFFF;//未消費消息條數
+                                logger.debug("processOfflineMsg ,count -> {} , clientId -> {} ", count, clientId);
+                                if (count > 0) {//存在未消費消息
+                                    getofflineLog();
+                                    int msgId = res.result().getShort(0) & 0x0FFFF;
+                                    AtomicInteger endIndex = new AtomicInteger(0);
+                                    if (!isOfflineConsumState()) {
+                                        this.closeFileHandle();
+                                        return;
+                                    }
+                                    long position = getPrePoition(msgId);
+                                    if (position <= 0) {
+                                        cleanOfflineCount(msgId);
+                                        return;
+                                    }
+                                    consumResidueMsg(position, endIndex, count, msgId, count);
+                                }
                             }
-                            long position = getPrePoition(msgId);
-                            if (position <= 0) {
-                                cleanOfflineCount(msgId);
-                                return;
-                            }
-                            consumResidueMsg(position, endIndex, count, msgId, count);
-                        }
-                    }
-                });
-            }, false, null);
+                        });
+                }, false, null);
         }
     }
 
 
     @Override
     public void updateTimerId(int msgId, long timerId, Handler<AsyncResult<Boolean>> handler) {
-        indexFile.write(Buffer.buffer(8).appendLong(timerId), getOffsetAddr(msgId) + 11, rs -> {
-            if (rs.failed()) {
-                handler.handle(Future.failedFuture(rs.cause()));
-            } else {
-                handler.handle(Future.succeededFuture(true));
-            }
-        });
+        if (indexFile != null)
+            indexFile.write(Buffer.buffer(8).appendLong(timerId), getOffsetAddr(msgId) + 11, rs -> {
+                if (rs.failed()) {
+                    handler.handle(Future.failedFuture(rs.cause()));
+                } else {
+                    handler.handle(Future.succeededFuture(true));
+                }
+            });
     }
 }
