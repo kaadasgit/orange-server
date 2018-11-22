@@ -27,6 +27,8 @@ public class PushClient {
 
     public static io.vertx.ext.web.client.WebClient iosClient;
 
+    public static io.vertx.ext.web.client.WebClient iosVOIPClient;
+
     private static Logger logger = LogManager.getLogger(PushClient.class);
 
     /**
@@ -90,6 +92,56 @@ public class PushClient {
             if (!pushConf.equals("")) {
                 JsonObject json = new JsonObject(pushConf);
                 iosClient = io.vertx.ext.web.client.WebClient.create(vertx, new WebClientOptions()
+                        .setDefaultPort(json.getInteger("port")).setDefaultHost(host)
+                        .setVerifyHost(json.getBoolean("verifyHost")).setSsl(json.getBoolean("is_ssl"))
+                        .setTrustAll(json.getBoolean("trustAll"))
+                        .setProtocolVersion(HttpVersion.HTTP_2)
+                        .setUseAlpn(json.getBoolean("alpn"))
+                        .setMaxPoolSize(json.getInteger("maxPoolSize")).setConnectTimeout(json.getInteger("timeout"))
+                        .setPfxKeyCertOptions(new PfxOptions().setValue(buffer).setPassword(json.getString("cert_password")))
+                        .setIdleTimeout(json.getInteger("IdleTimeout")));
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (null != pushIn)
+                try {
+                    pushIn.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+        }
+    }
+
+
+
+    /**
+     * @Description 配置IOS push服务
+     * @author zhang bo
+     * @date 17-11-23
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void loadIOSVoipConf(Vertx vertx) {
+        InputStream pushIn = SMSClient.class.getResourceAsStream("/push.json");
+        String pushConf = "";//jdbc连接配置
+        Buffer buffer;
+        try {
+            InputStream jksIn;
+            String host = "";
+            if (System.getProperty("pushDev").equalsIgnoreCase("true")) {//推送生產
+                jksIn = PushClient.class.getResourceAsStream("/VoIP_dev.p12");
+                host = ConstantConf.PUSH_API;
+            } else {
+                jksIn = PushClient.class.getResourceAsStream("/VoIP_dev.p12");
+                host = ConstantConf.DEVELOP_API;
+            }
+            byte[] jksByte = IOUtils.toByteArray(jksIn);
+            buffer = Buffer.buffer().appendBytes(jksByte);
+            pushConf = IOUtils.toString(pushIn, "UTF-8");//获取配置
+            if (!pushConf.equals("")) {
+                JsonObject json = new JsonObject(pushConf);
+                iosVOIPClient = io.vertx.ext.web.client.WebClient.create(vertx, new WebClientOptions()
                         .setDefaultPort(json.getInteger("port")).setDefaultHost(host)
                         .setVerifyHost(json.getBoolean("verifyHost")).setSsl(json.getBoolean("is_ssl"))
                         .setTrustAll(json.getBoolean("trustAll"))

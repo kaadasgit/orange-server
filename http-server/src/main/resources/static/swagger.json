@@ -2772,6 +2772,10 @@
           "type": "string",
           "description": "設備唯一標識"
         },
+        "VoIPId": {
+          "type": "string",
+          "description": "VoIP設備唯一標識,不是必需"
+        },
         "type": {
           "type": "integer",
           "format": "int32",

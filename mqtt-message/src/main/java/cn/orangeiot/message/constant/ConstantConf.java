@@ -10,9 +10,11 @@ public interface ConstantConf {
 
      String AUTH_PRE = "Basic ";
 
-     String APNS_TOPIC="com.kaidishi.lock";
+     String APNS_TOPIC="com.kaidishi.lock";//push通知
 
-     String DEVELOP_API="api.development.push.apple.com";//开发环境
+     String APNS_TOPIC_VOIP="com.kaidishi.lock.voip";//VIOP通话
+
+     String DEVELOP_API="api.sandbox.push.apple.com";//开发环境
 
      String PUSH_API="api.push.apple.com";//正式环境
 }

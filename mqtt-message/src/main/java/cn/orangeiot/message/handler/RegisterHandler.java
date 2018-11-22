@@ -72,6 +72,7 @@ public class RegisterHandler implements EventbusAddr {
             PushClient pushClient = new PushClient();
             pushClient.loadAndroidConf(vertx);
             pushClient.loadIOSConf(vertx);
+            pushClient.loadIOSVoipConf(vertx);
             //注册kafkaclient
 //            KafkaClient kafkaClient=new KafkaClient();
 //            kafkaClient.kafkaProducerConf(vertx);
@@ -100,6 +101,7 @@ public class RegisterHandler implements EventbusAddr {
             try {
                 MessagePushHandler messagePushHandler = new MessagePushHandler(config, vertx);
                 vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, messagePushHandler::sendPushNotify);
+                vertx.eventBus().consumer(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, messagePushHandler::sendPushSoundNotify);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }

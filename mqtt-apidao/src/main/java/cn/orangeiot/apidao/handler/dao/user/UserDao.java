@@ -834,8 +834,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void uploadPushId(Message<JsonObject> message) {
         logger.info("==params -> " + message.body());
+        JsonObject params = new JsonObject().put("JPushId", message.body().getString("JPushId")).put("type", message.body().getInteger("type"));
+        if (message.body().getValue("VoIPId") != null)
+            params.put("VoIPId", message.body().getString("VoIPId"));
         RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_PUSH_ID,
-                new JsonObject().put("JPushId", message.body().getString("JPushId")).put("type", message.body().getInteger("type")).toString(), rs -> {
+                params.toString(), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs.cause());
                         message.reply(null);

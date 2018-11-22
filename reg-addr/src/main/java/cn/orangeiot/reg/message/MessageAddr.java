@@ -36,6 +36,8 @@ public interface MessageAddr {
 
     String SEND_APPLICATION_NOTIFY = "sendAppNotify";//發送應用通知
 
+    String SEND_APPLICATION_SOUND_NOTIFY = "sendAppSoundNotify";//發送音响通知
+
     String GET_PUSHID = "getPushId";//获取应用id
 
     String KICK_OUT = "kickOut";//踢出

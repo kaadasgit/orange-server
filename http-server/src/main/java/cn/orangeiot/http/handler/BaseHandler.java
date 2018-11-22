@@ -247,7 +247,7 @@ public class BaseHandler implements UserAddr, RateLimitAddr {
             } else if (res.result()) {
                 limitUser(routingContext, result);
             } else {
-                routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
+                routingContext.response().setStatusCode(StatusCode.SUCCESSS);
                 result.setErrorMessage(ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue());
                 routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
                         .end(JsonObject.mapFrom(result).toString());

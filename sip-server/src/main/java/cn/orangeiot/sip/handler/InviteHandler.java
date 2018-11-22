@@ -195,7 +195,7 @@ public class InviteHandler implements UserAddr, MessageAddr {
                         if (!flag) {
                             notExistsUser(request, sipOptions);
                         } else {
-                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, new JsonObject().put("uid", uid)
+                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
                                     .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
                                             .put("func", "catEyeCall").put("data", warpRequest(request, sipOptions, to, via).toString()))
                                     .put("time_to_live", 30));

@@ -133,7 +133,7 @@ public class FileHandler implements EventbusAddr {
                 } else {
                     logger.warn("upload Images params fail: uid -> {} , filecount -> {}"
                             , routingContext.request().formAttributes().get("uid"), routingContext.fileUploads().size());
-                    routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
+                    routingContext.response().setStatusCode(StatusCode.SUCCESSS);
                     routingContext.response().end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
                             ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
                     )).toString());
@@ -160,7 +160,7 @@ public class FileHandler implements EventbusAddr {
                                 routingContext.put("uid", rs.result().headers().get("uid"));
                                 handler.handle(Future.succeededFuture(rs.result().body()));
                             } else {
-                                routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
+                                routingContext.response().setStatusCode(StatusCode.SUCCESSS);
                                 routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
                                         , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
                                         ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
@@ -170,7 +170,7 @@ public class FileHandler implements EventbusAddr {
                     });
         } else {
             logger.warn("Images checked token is null");
-            routingContext.response().setStatusCode(StatusCode.UNAUTHORIZED);
+            routingContext.response().setStatusCode(StatusCode.SUCCESSS);
             routingContext.response().putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey()
                     , HttpAttrType.CONTENT_TYPE_JSON.getValue()).end(JsonObject.mapFrom(new Result<String>().setErrorMessage(
                     ErrorType.RESULT_LOGIN_NO.getKey(), ErrorType.RESULT_LOGIN_NO.getValue()
