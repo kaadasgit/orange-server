@@ -88,9 +88,6 @@ public class LogServiceImpl implements LogService, MessageAddr {
 
     private final short MAX_PARTITION = 10;//最大的分区数
 
-    private boolean close;
-
-
     /**
      * @param dirPath       數據存放目錄
      * @param vertx         实例
@@ -370,7 +367,6 @@ public class LogServiceImpl implements LogService, MessageAddr {
             }
         }
         this.logsFileHandle = null;
-        close = true;
     }
 
     /**

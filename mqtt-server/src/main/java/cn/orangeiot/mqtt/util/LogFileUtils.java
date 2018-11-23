@@ -27,18 +27,22 @@ public class LogFileUtils {
 
     private static Logger logger = LogManager.getLogger(LogFileUtils.class);
 
-    ConcurrentLinkedHashMap<String, LogService> map = new ConcurrentLinkedHashMap.Builder<String, LogService>()
-            .maximumWeightedCapacity(10000).weigher(Weighers.singleton()).build();//LRU 存储离线打log集合
+    private final int DEFAULT_MAP_CAPACITY = 10000;//默认的map 容量
 
-    private final String dirPath;
+    private int capacity;
 
-    private final int segmentSize;
+    private final String dirPath;//log 目錄
+
+    private final int segmentSize;//分段大小
 
     private Vertx vertx;
 
-    private final long DEFAULT_TIMERID = 0L;
+    private final long DEFAULT_TIMERID = 0L;//默認的timeid
 
-    private final long liveTimeStamp;
+    private final long liveTimeStamp;//存活時間
+
+    private ConcurrentLinkedHashMap<String, LogService> map;//LRU 存储离线打log集合
+
 
     /**
      * @param dirPath     數據存放目錄
@@ -54,7 +58,48 @@ public class LogFileUtils {
         this.segmentSize = segmentSize;
         this.vertx = vertx;
         this.liveTimeStamp = liveTimeStamp;
+
+        try {
+            loadcapacity();
+        } catch (NumberFormatException e) {
+            logger.fatal("ConcurrentLinkedHashMap is capacity fail ,", e);
+            System.exit(1);
+        }
+        map = new ConcurrentLinkedHashMap.Builder<String, LogService>()
+                .maximumWeightedCapacity(capacity).weigher(Weighers.singleton()).listener(this::listenerMapExpire).build();
     }
+
+
+    /**
+     * @Description 加載離線log實例的容量
+     * @author zhang bo
+     * @date 18-11-23
+     * @version 1.0
+     */
+    public void loadcapacity() throws NumberFormatException {
+        if (System.getProperty("MAPCAPACITY") != null) {
+            capacity = Integer.parseInt(System.getProperty("MAPCAPACITY"));
+        } else {
+            capacity = DEFAULT_MAP_CAPACITY;
+        }
+    }
+
+
+    /**
+     * @param key map key
+     * @param val map val
+     * @Description 處理 ConcurrentLinkedHashMap 過期,清除資源問題
+     * @author zhang bo
+     * @date 18-11-23
+     * @version 1.0
+     */
+    private void listenerMapExpire(String key, LogService val) {
+        if (val != null)
+            val.release();
+        else
+            logger.warn("listenerMapExpire val is null , key -> {}", key);
+    }
+
 
     /**
      * @Description 移除實例
@@ -69,21 +114,6 @@ public class LogFileUtils {
                 logService.release();
             }
             map.remove(clientId);
-        }
-    }
-
-    /**
-     * @Description 移除實例
-     * @author zhang bo
-     * @date 18-11-5
-     * @version 1.0
-     */
-    public void remove(String clientId, LogService logService) {
-        if (clientId != null) {
-            if (logService != null) {
-                logService.release();
-            }
-            map.remove(clientId, logService);
         }
     }
 

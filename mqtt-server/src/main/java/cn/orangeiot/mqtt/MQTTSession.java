@@ -75,6 +75,9 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
     private String gateway_prefix;//网关前綴
     private LogService logService;//log服务
     private boolean state = false;//状态
+    private String dirPath;//log dir path
+    private int segmentSize;//分段的大小
+    private long liveTimeStamp;//message有效时间
 
     public static Map<String, Subscription> suscribeMap = new ConcurrentHashMap<>();
 
@@ -82,11 +85,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
     public MQTTSession(Vertx vertx, ConfigParser config, NetSocket netSocket, String clientID) {
         this.vertx = vertx;
-        this.decoder = new MQTTDecoder();
-        this.encoder = new MQTTEncoder();
         this.securityEnabled = config.isSecurityEnabled();
         this.retainSupport = config.isRetainSupport();
-        this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
         this.publish = config.getPublish();
         this.netSocket = netSocket;
@@ -94,7 +94,25 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
         this.clientID = clientID;
         this.user_prefix = config.getUser_prefix();
         this.gateway_prefix = config.getGateway_prefix();
-        logService = new LogServiceImpl(config.getDirPath(), vertx, clientID, config.getSegmentSize(), config.getExpireTime());
+        this.segmentSize = config.getSegmentSize();
+        this.dirPath = config.getDirPath();
+        this.liveTimeStamp = config.getExpireTime();
+        this.authenticatorAddress = config.getAuthenticatorAddress();
+    }
+
+
+    /**
+     * @Description 创建使用init实例
+     * @author zhang bo
+     * @date 18-11-23
+     * @version 1.0
+     */
+    public void createInitProcessInstance() {
+        this.subscriptions = new LinkedHashMap<>();
+        this.decoder = new MQTTDecoder();
+        this.encoder = new MQTTEncoder();
+
+        this.logService = new LogServiceImpl(dirPath, vertx, clientID, segmentSize, liveTimeStamp);
 
         PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<String, List<Subscription>>
                 expirePeriod = new PassiveExpiringMap.ConstantTimeToLiveExpirationPolicy<>(
@@ -103,10 +121,10 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
 
         this.topicsManager = new MQTTTopicsManagerOptimized();
         this.storeManager = new StoreManager(this.vertx);
-        this.authenticatorAddress = config.getAuthenticatorAddress();
 
         this.queue = new LinkedList<>();
     }
+
 
     public boolean isState() {
         return state;
