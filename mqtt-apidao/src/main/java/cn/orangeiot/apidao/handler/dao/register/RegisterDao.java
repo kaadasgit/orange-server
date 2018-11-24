@@ -139,7 +139,7 @@ public class RegisterDao {
      * @version 1.0
      */
     public void saveSessionBranch(Message<JsonObject> message) {
-        RedisClient.client.set(RedisKeyConf.SESSION_BRANCH + message.body().getString("branch"), message.body().getString("uid"), rs -> {
+        RedisClient.client.hset(RedisKeyConf.SESSION_BRANCH + message.body().getString("branch"), RedisKeyConf.SIP_VAL_UID, message.body().getString("uid"), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
@@ -161,7 +161,7 @@ public class RegisterDao {
      */
     @SuppressWarnings("Duplicates")
     public void getSessionBranch(Message<String> message) {
-        RedisClient.client.get(RedisKeyConf.SESSION_BRANCH + message.body(), rs -> {
+        RedisClient.client.hget(RedisKeyConf.SESSION_BRANCH + message.body(), RedisKeyConf.SIP_VAL_UID, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
                 message.reply(null);

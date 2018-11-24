@@ -228,6 +228,7 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(UserAddr.class.getName() + GET_GW_ADMIN, userDao::selectGWAdmin);
         vertx.eventBus().consumer(UserAddr.class.getName() + UPLOAD_JPUSHID, userDao::uploadPushId);
         vertx.eventBus().consumer(MessageAddr.class.getName() + GET_PUSHID, userDao::getPushId);
+        vertx.eventBus().consumer(MessageAddr.class.getName() + BRANCH_SEND_TIMES, userDao::branchSendRecord);
     }
 
 

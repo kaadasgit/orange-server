@@ -40,5 +40,7 @@ public interface MessageAddr {
 
     String GET_PUSHID = "getPushId";//获取应用id
 
+    String BRANCH_SEND_TIMES = "branchSendRecord";//send branch 记录
+
     String KICK_OUT = "kickOut";//踢出
 }

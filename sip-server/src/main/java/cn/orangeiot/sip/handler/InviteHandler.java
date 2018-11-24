@@ -11,8 +11,10 @@ import gov.nist.javax.sip.header.To;
 import gov.nist.javax.sip.header.Via;
 import gov.nist.javax.sip.header.ViaList;
 import gov.nist.javax.sip.message.SIPRequest;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -166,6 +168,18 @@ public class InviteHandler implements UserAddr, MessageAddr {
 
         SipURI uri = (SipURI) to.getAddress().getURI();
         String uid = uri.getUser();
+
+        //转发对应客户端
+        CallID callID = (CallID) request.getHeader(CallID.NAME);
+
+        SIPRequest newRequest = warpRequest(request, sipOptions, to, via);
+
+        SipURI fromUri = (SipURI) newRequest.getFrom().getAddress().getURI();
+        String fromUid = fromUri.getUser();
+
+        vertx.eventBus().send(UserAddr.class.getName() + SAVE_SESSION_BRANCH, new JsonObject().put("branch"
+                , callID.getCallIdentifer().toString()).put("uid", fromUid).put("expire", jsonObject.getInteger("branchExpire")));//加入會畫管理branch
+
         vertx.eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER, uid, SendOptions.getInstance(), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
@@ -175,31 +189,26 @@ public class InviteHandler implements UserAddr, MessageAddr {
                     //回复100 Trying
                     replySuccess(request, sipOptions);
 
-                    //转发对应客户端
-                    CallID callID = (CallID) request.getHeader(CallID.NAME);
-
-                    SIPRequest newRequest = warpRequest(request, sipOptions, to, via);
-
-                    SipURI fromUri = (SipURI) newRequest.getFrom().getAddress().getURI();
-                    String fromUid = fromUri.getUser();
-
                     ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), newRequest.toString(), sipOptions, uid);
-//            RePlayCallTime.callPeriodic(request.toString(), to.getAddress().getURI().toString());
-
-//                    PorcessHandler.getBranchs().put(via.getBranch(), fromUid);//加入會畫管理branch
-//                    PorcessHandler.getTransactions().put(callID.getCallIdentifer().getLocalId(), via.getBranch());//加入會畫管理
-                    vertx.eventBus().send(UserAddr.class.getName() + SAVE_SESSION_BRANCH, new JsonObject().put("branch"
-                            , callID.getCallIdentifer().toString()).put("uid", fromUid).put("expire", jsonObject.getInteger("branchExpire")));//加入會畫管理branch
                 } else {
                     getPushIdAndProcessNotify(vertx, uid, flag -> {
                         if (!flag) {
                             notExistsUser(request, sipOptions);
                         } else {
-                            vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
-                                    .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
-                                            .put("func", "catEyeCall").put("data", warpRequest(request, sipOptions, to, via).toString()))
-                                    .put("time_to_live", 30));
-                            replySuccess(request, sipOptions);
+                            vertx.eventBus().send(MessageAddr.class.getName() + BRANCH_SEND_TIMES,  callID.getCallIdentifer().toString(), SendOptions.getInstance(), (AsyncResult<Message<Long>> times) -> {
+                                if (times.failed()) {
+                                    logger.error(times.cause());
+                                } else {
+                                    if (times.result() != null && times.result().body() != null && times.result().body() == 1) {
+                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
+                                                .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
+                                                        .put("func", "catEyeCall").put("data", warpRequest(request, sipOptions, to, via).toString()))
+                                                .put("time_to_live", 30));
+                                        replySuccess(request, sipOptions);
+                                    }
+                                }
+                            });
+
                         }
                     });
                 }

@@ -873,4 +873,26 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             message.reply(null);
     }
 
+    /**
+     * @Description 发送branch记录
+     * @author zhang bo
+     * @date 18-5-4
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void branchSendRecord(Message<JsonObject> message) {
+        RedisClient.client.hsetnx(RedisKeyConf.SESSION_BRANCH + message.body(), RedisKeyConf.SIP_VAL_COUNT, "", rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
+                message.reply(null);
+            } else {
+                if (Objects.nonNull(rs.result())) {
+                    message.reply(rs.result());
+                } else {
+                    message.reply(null);
+                }
+            }
+        });
+    }
+
 }

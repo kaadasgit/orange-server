@@ -44,4 +44,8 @@ public class RedisKeyConf {
     public final static String USER_PUSH_ID = "pushId";//應用推送唯一標識
 
     public final static String USER_VAL_OLDTOKEN = "oldToken";//old token
+
+    public final static String SIP_VAL_UID = "sipUid";//sipuid字段
+
+    public final static String SIP_VAL_COUNT = "count";//count字段
 }

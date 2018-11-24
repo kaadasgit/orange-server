@@ -8,7 +8,7 @@ package cn.orangeiot.common.constant;
  */
 public interface NotifyConf {
 
-    String ALRAM_OPENLOCK_TITLE = "胁迫密码开门";//胁迫密码標題
+    String ALRAM_OPENLOCK_TITLE = "胁迫开门";//胁迫密码標題
 
     String ALRAM_OPENLOCK_CONTERNT = "deviceId门锁已开启";//脅迫密碼內容
 
