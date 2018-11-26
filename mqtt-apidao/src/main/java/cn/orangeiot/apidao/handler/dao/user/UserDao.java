@@ -881,18 +881,30 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void branchSendRecord(Message<JsonObject> message) {
-        RedisClient.client.hsetnx(RedisKeyConf.SESSION_BRANCH + message.body(), RedisKeyConf.SIP_VAL_COUNT, "", rs -> {
-            if (rs.failed()) {
-                logger.error(rs.cause().getMessage(), rs.cause());
-                message.reply(null);
-            } else {
-                if (Objects.nonNull(rs.result())) {
-                    message.reply(rs.result());
-                } else {
+        if (message.body().getValue("callId") != null && message.body().getValue("deviceId") != null) {
+            RedisClient.client.hsetnx(RedisKeyConf.SESSION_BRANCH + message.body().getString("callId"), RedisKeyConf.SIP_VAL_COUNT, "", rs -> {
+                if (rs.failed()) {
+                    logger.error(rs.cause().getMessage(), rs.cause());
                     message.reply(null);
+                } else {
+                    if (Objects.nonNull(rs.result()) && rs.result() == 1) {
+                        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceList.deviceId", message.body().getString("deviceId"))
+                                , new JsonObject().put("_id", 0).put("deviceSN", 1), ars -> {
+                                    if (ars.failed()) {
+                                        logger.error(rs.cause().getMessage(), rs.cause());
+                                        message.reply(null);
+                                    } else {
+                                        message.reply(ars.result());
+                                    }
+                                });
+                    } else {
+                        message.reply(null);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            message.reply(null);
+        }
     }
 
 }

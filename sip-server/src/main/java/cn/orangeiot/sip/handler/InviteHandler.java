@@ -195,14 +195,15 @@ public class InviteHandler implements UserAddr, MessageAddr {
                         if (!flag) {
                             notExistsUser(request, sipOptions);
                         } else {
-                            vertx.eventBus().send(MessageAddr.class.getName() + BRANCH_SEND_TIMES,  callID.getCallIdentifer().toString(), SendOptions.getInstance(), (AsyncResult<Message<Long>> times) -> {
+                            vertx.eventBus().send(MessageAddr.class.getName() + BRANCH_SEND_TIMES, new JsonObject().put("callId", callID.getCallIdentifer().toString())
+                                    .put("deviceId", fromUid), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> times) -> {
                                 if (times.failed()) {
                                     logger.error(times.cause());
                                 } else {
-                                    if (times.result() != null && times.result().body() != null && times.result().body() == 1) {
+                                    if (times.result() != null && times.result().body() != null) {
                                         vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
                                                 .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
-                                                        .put("func", "catEyeCall").put("data", warpRequest(request, sipOptions, to, via).toString()))
+                                                        .put("func", "catEyeCall").put("gwId", times.result().body().getString("deviceSN")).put("deviceId", fromUid))
                                                 .put("time_to_live", 30));
                                         replySuccess(request, sipOptions);
                                     }
