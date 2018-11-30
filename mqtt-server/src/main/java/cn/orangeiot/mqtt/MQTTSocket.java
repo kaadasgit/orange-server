@@ -188,7 +188,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     } else {
                         logger.warn("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
 //                        closeConnection();
-                        if (Objects.nonNull(authenticated.getString("header"))) {
+                        if (Objects.nonNull(authenticated.getValue("header"))) {
                             connAck.setReturnCode(ConnAckMessage.NOT_AUTHORIZED);
                             sendMessageToClient(connAck);
                         } else {

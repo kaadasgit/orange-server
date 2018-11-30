@@ -759,7 +759,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     public void createPartitionLog(Handler<AsyncResult<Boolean>> handler) {
-        logService.createPartitionLog(handler);
+        if (this.logService != null)
+            this.logService.createPartitionLog(handler);
     }
 
 
@@ -770,7 +771,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     public void consumLog(int msgId, Handler<AsyncResult<Long>> handler) {
-        logService.consumLog(msgId, handler);
+        if (this.logService != null)
+            this.logService.consumLog(msgId, handler);
     }
 
 
@@ -781,7 +783,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     public void processOfflineLog() {
-        logService.processOfflineMsg();
+        if (this.logService != null)
+            this.logService.processOfflineMsg();
     }
 
 
@@ -792,7 +795,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     public void release() {
-        logService.release();
+        if (this.logService != null)
+            this.logService.release();
     }
 
 
@@ -803,7 +807,8 @@ public class MQTTSession implements Handler<Message<Buffer>>, EventbusAddr {
      * @version 1.0
      */
     public void closeState() {
-        logService.closeState();
+        if (this.logService != null)
+            this.logService.closeState();
     }
 
 
