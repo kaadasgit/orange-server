@@ -889,14 +889,14 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 } else {
                     if (Objects.nonNull(rs.result()) && rs.result() == 1) {
                         MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceList.deviceId", message.body().getString("deviceId"))
-                                , new JsonObject().put("_id", 0).put("deviceSN", 1), ars -> {
-                                    if (ars.failed()) {
-                                        logger.error(rs.cause().getMessage(), rs.cause());
-                                        message.reply(null);
-                                    } else {
-                                        message.reply(ars.result());
-                                    }
-                                });
+                                .put("deviceList.event_str", "online"), new JsonObject().put("_id", 0).put("deviceSN", 1), ars -> {
+                            if (ars.failed()) {
+                                logger.error(rs.cause().getMessage(), rs.cause());
+                                message.reply(null);
+                            } else {
+                                message.reply(ars.result());
+                            }
+                        });
                     } else {
                         message.reply(null);
                     }
