@@ -203,7 +203,8 @@ public class InviteHandler implements UserAddr, MessageAddr {
                                     if (times.result() != null && times.result().body() != null) {
                                         vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
                                                 .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
-                                                        .put("func", "catEyeCall").put("gwId", times.result().body().getString("deviceSN")).put("deviceId", fromUid))
+                                                        .put("func", "catEyeCall").put("gwId", times.result().body().getString("deviceSN")).put("deviceId", fromUid)
+                                                        .put("data", newRequest.toString()))
                                                 .put("time_to_live", 30));
                                         replySuccess(request, sipOptions);
                                     }
