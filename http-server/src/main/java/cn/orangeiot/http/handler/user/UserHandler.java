@@ -96,7 +96,8 @@ public class UserHandler implements EventbusAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result()
+                eventBus.send("test", asyncResult.result()
+//                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result()
                                 .put("loginIP", routingContext.request().remoteAddress().toString()), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
