@@ -4,7 +4,7 @@
     <Appenders>
         <!--按天分日志文件-->
         <RollingFile name="serverLog" fileName="./logs/message.log"
-                     filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
+                     filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-message.log.gz">
             <PatternLayout
                     pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:10.29.67.209:45269/mqtt_message] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>
             <Policies>

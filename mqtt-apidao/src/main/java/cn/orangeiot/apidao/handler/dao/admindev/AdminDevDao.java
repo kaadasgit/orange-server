@@ -810,9 +810,14 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
      */
     public void uploadOpenLockList(Message<JsonObject> message) {
         JsonObject jsonObject = message.body();
+        if (jsonObject.getJsonArray("openLockList").size() <= 0) {
+            message.reply(new JsonObject());
+            return;
+        }
         RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + jsonObject.getString("user_id"), RedisKeyConf.USER_VAL_INFO, rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
+                message.reply(null);
             } else {
                 JsonObject userInfo = new JsonObject(rs.result());
                 String uname = userInfo.getString("username");
