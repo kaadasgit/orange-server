@@ -155,7 +155,7 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                         logger.error(ars.cause().getMessage(), ars);
                         message.reply(null);
                     } else {
-                        if (Objects.nonNull(ars.result().getValue("adminuid"))) {
+                        if (Objects.nonNull(ars.result()) && Objects.nonNull(ars.result().getValue("adminuid"))) {
                             message.reply(new JsonObject());
                             if (ars.result().getString("adminuid")
                                     .equals(jsonObject.getString("adminid"))) {//管理员删除设备
@@ -179,6 +179,8 @@ public class AdminDevDao implements AdminlockAddr, MessageAddr {
                                             if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                                         });
                             }
+                        }else{
+                            message.reply(null);
                         }
                     }
                 });
