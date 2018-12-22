@@ -85,7 +85,7 @@ public class DeviceHandler implements EventbusAddr {
             } else {
                 DeliveryOptions deliveryOptions = new DeliveryOptions().addHeader("uid"
                         , "gw:" + jsonObject.getString("gwId")).addHeader("messageId", headers.get("messageId")).addHeader("qos"
-                        ,headers.get("qos")).addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", jsonObject.getString("gwId")));
+                        , headers.get("qos")).addHeader("topic", MessageAddr.SEND_GATEWAY_REPLAY.replace("gwId", jsonObject.getString("gwId")));
 
                 vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG, jsonObject
                                 .put("returnCode", 200).put("returnData", rs.result().body())
@@ -128,7 +128,7 @@ public class DeviceHandler implements EventbusAddr {
                         vertx.eventBus().send(MessageAddr.class.getName() + SEND_UPGRADE_MSG
                                 , dataObject.put("returnCode", StatusCode.SERVER_ERROR), deliveryOptions);
                     } else {
-                        if (Objects.nonNull(rs.result().body())) {//数据是否存在
+                        if (Objects.nonNull(rs.result()) && rs.result().headers().get("mult") != null && Objects.nonNull(rs.result().body())) {//数据是否存在
                             //同步第三方信息
                             vertx.eventBus().send(MemenetAddr.class.getName() + RELIEVE_DEVICE_USER, rs.result().body()
                                             .put("uid", rs.result().body().getString("adminuid"))

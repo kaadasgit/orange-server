@@ -10,6 +10,8 @@ public interface MemenetAddr{
 
     String REGISTER_USER="registerUser";//MIMI用户注册
 
+    String REGISTER_USER_CALLBACK="registerUserCall";//MIMI用户注册回調
+
     String UPDATE_PWD="updatePwd";//MIMI用户密码修改
 
     String BIND_DEVICE_USER="bindDeviceByUser";//MIMI用户绑定设备

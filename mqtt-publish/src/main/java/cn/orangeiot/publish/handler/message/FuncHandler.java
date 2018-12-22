@@ -1,9 +1,6 @@
 package cn.orangeiot.publish.handler.message;
 
-import cn.orangeiot.publish.service.AdminLockService;
-import cn.orangeiot.publish.service.ApprovateService;
-import cn.orangeiot.publish.service.GatewayDeviceService;
-import cn.orangeiot.publish.service.LockService;
+import cn.orangeiot.publish.service.*;
 import cn.orangeiot.publish.service.impl.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -41,6 +38,8 @@ public class FuncHandler {
 
     private LockService lockService;
 
+    private MemeNetService memeNetService;
+
     public FuncHandler(Vertx vertx, JsonObject jsonObject) {
         this.vertx = vertx;
         this.jsonObject = jsonObject;
@@ -49,6 +48,7 @@ public class FuncHandler {
         approvateService = new ApprovateServiceImpl(vertx, jsonObject);
         userService = new UserServiceImpl(vertx, jsonObject);
         lockService = new LockServiceImpl(vertx, jsonObject);
+        memeNetService=new MemeNetSserviceImpl(vertx.eventBus());
     }
 
 
@@ -198,6 +198,15 @@ public class FuncHandler {
                 gatewaydeviceService.getGatewayByDeviceList(message.body(), rs -> {
                     handler.handle(rs);
                 });
+                break;
+            case "RegisterMemeAndBind"://注册米米网用户并且绑定
+                memeNetService.registerMemeAndBind(message.body(),handler);
+                break;
+            case "RegisterMeme"://注册米米网用户
+                memeNetService.registerMeme(message.body(),handler);
+                break;
+            case "bindMeme"://绑定米米网设备
+                memeNetService.bindMeme(message.body(),handler);
                 break;
             default:
                 handler.handle(Future.failedFuture("func resources not find "));

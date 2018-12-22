@@ -33,4 +33,6 @@ public interface ApiConf {
 
     String UPLOAD_DEVICE_TEST_INFO="/file/device/info/test";//上传设备测试信息
 
+    String UPLOAD_DEVICE_BIND="/upload/device/bind";//上傳設備預綁定 文檔
+
 }

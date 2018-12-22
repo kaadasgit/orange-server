@@ -659,26 +659,34 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      * @version 1.0
      */
     public void meMeUser(Message<JsonObject> message) {
-        //同步緩存
-        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, rs -> {
-            if (rs.failed()) {
-                logger.error(rs.cause().getMessage(), rs.cause());
-            } else {
-                if (Objects.nonNull(rs.result()))
-                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
-                            , new JsonObject(rs.result()).put("meUsername", message.body().getString("username"))
-                                    .put("mePwd", message.body().getString("password"))
-                                    .put("userid", message.body().getLong("userid")).toString(), as -> {
-                                if (as.failed()) logger.error(rs.cause().getMessage(), rs.cause());
-                            });
-            }
-        });
         //同步db
         MongoClient.client.updateCollectionWithOptions("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
                 , new JsonObject().put("$set", new JsonObject().put("meUsername", message.body().getString("username"))
                         .put("mePwd", message.body().getString("password")).put("userid", message.body().getLong("userid")))
-                , new UpdateOptions().setUpsert(true), rs -> {
+                , new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
+                    else
+                        //同步緩存
+                        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, res -> {
+                            if (res.failed()) {
+                                logger.error(res.cause().getMessage(), res.cause());
+                            } else {
+                                if (Objects.nonNull(res.result()))
+                                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
+                                            , new JsonObject(res.result()).put("meUsername", message.body().getString("username"))
+                                                    .put("mePwd", message.body().getString("password"))
+                                                    .put("userid", message.body().getLong("userid")).toString(), as -> {
+                                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                                            });
+                            }
+                        });
+                });
+
+        MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid", message.body().getString("uid"))
+                , new JsonObject().put("$set", new JsonObject().put("meUsername", message.body().getString("username")).put("mePwd",message.body().getString("password"))
+                .put("userid",message.body().getLong("userid")))
+                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
+                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
     }
 

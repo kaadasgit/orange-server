@@ -242,6 +242,39 @@ public class PublishDeviceHandler implements EventbusAddr {
     }
 
 
+
+    /**
+     * @Description 上傳設備預綁定
+     * @author zhang bo
+     * @date 18-1-26
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void uploadDeviceBind(RoutingContext routingContext) {
+        for (FileUpload f : routingContext.fileUploads()) {
+            Buffer fileByteBuffer = vertx.fileSystem().readFileBlocking(f.uploadedFileName());
+
+            try {
+                //解析数据集
+                JsonArray jsonArray = ExcelUtil.readExcelContent(new ByteArrayInputStream(fileByteBuffer.getBytes()));
+
+                vertx.eventBus().send(AdminlockAddr.class.getName() + UPDATE_PRE_BIND_DEVICE, jsonArray,
+                        new DeliveryOptions().setSendTimeout(30000), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                routingContext.response().end(JsonObject.mapFrom(
+                                        new Result<>().setData(rs.result().body())).toString());
+                            }
+                        });
+
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
+
     /**
      * @Description 获取mac写入结果
      * @author zhang bo

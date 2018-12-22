@@ -68,7 +68,8 @@ public enum ErrorType {
     MQTT_CONNECT_FAIL(407, "mqtt server connect fail"),
     MEMENET_USER_NO_REGISTER(414, "don't register user ,memenet"),
     DEVICE_NOT_FOUND(404, "device not found"),
-    REQUEST_COUNT_LOT(499, "too many requests");
+    REQUEST_COUNT_LOT(499, "too many requests"),
+    REGISTER_MEME_FAIL(711,"register memenet fail");
 
     private int key;
 

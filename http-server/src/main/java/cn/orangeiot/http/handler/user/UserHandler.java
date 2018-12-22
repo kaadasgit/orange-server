@@ -185,13 +185,15 @@ public class UserHandler implements EventbusAddr {
                     routingContext.fail(501);
                 } else {
                     if (Objects.nonNull(rs.result().body())) {
-                        String meUsername = UUIDUtils.getUUID();
-                        String mePassword = UUIDUtils.getUUID();
-                        result.setData(rs.result().body().put("meUsername", meUsername).put("mePassword", mePassword));
+//                        String meUsername = UUIDUtils.getUUID();
+//                        String mePassword = UUIDUtils.getUUID();
+//                        result.setData(rs.result().body().put("meUsername", meUsername).put("mePassword", mePassword));
+
+                        result.setData(rs.result().body());
                         routingContext.response().end(JsonObject.mapFrom(result).toString());
 
-                        eventBus.send(MemenetAddr.class.getName() + REGISTER_USER, new JsonObject().put("username", meUsername)
-                                .put("password", mePassword).put("uid", rs.result().body().getString("uid")), SendOptions.getInstance());//第三方数据同步
+//                        eventBus.send(MemenetAddr.class.getName() + REGISTER_USER, new JsonObject().put("username", meUsername)
+//                                .put("password", mePassword).put("uid", rs.result().body().getString("uid")), SendOptions.getInstance());//第三方数据同步
                     } else {
                         if (!rs.result().headers().isEmpty())
                             routingContext.response().end(JsonObject.mapFrom(

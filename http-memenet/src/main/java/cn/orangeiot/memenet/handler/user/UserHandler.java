@@ -35,14 +35,29 @@ public class UserHandler implements UserAddr {
         this.vertx = vertx;
     }
 
+
     /**
-     * @Description MIMI用户注册
+     * @param message 消息体
+     * @param state   注册状态
+     * @param flag    是否回复
+     * @Description 注册回调
      * @author zhang bo
-     * @date 17-12-28
+     * @date 18-12-20
      * @version 1.0
      */
-    @SuppressWarnings("Duplicates")
-    public void onRegisterUser(Message<JsonObject> message) {
+    public void callBackRegister(Message<JsonObject> message, boolean state, boolean flag) {
+        if (flag)
+            message.reply(state);
+    }
+
+    /**
+     * @param flag 是否回调
+     * @Description 注册米米网用户
+     * @author zhang bo
+     * @date 18-12-20
+     * @version 1.0
+     */
+    public void onRegisterUser0(Message<JsonObject> message, boolean flag) {
         logger.info("==UserHandler=onRegisterUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
         // sha256加密
@@ -50,6 +65,7 @@ public class UserHandler implements UserAddr {
             if (as.failed()) {
                 logger.error(as.cause().getMessage(), as);
                 logger.error("==UserHandler==onRegister Usersha256 encrypt is fail");
+                this.callBackRegister(message, false, flag);
             } else {
                 //注册用户请求
                 HttpClient.client.post("/v1/accsvr/accregister")
@@ -62,15 +78,42 @@ public class UserHandler implements UserAddr {
                             if (rs.failed()) {
                                 logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==UserHandler=onRegisterUser===request /v1/accsvr/accregister timeout");
+                                this.callBackRegister(message, false, flag);
                             } else {
                                 logger.info("==UserHandler=onRegisterUser===request /v1/accsvr/accregister result -> " + rs.result().body());
-                                if (rs.result().body().getInteger("result") == 0)
+                                if (rs.result().body().getInteger("result") == 0) {
                                     vertx.eventBus().send(UserAddr.class.getName() + MEME_USER, message.body()
                                             .put("userid", rs.result().body().getLong("userid")), SendOptions.getInstance());
+                                    this.callBackRegister(message, true, flag);
+                                } else {
+                                    this.callBackRegister(message, false, flag);
+                                }
                             }
                         });
             }
         });
+    }
+
+    /**
+     * @Description MIMI用户注册
+     * @author zhang bo
+     * @date 17-12-28
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void onRegisterUser(Message<JsonObject> message) {
+        this.onRegisterUser0(message, false);
+
+    }
+
+    /**
+     * @Description MIMI 用户注册 回调
+     * @author zhang bo
+     * @date 18-12-20
+     * @version 1.0
+     */
+    public void onRegisterUserCall(Message<JsonObject> message) {
+        this.onRegisterUser0(message, true);
     }
 
     /**

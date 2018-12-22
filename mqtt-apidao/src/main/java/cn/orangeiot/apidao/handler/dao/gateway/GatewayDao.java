@@ -114,13 +114,13 @@ public class GatewayDao implements GatewayAddr {
                         } else {
                             if (Objects.nonNull(userResult.result())) {
                                 JsonObject jsonObject = new JsonObject(userResult.result());
-                                MongoClient.client.save("kdsGatewayDeviceList", new JsonObject()
-                                        .put("deviceSN", message.body().getString("devuuid")).put("uid", jsonObject.getString("_id"))
+                                MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList",new JsonObject().put("deviceSN", message.body().getString("devuuid"))
+                                        ,new JsonObject().put("$set",new JsonObject().put("deviceSN", message.body().getString("devuuid")).put("uid", jsonObject.getString("_id"))
                                         .put("deviceNickName", message.body().getString("devuuid")).put("username", jsonObject.getString("username"))
                                         .put("userNickname", jsonObject.getString("username")).put("adminuid", jsonObject.getString("_id"))
                                         .put("adminName", jsonObject.getString("username")).put("adminNickname", jsonObject.getString("username")).put("isAdmin", 1)
-                                        .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                        .put("userid", jsonObject.getLong("userid")), rs -> {
+                                        .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))),
+                                        new UpdateOptions().setUpsert(true),rs -> {
                                     if (rs.failed())
                                         message.reply(null);
                                     else
@@ -214,8 +214,7 @@ public class GatewayDao implements GatewayAddr {
                                             .put("deviceNickName", message.body().getString("devuuid")).put("username", reqUser.getString("username"))
                                             .put("userNickname", reqUser.getString("nickName")).put("adminuid", adminUser.getString("_id"))
                                             .put("adminName", adminUser.getString("username")).put("adminNickname", adminUser.getString("nickName")).put("isAdmin", 2)
-                                            .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                            .put("userid", reqUser.getLong("userid")));
+                                            .put("bindTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
                             if (Objects.nonNull(ars.result())
                                     && Objects.nonNull(ars.result().getValue("deviceList")) && ars.result().getJsonArray("deviceList").size() > 0) {
                                 paramsObject.getJsonObject("$set").put("deviceList", ars.result().getJsonArray("deviceList"));
@@ -257,7 +256,8 @@ public class GatewayDao implements GatewayAddr {
     public void onGetGatewayBindList(Message<JsonObject> message) {
         MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid",
                 message.body().getString("uid")), new FindOptions().setFields(new JsonObject().put("deviceSN", 1)
-                .put("deviceNickName", 1).put("isAdmin", 1).put("adminuid",1).put("adminName",1).put("adminNickname",1)), rs -> {
+                .put("deviceNickName", 1).put("isAdmin", 1).put("adminuid", 1).put("adminName", 1).put("adminNickname", 1)
+        .put("meUsername",1).put("mePwd",1).put("_id",0).put("meBindState",1)), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
@@ -304,7 +304,17 @@ public class GatewayDao implements GatewayAddr {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
             } else {
-                message.reply(new JsonObject(rs.result()));
+                if (Objects.nonNull(rs.result()))
+                    message.reply(new JsonObject(rs.result()));
+                else
+                    MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid"))), new JsonObject(), res -> {
+                        if (res.failed()) {
+                            logger.error(res.cause().getMessage(), res);
+                            message.reply(null);
+                        } else {
+                            message.reply(res.result());
+                        }
+                    });
             }
         });
     }
@@ -318,25 +328,26 @@ public class GatewayDao implements GatewayAddr {
      */
     public void onupdateGWDomain(Message<JsonObject> message) {
         MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.body().getString("devicesn"))
-                , new JsonObject().put("$set", new JsonObject().put("domain", message.body().getString("domain")))
+                        .put("uid", message.body().getString("uid")), new JsonObject().put("$set", new JsonObject().put("domain", message.body().getString("domain"))
+                        .put("meBindState", 1))//綁定狀態 1 綁定成功,其餘失敗
                 , new UpdateOptions().setUpsert(false), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
 
-        if (Objects.nonNull(message.body().getValue("type"))) {//綁定網關失敗
-            if (StringUtils.isNotBlank(message.body().getString("userid")))
-                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
-                        .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
-                    if (rs.failed())
-                        logger.error(rs.cause().getMessage(), rs);
-                });
-            else
-                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
-                        .put("deviceSN", message.body().getString("devicesn")).put("uid", message.body().getString("uid")), rs -> {
-                    if (rs.failed())
-                        logger.error(rs.cause().getMessage(), rs);
-                });
-        }
+//        if (Objects.nonNull(message.body().getValue("type"))) {//綁定網關失敗
+//            if (StringUtils.isNotBlank(message.body().getString("userid")))
+//                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
+//                        .put("deviceSN", message.body().getString("devicesn")).put("userid", Long.parseLong(message.body().getString("userid"))), rs -> {
+//                    if (rs.failed())
+//                        logger.error(rs.cause().getMessage(), rs);
+//                });
+//            else
+//                MongoClient.client.removeDocument("kdsGatewayDeviceList", new JsonObject()
+//                        .put("deviceSN", message.body().getString("devicesn")).put("uid", message.body().getString("uid")), rs -> {
+//                    if (rs.failed())
+//                        logger.error(rs.cause().getMessage(), rs);
+//                });
+//        }
     }
 
 
@@ -495,7 +506,7 @@ public class GatewayDao implements GatewayAddr {
                                             logger.error(as.cause().getMessage(), as);
                                             message.reply(null);
                                         } else {
-                                            message.reply(as.result());
+                                            message.reply(rs.result());
                                         }
                                     });
                         } else {
@@ -895,7 +906,7 @@ public class GatewayDao implements GatewayAddr {
     @SuppressWarnings("Duplicates")
     public void updateDevNickName(Message<JsonObject> message) {
         MongoClient.client.updateCollection("kdsGatewayDeviceList", new JsonObject().put("deviceSN",
-                message.body().getString("devuuid")).put("uid",message.body().getString("uid")).put("deviceList.deviceId", new JsonObject()
+                message.body().getString("devuuid")).put("uid", message.body().getString("uid")).put("deviceList.deviceId", new JsonObject()
                         .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.nickName"
                         , message.body().getString("nickName"))), as -> {

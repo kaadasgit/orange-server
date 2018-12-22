@@ -1,18 +1,12 @@
 package cn.orangeiot.publish.model;
 
-/**
- * @author zhang bo
- * @version 1.0
- * @Description
- * @date 2017-12-22
- */
-
 import java.io.Serializable;
 
 /**
- * 接口层统一返回的数据封装接口
- *
- * @author app
+ * @author zhang bo
+ * @version 1.0
+ * @Description  接口层统一返回的数据封装接口
+ * @date 2017-12-22
  */
 public class ResultInfo<E> implements Serializable {
     public final static String CODE_SUCCESS = "200";
