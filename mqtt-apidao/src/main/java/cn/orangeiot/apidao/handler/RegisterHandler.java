@@ -13,6 +13,7 @@ import cn.orangeiot.apidao.handler.dao.ota.OtaDao;
 import cn.orangeiot.apidao.handler.dao.rateLimit.RateLimitDao;
 import cn.orangeiot.apidao.handler.dao.register.RegisterDao;
 import cn.orangeiot.apidao.handler.dao.storage.StorageDao;
+import cn.orangeiot.apidao.handler.dao.test.TestProcessDao;
 import cn.orangeiot.apidao.handler.dao.topic.TopicDao;
 import cn.orangeiot.apidao.handler.dao.user.UserDao;
 import cn.orangeiot.apidao.jwt.JwtFactory;
@@ -26,6 +27,7 @@ import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.ota.OtaAddr;
 import cn.orangeiot.reg.rateLimit.RateLimitAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
+import cn.orangeiot.reg.testservice.TestProcessAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
@@ -124,11 +126,26 @@ public class RegisterHandler implements EventbusAddr {
 
             //限流相关
             rateLimitAboutEvent(vertx);
+
+            //測試抽查相關
+            testProcess(vertx);
         } else {
             // failed!
             logger.fatal(res.cause().getMessage(), res.cause());
             System.exit(1);
         }
+    }
+
+
+    /**
+     * @Description 測試處理相關
+     * @author zhang bo
+     * @date 18-12-25
+     * @version 1.0
+     */
+    public void testProcess(Vertx vertx){
+        TestProcessDao testProcessDao=new TestProcessDao(vertx);
+        vertx.eventBus().consumer(TestProcessAddr.class.getName() + TEST_UIBIND_GATEWAY, testProcessDao::testUnBindGateway);
     }
 
 
@@ -248,6 +265,7 @@ public class RegisterHandler implements EventbusAddr {
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + DEVICE_TEST_INFO_IN, deviceDao::deviceTestInfoIn);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + GET_WRITE_MAC_RESULT, deviceDao::getWriteMacResult);
         vertx.eventBus().consumer(AdminlockAddr.class.getName() + UPDATE_PRE_BIND_DEVICE, deviceDao::preBindDevice);
+        vertx.eventBus().consumer(AdminlockAddr.class.getName() + PRODUCTION_TEST_USER, deviceDao::productionTestUser);
     }
 
 

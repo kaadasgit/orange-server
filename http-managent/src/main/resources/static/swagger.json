@@ -13,7 +13,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "host": "172.16.0.105:17000",
+  "host": "127.0.0.1:17000",
   "basePath": "/",
   "tags": [
     {
@@ -250,6 +250,39 @@
         "summary": "上传设备测试信息",
         "description": "List of user object",
         "operationId": "deviceINfoTest",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "file to upload",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    },
+    "/upload/device/bind": {
+      "post": {
+        "tags": [
+          "file"
+        ],
+        "summary": "上傳設備預綁定 文檔",
+        "description": "List of user object",
+        "operationId": "devicePreBind",
         "consumes": [
           "multipart/form-data"
         ],

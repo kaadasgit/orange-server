@@ -17,6 +17,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import scala.Int;
+import scala.util.parsing.json.JSONArray;
 import scala.util.parsing.json.JSONObject;
 
 import java.time.LocalDate;
@@ -93,6 +95,71 @@ public class DeviceDao {
                             }
                         }
                     });
+                } else {
+                    message.reply(null);
+                }
+            }
+        });
+    }
+
+
+    /**
+     * @Description 生成測試用戶
+     * @author zhang bo
+     * @date 18-12-25
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void productionTestUser(Message<JsonObject> message) {
+        int count = 0;
+        try {
+            count = Integer.parseInt(message.body().getString("count"));
+        } catch (Exception e) {
+            logger.error(e.getCause());
+        }
+
+        if (count > 100 || count == 0) {
+            message.reply(null);
+            return;
+        }
+        int finalCount = count;
+        vertx.executeBlocking(future -> {
+            List<BulkOperation> bulkOperations = new ArrayList<>(finalCount);
+            JsonArray jsonArray = new JsonArray();
+            String usernameBody = message.body().getString("prefix")+KdsCreateRandom.createRandom(5);
+            String usernameFuffix = "@testKDS.com";
+            String password = message.body().getString("prefix") + "123456";
+            String password0 = SHA1.encode(password);
+            for (int i = 0; i < finalCount; i++) {
+                jsonArray.add(new JsonObject().put("userMail", usernameBody + i + usernameFuffix).put("userPwd", password));
+                JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.INSERT).put("document",
+                        new JsonObject().put("userMail", usernameBody + i + usernameFuffix).put("userPwd", password0)
+                                .put("versionType", "kaadas").put("nickName", usernameBody + i + usernameFuffix)
+                        .put("testUser",1)//測試用戶
+                ).put("upsert", false).put("multi", false);
+                bulkOperations.add(new BulkOperation(params));
+            }
+
+            if (bulkOperations.size() > 0)
+                MongoClient.client.bulkWrite("kdsUser", bulkOperations, urs -> {//导入账户列表
+                    if (urs.failed()) {
+                        logger.error(urs.cause().getMessage(), urs);
+                        future.complete(null);
+                    } else {
+                        if (urs.result().getInsertedCount() != 0) {
+                            future.complete(jsonArray);
+                        } else {
+                            future.complete(null);
+                        }
+                    }
+                });
+
+        }, true, (AsyncResult<JsonArray> rs) -> {
+            if (rs.failed()) {
+                message.reply(null);
+            } else {
+                if (rs.result() != null) {
+                    message.reply(rs.result());
                 } else {
                     message.reply(null);
                 }
@@ -278,10 +345,10 @@ public class DeviceDao {
                     JsonObject datas = message.body().getJsonObject(i * BOUNART_NUM + j);
                     JsonObject params = new JsonObject().put("type", BulkOperation.BulkOperationType.UPDATE)
                             .put("filter", new JsonObject().put("deviceSN", datas.getString("gatewaySN"))
-                                    .put("deviceNickName",datas.getString("gatewaySN"))
+                                    .put("deviceNickName", datas.getString("gatewaySN"))
                                     .put("deviceList", new JsonObject().put("$exists", true)))
                             .put("document", new JsonObject()
-                                    .put("$addToSet",new JsonObject().put("deviceList", new JsonObject().put("$each", new JsonArray().add(new JsonObject().put("deviceId", datas.getString("deviceSN"))
+                                    .put("$addToSet", new JsonObject().put("deviceList", new JsonObject().put("$each", new JsonArray().add(new JsonObject().put("deviceId", datas.getString("deviceSN"))
                                             .put("event_str", datas.getString("status")).put("macaddr", datas.getString("mac"))
                                             .put("device_type", datas.getString("deviceType")).put("SW", datas.getString("version"))
                                             .put("time", datas.getString("productTime")))))))

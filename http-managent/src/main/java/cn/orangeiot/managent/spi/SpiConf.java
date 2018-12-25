@@ -77,6 +77,7 @@ public class SpiConf {
                     .handler(publishDeviceHandler::getWriteMacResult);
             router.post(ApiConf.UPLOAD_DEVICE_TEST_INFO).blockingHandler(publishDeviceHandler::uploadDeviceTestInfo);
             router.post(ApiConf.UPLOAD_DEVICE_BIND).blockingHandler(publishDeviceHandler::uploadDeviceBind);
+            router.get(ApiConf.PRODUCT_TEST_USER).blockingHandler(publishDeviceHandler::productionTestUser);
 
             MemeNetHandler memeNetHandler = new MemeNetHandler(vertx.eventBus(), configJson);
             router.get(ApiConf.REGISTER_USER_BULK).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).blockingHandler(memeNetHandler::onRegisterUserBulk);
