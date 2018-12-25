@@ -8,16 +8,16 @@ import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.http.verify.VerifyParamsUtil;
 import cn.orangeiot.reg.EventbusAddr;
 import cn.orangeiot.reg.memenet.MemenetAddr;
+import cn.orangeiot.reg.message.MessageAddr;
 import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
@@ -49,7 +49,6 @@ public class UserHandler implements EventbusAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUserByTel(RoutingContext routingContext) {
-        logger.info("==UserHandler=getUserByTel==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
                 .put("password", DataType.STRING), asyncResult -> {
@@ -57,15 +56,20 @@ public class UserHandler implements EventbusAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result(), SendOptions.getInstance()
+                eventBus.send(UserAddr.class.getName() + LOGIN_TEL, asyncResult.result()
+                                .put("loginIP", routingContext.request().remoteAddress().toString()), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
+                                    logger.info("==UserHandler=getUserByTel==login success==data-> {}, IP -> {}", rs.result().body().getValue("uid"),
+                                            routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
+                                    logger.info("==UserHandler=getUserByTel==login fail==data-> {}, IP -> {}", routingContext.getBodyAsJson().getValue("tel"),
+                                            routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 }
@@ -85,7 +89,6 @@ public class UserHandler implements EventbusAddr {
      */
     @SuppressWarnings("Duplicates")
     public void getUserByEmail(RoutingContext routingContext) {
-        logger.info("==UserHandler=getUserByEmail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
                 .put("password", DataType.STRING), asyncResult -> {
@@ -93,15 +96,20 @@ public class UserHandler implements EventbusAddr {
                 routingContext.fail(401);
             } else {
                 Result<JsonObject> result = new Result<>();
-                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result(), SendOptions.getInstance()
+                eventBus.send(UserAddr.class.getName() + LOGIN_MAIL, asyncResult.result()
+                                .put("loginIP", routingContext.request().remoteAddress().toString()), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> rs) -> {
                             if (rs.failed()) {
                                 routingContext.fail(501);
                             } else {
                                 if (Objects.nonNull(rs.result().body())) {
+                                    logger.info("==UserHandler=getUserByEmail==login success==data-> {}, IP -> {}", rs.result().body().getValue("uid"),
+                                            routingContext.request().remoteAddress());
                                     result.setData(rs.result().body());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 } else {
+                                    logger.info("==UserHandler=getUserByEmail==login fail==data-> {}, IP -> {}", routingContext.getBodyAsJson().getValue("mail"),
+                                            routingContext.request().remoteAddress());
                                     result.setErrorMessage(ErrorType.RESULT_LOGIN_FIAL.getKey(), ErrorType.RESULT_LOGIN_FIAL.getValue());
                                     routingContext.response().end(JsonObject.mapFrom(result).toString());
                                 }
@@ -127,8 +135,7 @@ public class UserHandler implements EventbusAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
-                if (!asyncResult.result().getString("name").matches(regex))//检验是否是合法的邮箱地址
+                if (StringUtils.isNumeric(asyncResult.result().getString("name")))//检验是否是合法的邮箱地址
                     register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_TEL, routingContext);
                 else
                     routingContext.fail(401);
@@ -156,7 +163,6 @@ public class UserHandler implements EventbusAddr {
                     register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_MAIL, routingContext);
                 else
                     routingContext.fail(401);
-
             }
         });
 
@@ -179,13 +185,15 @@ public class UserHandler implements EventbusAddr {
                     routingContext.fail(501);
                 } else {
                     if (Objects.nonNull(rs.result().body())) {
-                        String meUsername = UUIDUtils.getUUID();
-                        String mePassword = UUIDUtils.getUUID();
-                        result.setData(rs.result().body().put("meUsername", meUsername).put("mePassword", mePassword));
+//                        String meUsername = UUIDUtils.getUUID();
+//                        String mePassword = UUIDUtils.getUUID();
+//                        result.setData(rs.result().body().put("meUsername", meUsername).put("mePassword", mePassword));
+
+                        result.setData(rs.result().body());
                         routingContext.response().end(JsonObject.mapFrom(result).toString());
 
-                        eventBus.send(MemenetAddr.class.getName() + REGISTER_USER, new JsonObject().put("username", meUsername)
-                                .put("password", mePassword).put("uid", rs.result().body().getString("uid")), SendOptions.getInstance());//第三方数据同步
+//                        eventBus.send(MemenetAddr.class.getName() + REGISTER_USER, new JsonObject().put("username", meUsername)
+//                                .put("password", mePassword).put("uid", rs.result().body().getString("uid")), SendOptions.getInstance());//第三方数据同步
                     } else {
                         if (!rs.result().headers().isEmpty())
                             routingContext.response().end(JsonObject.mapFrom(
@@ -210,7 +218,6 @@ public class UserHandler implements EventbusAddr {
      * @version 1.0
      */
     public void getNickName(RoutingContext routingContext) {
-        logger.info("==UserHandler=getNickName==");
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
                 , asyncResult -> {
@@ -409,4 +416,55 @@ public class UserHandler implements EventbusAddr {
         }
     }
 
+
+    /**
+     * @Description 上報jpushId
+     * @author zhang bo
+     * @date 18-5-22
+     * @version 1.0
+     */
+    public void uploadJPushId(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("JPushId", DataType.STRING).put("type", DataType.INTEGER), asyncResult -> {//type 1 ios 2 android
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                eventBus.send(UserAddr.class.getName() + UPLOAD_JPUSHID, asyncResult.result()
+                        , SendOptions.getInstance(), rs -> {
+                            if (rs.failed()) {
+                                routingContext.fail(501);
+                            } else {
+                                if (Objects.nonNull(rs.result().body())) {
+                                    routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                                } else {
+                                    routingContext.response().end(JsonObject.mapFrom(
+                                            new Result<String>().setErrorMessage(ErrorType.UPLOAD_PUSHID_FAIL.getKey(), ErrorType.UPLOAD_PUSHID_FAIL.getValue())).toString());
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 推送消息
+     * @author zhang bo
+     * @date 18-5-22
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void sendPushNotify(RoutingContext routingContext) {
+        //验证参数的合法性
+        VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("uid", DataType.STRING)
+                .put("content", DataType.STRING), asyncResult -> {//type 1 ios 2 android
+            if (asyncResult.failed()) {
+                routingContext.fail(401);
+            } else {
+                routingContext.response().end(JsonObject.mapFrom(new Result<JsonObject>()).toString());
+                eventBus.send(MessageAddr.class.getName() + SEND_APPLICATION_NOTIFY, asyncResult.result());
+            }
+        });
+    }
 }

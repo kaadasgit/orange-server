@@ -47,6 +47,7 @@ public class RegisterHandler implements EventbusAddr{
             //用户相关
             UserHandler userHandler=new UserHandler(config,vertx);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER,userHandler::onRegisterUser);
+            vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER_CALLBACK,userHandler::onRegisterUserCall);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+UPDATE_PWD,userHandler::onUpdatePwd);
             vertx.eventBus().consumer(MemenetAddr.class.getName()+REGISTER_USER_BULK,userHandler::onRegisterUserBulk);
 

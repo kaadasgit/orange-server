@@ -2,6 +2,7 @@ package cn.orangeiot.mqtt.persistence;
 
 import cn.orangeiot.mqtt.MQTTTopicsManagerOptimized;
 import cn.orangeiot.mqtt.ITopicsManager;
+import cn.orangeiot.reg.storage.StorageAddr;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Giovanni Baleani on 04/06/2015.
  */
-public class StoreVerticle extends AbstractVerticle {
+public class StoreVerticle extends AbstractVerticle implements StorageAddr{
 
     public static final String ADDRESS = StoreVerticle.class.getName()+"_IN";
 

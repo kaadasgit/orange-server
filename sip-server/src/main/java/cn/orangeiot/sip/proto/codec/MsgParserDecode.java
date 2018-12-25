@@ -1,5 +1,6 @@
 package cn.orangeiot.sip.proto.codec;
 
+import cn.orangeiot.reg.user.UserAddr;
 import gov.nist.javax.sip.SIPConstants;
 import gov.nist.javax.sip.header.RequestLine;
 import gov.nist.javax.sip.header.SIPHeader;
@@ -14,6 +15,9 @@ import gov.nist.javax.sip.parser.StatusLineParser;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.datagram.DatagramPacket;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,9 +42,10 @@ public class MsgParserDecode {
      * @date 18-1-31
      * @version 1.0
      */
-    public static void parseSIPMessage(byte[] msgBuffer, boolean readBody, boolean strict, Handler<AsyncResult<SIPMessage>> handler) {
-        if (Objects.nonNull(msgBuffer) && msgBuffer.length > 0) {
-            if (msgBuffer.length != 4 && !Arrays.toString(msgBuffer).equals("[13, 10, 13, 10]")) {
+    public static void parseSIPMessage(Buffer buffer, boolean readBody, boolean strict, Handler<AsyncResult<SIPMessage>> handler) {
+        if (Objects.nonNull(buffer) && buffer.length() > 0) {
+            if (buffer.length() != 4 && !Arrays.toString(buffer.getBytes(0, 2)).equals("[13, 10]")) {
+                byte[] msgBuffer = buffer.getBytes();
                 int i = 0;
                 // 開頭控制字符(0x20 空格)
                 while (msgBuffer[i] < 0x20)
@@ -50,7 +55,7 @@ public class MsgParserDecode {
                 boolean isFirstLine = true;//是否是第一行
                 SIPMessage message = null;//消息解析成消息對象
 
-                //todo 讀取數據
+                // 讀取數據
                 do {
                     int lineStart = i;
                     // 找到一行的長度 length
@@ -126,7 +131,7 @@ public class MsgParserDecode {
                         try {
                             message.setMessageContent(body, !strict, false, message.getContentLength().getContentLength());
                         } catch (ParseException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(), e);
                         }
                     } else if (!false && message.getContentLength().getContentLength() == 0 & strict) {
                         String last4Chars = new String(msgBuffer, msgBuffer.length - 4, 4);
@@ -136,13 +141,19 @@ public class MsgParserDecode {
                     }
                 }
                 handler.handle(Future.succeededFuture(message));
-            } else {
-                handler.handle(Future.failedFuture("=========The heartbeat packets"));
+            } else if (buffer.length() == 4) {
+
+                handler.handle(Future.failedFuture("=========data msgBuffer is Deprecated"));
+
+            } else {//心跳包heart
+                handler.handle(Future.succeededFuture(null));
+//                handler.handle(Future.succeededFuture("=========The heartbeat packets"));
             }
         } else {
             handler.handle(Future.failedFuture("=========data msgBuffer is null"));
         }
     }
+
 
     /**
      * @Description 去除字符串尾部空格

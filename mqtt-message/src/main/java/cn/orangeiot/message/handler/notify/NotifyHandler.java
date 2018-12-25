@@ -5,6 +5,7 @@ import cn.orangeiot.message.Model.MqttQos;
 import cn.orangeiot.reg.message.MessageAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -38,16 +39,18 @@ public class NotifyHandler implements MessageAddr {
      * @version 1.0
      */
     public void notifyGatewayAdmin(Message<JsonObject> message) {
-        logger.info("==NotifyHandler=NotifyGatewayAdmin===params -> " + message.body());
+        logger.debug("==NotifyHandler=NotifyGatewayAdmin===params -> " + message.body());
         //获取网关管理员信息
         vertx.eventBus().send(MessageAddr.class.getName() + GET_GATEWAY_ADMIN, message.body(), (AsyncResult<Message<JsonObject>> rs) -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, rs.result().body().put("requestuid",
                             message.body().getString("uid")).put("func", "notifyApprovalBindGW"),
-                            SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", rs.result().body().getString("adminuid")));
+                            SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                                    .addHeader("uid", rs.result().body().getString("adminuid"))
+                                    .addHeader("messageId", message.headers().get("messageId")));
                 }
             }
         });
@@ -60,8 +63,10 @@ public class NotifyHandler implements MessageAddr {
      * @version 1.0
      */
     public void replyGatewayUser(Message<JsonObject> message) {
-        logger.info("==NotifyHandler=replyGatewayUser===params -> " + message.body());
+        logger.debug("==NotifyHandler=replyGatewayUser===params -> " + message.body());
         vertx.eventBus().send(MessageAddr.class.getName() + SEND_ADMIN_MSG, message.body().put("func", "replyApprovalBindGW"),
-                SendOptions.getInstance().addHeader("qos", "1").addHeader("uid", "app:"+message.body().getString("requestuid")));
+                SendOptions.getInstance().addHeader("qos", message.headers().get("qos"))
+                        .addHeader("uid", "app:" + message.body().getString("requestuid"))
+                        .addHeader("messageId", message.headers().get("messageId")));
     }
 }

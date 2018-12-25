@@ -13,19 +13,27 @@ import io.vertx.core.json.JsonObject;
  * @Description
  * @date 2018-01-04
  */
-public interface GatewayDeviceService extends GatewayAddr,MessageAddr,MemenetAddr{
+public interface GatewayDeviceService extends GatewayAddr, MessageAddr, MemenetAddr {
 
-    void bindGatewayByUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+    void bindGatewayByUser(JsonObject jsonObject, String qos, String messageId, Handler<AsyncResult<JsonObject>> handler);
 
-    void approvalBindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+    void approvalBindGateway(JsonObject jsonObject, String qos, String messageId, Handler<AsyncResult<JsonObject>> handler);
 
     void getGatewayBindList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
     void approvalList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
-    void unbindGateway(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+    void unbindGateway(JsonObject jsonObject, String qos, String msgId, Handler<AsyncResult<JsonObject>> handler);
 
     void delGatewayUser(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 
     void getGatewayUserList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void getDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void selectOpenLockRecord(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void updateDevNickName(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
+
+    void getGatewayByDeviceList(JsonObject jsonObject, Handler<AsyncResult<JsonObject>> handler);
 }

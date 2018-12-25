@@ -88,7 +88,7 @@ public class IceClient extends AbstractVerticle {
 //                            }
 //                        });
 //                    } catch (SdpParseException e) {
-//                        e.printStackTrace();
+//                        logger.error(e.getMessage(), e)();
 //                    }
 //                } else {
 //                    System.out.println("Listen failed" + asyncResult.cause());
@@ -97,7 +97,7 @@ public class IceClient extends AbstractVerticle {
 //                }
 //            });
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
 
         log.info("======================================"

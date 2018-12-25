@@ -62,7 +62,8 @@ public class SdpTest {
 //        };
 
 
-        String sdp = "v=0\r\n" +
+
+    String sdp = "v=0\r\n" +
                 "o=789 2607 4062 IN IP4 192.168.137.208\r\n" +
                 "s=Talk\r\n" +
                 "c=IN IP4 192.168.137.208\r\n" +
@@ -130,7 +131,7 @@ public class SdpTest {
             ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(outFile, false));
             os.writeObject(sessiondescription1);
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
     }
 //    }

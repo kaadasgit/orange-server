@@ -20,7 +20,6 @@ public class TopicStart {
         Vertx.vertx().deployVerticle(TopicVerticle.class.getName(), rs->{
             if(rs.failed()){
                 logger.error("deploy TopicVerticle fail");
-                rs.cause().printStackTrace();
             }else{
                 logger.info("deploy TopicVerticle successs");
             }

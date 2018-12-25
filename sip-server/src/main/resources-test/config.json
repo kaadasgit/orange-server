@@ -1,12 +1,16 @@
 {
-  "port": 5058,
-  "host": "114.67.58.242",
+  "port": 5061,
+  "host": "121.201.57.214",
+  "startHost": "0.0.0.0",
   "receBufferSize": 16384,
   "idleTimeout": 1200,
   "maxTimes": 5,
   "intervalTimes": 1000,
   "audioPort": 7090,
-  "audioHost": "114.67.58.242",
+  "audioHost": "121.201.57.214",
   "videoPort": 7091,
-  "videoHost": "114.67.58.242"
+  "videoHost": "121.201.57.214",
+  "heartIdleTime": 100,
+  "maxHeartIdleTime": 7200,
+  "branchExpire":1200
 }

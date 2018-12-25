@@ -73,7 +73,7 @@ class PublishDecoder extends DemuxDecoder {
             return;
         }
 
-        // TODO: reimplement without ctx
+        // : reimplement without ctx
 //        if (Utils.isMQTT3_1_1(ctx)) {
 //            if (message.getQos() == AbstractMessage.QOSType.MOST_ONE && message.isDupFlag()) {
 //                //bad protocol, if QoS=0 => DUP = 0
@@ -101,7 +101,7 @@ class PublishDecoder extends DemuxDecoder {
 
         if (message.getQos() == AbstractMessage.QOSType.LEAST_ONE ||
                 message.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
-            message.setMessageID(in.readUnsignedShort());
+            message.setMessageID( in.readUnsignedShort());
         }
         int stopPos = in.readerIndex();
 

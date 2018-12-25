@@ -26,7 +26,9 @@
         <module>http-managent</module>
         <module>sip-server</module>
         <module>rtp-server</module>
+        <module>mqtt-client-junit</module>
     </modules>
+
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,6 +47,7 @@
         <ssh.scp.directory>/home/zhangbo/file</ssh.scp.directory>
         <ssh.exec.command>sh /home/zhangbo/file/run.sh restart
         </ssh.exec.command>
+        <disruptor.version>3.4.1</disruptor.version>
     </properties>
 
     <dependencies>
@@ -59,6 +62,28 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-core</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-databind</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.0</version>
         </dependency>
 
 
@@ -92,7 +117,25 @@
             <artifactId>log4j-core</artifactId>
             <version>${log4j2.version}</version>
         </dependency>
-        <!-- log4j2 async -->
+
+        <!--kafka client-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-kafka-client</artifactId>
+            <version>${vertx.version}</version>
+            <exclusions> <!-- exclude掉过时的log依赖 -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--disruptor日志队列 async-->
         <dependency>
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>

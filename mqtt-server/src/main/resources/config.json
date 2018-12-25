@@ -1,0 +1,65 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1883,
+      "socket_idle_timeout": 60,
+      "authenticator_address": "mqtt.authenticator.oauth2.apifest",
+      "dirPath": "/home/linuxzhangbo/dir/",
+      //      "segmentSize": 1073741824
+      "segmentSize": 12582912,
+      "expireTime": 3600000,
+      "periodicTime": 3600000,
+      "user_prefix": "app",
+      "gateway_prefix": "gw"
+    },
+    {
+      "tcp_port": 11883,
+      "websocket_enabled": true,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "authenticator_address": "mqtt.authenticator.oauth2.apifest"
+    },
+    //    {
+    //      "tcp_port": 1884,
+    //      "retain_support": false,
+    //      "authenticator_address": "mqtt.authenticator.oauth2"
+    //    },
+    {
+      "tcp_port": 11884,
+      "retain_support": false,
+      "websocket_enabled": true,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "authenticator_address": "mqtt.authenticator.oauth2"
+    },
+    //    {
+    //      "tcp_port": 1885,
+    //      "retain_support": false
+    //    },
+    {
+      "tcp_port": 11885,
+      "websocket_enabled": true,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "retain_support": false
+    }
+  ],
+  "bridge_server": {
+    "local_bridge_port": 7007
+  },
+  "rest_server": {
+    "port": 2883
+  },
+  "authenticators": [
+    {
+      "verticle": "io.github.giovibal.mqtt.verticle.AuthServerVerticle",
+      "address": "mqtt.authenticator.oauth2",
+      "security": {
+        "authorized_clients": [
+          "testing.*"
+        ],
+        "idp_url": "http://127.0.0.1:9763",
+        "idp_username": "admin",
+        "idp_password": "admin"
+      }
+    }
+  ],
+  "send_publish_message": "cn.orangeiot.publish.message"
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<html>
+<head>
+    <title>WebSocket/SockJS Echo Sample (Adapted from Tomcat's echo sample)</title>
+    <link href="css/pushy-buttons.css" rel="stylesheet">
+    <style type="text/css">
+        #content-container {
+            float: left;
+            width: 600px;
+            height: 800px;
+            align-content: center;
+            margin: auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .textarea {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 250px;
+            overflow-y: scroll;
+            padding: 5px;
+            width: 90%;
+        }
+
+        .text {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            padding: 5px;
+            width: 67%;
+        }
+
+        .button {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            padding: 5px;
+            height: 6%;
+            width: 90%;
+        }
+
+        .description {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 250px;
+            overflow-y: scroll;
+            padding: 5px;
+            width: 90%;
+        }
+    </style>
+
+    <script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
+    <script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        var url ="http://"+window.location.host;
+
+        function uploadApi() {
+            if (url == null) {
+                alert("url =window.location.host= fail");
+                return;
+            }
+
+            var topic = $("#topic").val();
+            var payload = $("#payload").val();
+            var description = $("#description").val();
+            var title = $("#title").val();
+            var scheme = $("#scheme").val();
+
+            if (topic != null && payload != null && title != null && scheme != null) {
+                try {
+                    var requestData = {
+                        topic: topic,
+                        payload: JSON.parse(payload),
+                        description: description == null ? "" : description,
+                        title: HTMLEncode(title),
+                        qos: parseInt($('.qos').val()),
+                        scheme: scheme
+                    }
+
+                    console.log(requestData)
+                    $.ajax({
+                        type: "POST",
+                        url: url + "/submitApi",
+                        data: JSON.stringify(requestData),
+                        contentType: "application/json",
+                        dataType: "json",
+                        success: function (jsonResult) {
+                            if (jsonResult.code == 200) {
+                                alert("submit success");
+                                clean()
+                            } else {
+                                alert("submit fail");
+                            }
+                        }
+                    });
+
+                } catch (e) {
+                    console.log(e.name + ": " + e.message);
+                    alert("params fail")
+                    return
+                }
+            } else {
+                alert("params data is not null")
+            }
+
+        }
+
+
+        function clean() {
+            $("#payload").val('');
+            $("#description").val('');
+        }
+
+        function HTMLEncode(html) {
+            var temp = document.createElement("payload")
+            ;(temp.textContent != null) ? (temp.textContent = html) : (temp.innerText = html);
+            var output = temp.innerHTML;
+            temp = null;
+            return output;
+        }
+    </script>
+</head>
+<body style="background: rgb(199,238,206)">
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websockets
+    rely on Javascript being enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div>
+    <div id="content-container">
+        <label style="margin-left: 18px;">scheme : </label> <input type="text" id="scheme" class="text"/></p>
+        <label style="margin-left: 41px;">title : </label> <input type="text" id="title" class="text"/>
+        <p>
+            <label>send topic : </label> <input type="text" id="topic" class="text"/>
+            <label>qos :</label>
+            <select class="qos">
+                <option>0</option>
+                <option selected>1</option>
+                <option>2</option>
+            </select>&nbsp;
+        <p>
+            <label>payload : </label></p><textarea id="payload" class="textarea"></textarea></p>
+        <label>description : </label></p><textarea id="description" class="description"></textarea></p>
+        <a class="btn btn--df btn--blue" href="#" onclick="uploadApi()" style="width: 80%;text-align: center">submit</a>
+    </div>
+</div>
+</body>
+</html>

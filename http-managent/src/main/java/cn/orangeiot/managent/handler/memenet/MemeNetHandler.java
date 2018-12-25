@@ -48,7 +48,7 @@ public class MemeNetHandler implements EventbusAddr {
         logger.info("==MemeNetHandler=onRegisterUserBulk===params -> " + routingContext.getBodyAsString());
         eventBus.send(UserAddr.class.getName() + MEME_REGISTER_USER_BULK, "", rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
                 routingContext.fail(501);
             } else {
                 if (Objects.nonNull(rs.result().body()))

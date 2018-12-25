@@ -3,29 +3,44 @@
 <Configuration status="INFO" name="MyApp" packages="">
     <Appenders>
         <!--控制台输出-->
-        <Console name="Console" target="SYSTEM_OUT">
+        <Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
         </Console>
-        <!--按天分日志文件-->
-        <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
-                     <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
+
+        <!--写入kafka   topic订阅的主题-->
+        <!--<Kafka name="kafkaAppender" topic="orangelog" ignoreExceptions="false">-->
+            <!--<PatternLayout-->
+                    <!--pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [httpserver] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n"/>&lt;!&ndash;显示信息格式&ndash;&gt;-->
+            <!--<Property name="bootstrap.servers">localhost:9092</Property>&lt;!&ndash;kafka地址&ndash;&gt;-->
+            <!--<Property name="timeout.ms">2000</Property>&lt;!&ndash;写入超时时间&ndash;&gt;-->
+        <!--</Kafka>-->
+
+        <!--<RollingFile name="failoverKafkaLog" fileName="./logs/http-server.log"-->
+                     <!--filePattern="./logs/http-server/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz" immediateFlush="false"-->
+                     <!--ignoreExceptions="false">-->
+            <!--<PatternLayout>-->
+                <!--<Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [IP:127.0.0.1:8090/ebcuiy] [%p] [%t] [%logger:%M:%L] - %msg%xEx%n-->
+                <!--</Pattern>-->
+            <!--</PatternLayout>-->
             <!--<Policies>-->
-                <!--<TimeBasedTriggeringPolicy modulate="true" interval="1"/>-->
+                <!--<TimeBasedTriggeringPolicy/>-->
             <!--</Policies>-->
         <!--</RollingFile>-->
-        <!--按大小日志文件-->
-        <!--<RollingFile name="serverLog" fileName="/home/linuxzhangbo/test/server-log.log"-->
-                     <!--filePattern="/home/linuxzhangbo/test/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-%i.log.gz">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-            <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
-        <!--</RollingFile>-->
+
+        <!--&lt;!&ndash;kafka写入失败触发写入本地日志&ndash;&gt;-->
+        <!--<Failover name="Failover" primary="kafkaAppender" retryIntervalSeconds="600">-->
+            <!--<Failovers>-->
+                <!--<AppenderRef ref="failoverKafkaLog"/>-->
+            <!--</Failovers>-->
+        <!--</Failover>-->
     </Appenders>
+
+
     <Loggers>
         <!--配置日志的根节点-->
-        <Root level="all">
+        <Root level="info">
             <AppenderRef ref="Console"/>
-            <!--<AppenderRef ref="serverLog"/>-->
+            <!--<AppenderRef ref="Failover"/>-->
         </Root>
     </Loggers>
 </Configuration>

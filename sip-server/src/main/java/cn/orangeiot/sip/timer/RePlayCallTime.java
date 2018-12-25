@@ -31,26 +31,26 @@ public class RePlayCallTime implements UserAddr {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public static void callPeriodic(String msg, String username) {
-        logger.info("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
-        //todo 重发消息
+    public static void callPeriodic(String msg, String username,String uid) {
+        logger.debug("==ResponseMsgUtil==reSend==params -> msg = {} , socket = {}", msg, username);
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         SipVertxFactory.getVertx().setPeriodic(SipVertxFactory.getConfig().getLong("intervalTimes"), rs -> {
             SipVertxFactory.getVertx().eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER,
-                    username, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
+                    uid, SendOptions.getInstance(), (AsyncResult<Message<String>> as) -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as.cause().getMessage(), as.cause());
                         } else {
                             atomicInteger.getAndIncrement();//原子自增
                             if (atomicInteger.intValue() == SipVertxFactory.getConfig().getInteger("maxTimes")) {//达到重发次数
                                 SipVertxFactory.getVertx().cancelTimer(rs);//取消周期定时
                             }
                             if (Objects.nonNull(as.result().body())) {
-                                String[] address=as.result().body().split(":");
-                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]),address[0]);
+                                String[] address = as.result().body().split(":");
+                                SocketAddress socket = new SocketAddressImpl(Integer.parseInt(address[1]), address[0]);
                                 SipVertxFactory.getSocketInstance().send(msg, socket.port(), socket.host(), ars -> {
                                     if (ars.failed())
-                                        ars.cause().printStackTrace();
+                                        logger.error(ars.cause().getMessage(), ars.cause());
                                 });
                             }
                         }

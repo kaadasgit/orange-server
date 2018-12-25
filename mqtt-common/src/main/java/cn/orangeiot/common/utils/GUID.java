@@ -7,6 +7,9 @@ package cn.orangeiot.common.utils;
  * 
  */
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -15,6 +18,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class GUID implements Serializable{
+
+
+    private static Logger logger = LogManager.getLogger(GUID.class);
 
     /**
      * simple GUID (Globally Unique ID) implementation.
@@ -84,7 +90,7 @@ public class GUID implements Serializable{
 	//	s1 = a.toString(10);
 		for (int i = 0; i < abyte.length; i++)
 			s1 += abyte[i];
-	} catch (NoSuchAlgorithmException e) {e.printStackTrace();}
+	} catch (NoSuchAlgorithmException e) {logger.error(e.getMessage(), e);}
     
     return s1;
   }
@@ -106,7 +112,7 @@ public class GUID implements Serializable{
             	
             	md5_str += Digits.substring(h, h + 1) + Digits.substring(l, l + 1);
             }
-		}catch(Exception e){e.printStackTrace();}
+		}catch(Exception e){logger.error(e.getMessage(), e);}
 		return md5_str;
     }
     public static String mpMD5(String text) {
@@ -122,7 +128,7 @@ public class GUID implements Serializable{
 					md5_str += array[i];
 				md5_str = md5_str.replaceAll("-", "").substring(0, 16);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(e.getMessage(), e);
 			}
 		}
 		return md5_str;

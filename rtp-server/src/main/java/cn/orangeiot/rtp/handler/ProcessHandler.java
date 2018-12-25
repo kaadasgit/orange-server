@@ -4,15 +4,12 @@ import cn.orangeiot.common.constant.MediaTypeEnum;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.reg.user.UserAddr;
 import cn.orangeiot.rtp.RtpVertFactory;
-import com.sun.jmx.snmp.UserAcl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.SocketAddressImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,20 +48,20 @@ public class ProcessHandler implements UserAddr {
         logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
 
 
-        //TODO 轉發rtp stream
+        // 轉發rtp stream
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.VIDEO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                     } else {
                         if (Objects.nonNull(rs.result().body())) {
                             String[] socketAddress = rs.result().body().split(":");
                             RtpVertFactory.getVideoSocket().send(datagramPacket.data(), Integer.parseInt(socketAddress[1]), socketAddress[0]
                                     , as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as.cause());
                                         } else {
-                                            logger.info("send success ->" + rs.succeeded());
+                                            logger.info("send success ->" + as.succeeded());
                                             if (as.failed())
                                                 reSendVideo(datagramPacket.data(), socketAddress);
                                         }
@@ -84,7 +81,7 @@ public class ProcessHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void reSendVideo(Buffer bufferStream, String[] socketAddress) {
         logger.info("==ResponseMsgUtil==reSendVideo==params -> socket = {}", socketAddress);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         vertx.setPeriodic(conf.getLong("intervalTimes"), rs -> {
             atomicInteger.getAndIncrement();//原子自增
@@ -93,7 +90,7 @@ public class ProcessHandler implements UserAddr {
             }
             RtpVertFactory.getVideoSocket().send(bufferStream, Integer.parseInt(socketAddress[1]), socketAddress[0], ars -> {
                 if (ars.failed())
-                    ars.cause().printStackTrace();
+                    logger.error(ars.cause().getMessage(), ars.cause());
                 else
                     vertx.cancelTimer(rs);//取消周期定时
             });
@@ -112,18 +109,18 @@ public class ProcessHandler implements UserAddr {
         logger.info("SERVER received remoteAddress: " + datagramPacket.sender().toString());
         logger.info("SERVER I received some bytes: " + datagramPacket.data().length());
 
-        //TODO 轉發rtp stream
+        // 轉發rtp stream
         vertx.eventBus().send(UserAddr.class.getName() + GET_CALL_ID, MediaTypeEnum.AUDIO.toString().toLowerCase() + datagramPacket.sender().host()
                 , SendOptions.getInstance(), (AsyncResult<Message<String>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                     } else {
                         if (Objects.nonNull(rs.result().body())) {
                             String[] socketAddress = rs.result().body().split(":");
                             RtpVertFactory.getAudioSocket().send(datagramPacket.data(), Integer.parseInt(socketAddress[1]), socketAddress[0]
                                     , as -> {
                                         if (as.failed()) {
-                                            as.cause().printStackTrace();
+                                            logger.error(as.cause().getMessage(), as.cause());
                                         } else {
                                             logger.info("send success ->" + rs.succeeded());
                                             if (as.failed())
@@ -145,7 +142,7 @@ public class ProcessHandler implements UserAddr {
     @SuppressWarnings("Duplicates")
     public void reSendAudio(Buffer bufferStream, String[] socketAddress) {
         logger.info("==ResponseMsgUtil==reSendAudio==params -> socket = {}", socketAddress);
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         vertx.setPeriodic(conf.getLong("intervalTimes"), rs -> {
             atomicInteger.getAndIncrement();//原子自增
@@ -154,7 +151,7 @@ public class ProcessHandler implements UserAddr {
             }
             RtpVertFactory.getVideoSocket().send(bufferStream, Integer.parseInt(socketAddress[1]), socketAddress[0], ars -> {
                 if (ars.failed())
-                    ars.cause().printStackTrace();
+                    logger.error(ars.cause().getMessage(), ars.cause());
                 else
                     vertx.cancelTimer(rs);//取消周期定时
             });

@@ -38,11 +38,15 @@ public interface UserAddr {
 
      String USER_LOGOUT="logout";//用户登出
 
+     String UPLOAD_JPUSHID="uploadPushId";//上報pushId
+
      String MEME_USER="memeUser";//同步米米用户信息
 
      String MEME_REGISTER_USER_BULK="memeRegisterUserBulk";//批量注册用户
 
      String SAVE_REGISTER_USER="saveRegisterUser";//注冊用戶信息
+
+     String HEARTBEAT_REGISTER_USER="heartbeatRegisterUser";//注冊用戶信息心跳包
 
      String GET_REGISTER_USER="getRegisterUser";//獲取用戶信息
 
@@ -51,4 +55,12 @@ public interface UserAddr {
      String SAVE_CALL_ID="saveCallIdAddr";//會話話的用戶地址映射
 
      String GET_CALL_ID="getCallIdAddr";//獲取用戶地址映射
+
+     String SAVE_SESSION_BRANCH="saveSessionBranch";//保存会话节点
+
+     String GET_SESSION_BRANCH="getSessionBranch";//获取会话节点
+
+     String REMOVE_SESSION_BRANCH="removeSessionBranch";//移除会话节点
+
+     String GET_GW_ADMIN="getGatewayAdmin";//獲取網關管理員
 }

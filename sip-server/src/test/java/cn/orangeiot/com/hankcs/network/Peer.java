@@ -45,7 +45,7 @@ public class Peer {
 //                            }
 //                        });
 //                    } catch (Exception e) {
-//                        e.printStackTrace();
+//                        logger.error(e.getMessage(), e)();
 //                    }
                 } else {
                     System.out.println("Listen failed" + asyncResult.cause());
@@ -55,7 +55,7 @@ public class Peer {
             });
 
         } catch (Exception e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
 
     }
@@ -70,7 +70,7 @@ public class Peer {
      */
     @SuppressWarnings("Duplicates")
     public static void reSend(Vertx vertx, String msg, int port, String address, io.vertx.core.datagram.DatagramSocket socket) {
-        //todo 重发消息
+        // 重发消息
         AtomicInteger atomicInteger = new AtomicInteger(0);
         vertx.setPeriodic(1000, rs -> {
             atomicInteger.getAndIncrement();//原子自增

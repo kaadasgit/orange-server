@@ -5,8 +5,9 @@ import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 
+import java.util.Objects;
+
 /**
- *
  * @author andrea
  */
 class PublishEncoder extends DemuxEncoder<PublishMessage> {
@@ -19,13 +20,13 @@ class PublishEncoder extends DemuxEncoder<PublishMessage> {
         if (message.getTopicName() == null || message.getTopicName().isEmpty()) {
             throw new IllegalArgumentException("Found a message with empty or null topic name");
         }
-        
+
         ByteBuf variableHeaderBuff = Buffer.buffer(2).getByteBuf();
         try {
             variableHeaderBuff.writeBytes(Utils.encodeString(message.getTopicName()));
             if (message.getQos() == AbstractMessage.QOSType.LEAST_ONE ||
-                message.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE ) {
-                if (message.getMessageID() == null) {
+                    message.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
+                if (!Objects.nonNull(message.getMessageID())) {
                     throw new IllegalArgumentException("Found a message with QOS 1 or 2 and not MessageID setted");
                 }
                 variableHeaderBuff.writeShort(message.getMessageID());
@@ -44,5 +45,5 @@ class PublishEncoder extends DemuxEncoder<PublishMessage> {
             variableHeaderBuff.release();
         }
     }
-    
+
 }

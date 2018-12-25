@@ -32,7 +32,7 @@ public class MemeNetStart {
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         if (null != source) {
@@ -40,7 +40,6 @@ public class MemeNetStart {
             Vertx.vertx().deployVerticle(MemeNetVerticle.class.getName(), rs -> {
                 if (rs.failed()) {
                     logger.fatal("deploy MemeNetVerticle fail");
-                    rs.cause().printStackTrace();
                 } else {
                     logger.info("deploy MemeNetVerticle successs");
                 }

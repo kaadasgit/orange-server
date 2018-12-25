@@ -2,13 +2,9 @@
 
 <Configuration status="warn" name="MyApp" packages="">
     <Appenders>
-        <!--控制台输出-->
-        <!--<Console name="Console" target="SYSTEM_OUT" ignoreExceptions="false">-->
-        <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
-        <!--</Console>-->
         <!--按天分日志文件-->
-        <RollingFile name="serverLog" fileName="/home/zhangbo/logs/server-log.log"
-                     filePattern="/home/zhangbo/logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}.log.gz">
+        <RollingFile name="serverLog" fileName="./logs/sipserver.log"
+                     filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-sipserver.log.gz">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
@@ -23,8 +19,8 @@
     </Appenders>
     <Loggers>
         <!--异步写入log-->
-        <AsyncLogger name="async">
+        <Root name="info">
             <AppenderRef ref="serverLog"/>
-        </AsyncLogger>
+        </Root>
     </Loggers>
 </Configuration>

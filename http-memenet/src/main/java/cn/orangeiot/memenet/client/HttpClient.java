@@ -6,6 +6,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +22,7 @@ public class HttpClient {
 
     public static io.vertx.ext.web.client.WebClient client;
 
+    private static Logger logger = LogManager.getLogger(HttpClient.class);
 
     /**
      * @Description redisClient配置
@@ -44,13 +47,13 @@ public class HttpClient {
                         ).setConnectTimeout(json.getInteger("timeout")));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != mongoIn)
                 try {
                     mongoIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }
@@ -70,7 +73,7 @@ public class HttpClient {
                         .sendJsonObject(new JsonObject().put("username", "123456")
                                 .put("password", "123456").put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                             } else {
                                 System.out.println(rs.result().body());
                             }

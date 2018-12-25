@@ -53,7 +53,9 @@ public interface ApiConf {
 
     String UPDATE_USER_PREMISSON = "/normallock/ctl/updateNormalDevlock";//管理员修改普通用户权限
 
-    String REQUEST_USER_OPEN_LOCK = "/adminlock/open/adminOpenLock";//用户申请开锁
+    String REQUEST_USER_OPEN_LOCK = "/adminlock/open/adminOpenLock";//App户开锁成功上报
+
+    String REQUEST_USER_AUTH = "/adminlock/open/openLockAuth";//鎖鑑權權
 
     String GET_DEV_LIST = "/adminlock/edit/getAdminDevlist";//获取设备列表
 
@@ -71,5 +73,22 @@ public interface ApiConf {
 
     String UPLOAD_OPEN_LOCK_RECORD = "/openlock/uploadopenlocklist";//上传开门记录
 
-    String MODEL_PWD_BY_MAC = "/model/getpwdBymac";//根据mac获取password1
+    String MODEL_PWD_BY_MAC = "/model/getpwdBySN";//根据sn获取password1
+
+    String UPLOAD_PUSHID = "/user/upload/pushId";//用户上传pushId
+
+    String SEND_PUSH_APPLICATION = "/notify/app";//測試推送
+
+    @Deprecated
+    String UPDATE_LOCK_INFO = "/normallock/info/update";//修改锁的信息
+
+    String OPEN_LOCK_NO_AUTH_SUCCESS = "/adminlock/noAuth/upload";//上傳無服務器鉴权開門記錄
+
+    String SELECT_OPENLOCK_RECORD = "/openlock/record/select";//查询开门记录
+
+    String UPDATE_BULK_LOCK_NUMBER = "/adminlock/info/number/bulkupdate";//批量修改锁编号信息
+
+    String UPDATE_LOCK_NUMBER = "/adminlock/info/number/update";//修改锁编号信息
+
+    String GET_LOCK_NUMBER = "/adminlock/info/number/get";//獲取锁编号信息
 }

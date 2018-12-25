@@ -1,5 +1,8 @@
 package cn.orangeiot.mqtt;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.nio.ByteBuffer;
 import java.util.LinkedHashSet;
 
@@ -8,6 +11,8 @@ import java.util.LinkedHashSet;
  * MQTT Protocol tokenizer.
  */
 public class MQTTPacketTokenizer {
+
+    private static Logger logger = LogManager.getLogger(MQTTPacketTokenizer.class);
 
     /* tokenizer state machine */
     public static enum MqttTokenizerState {
@@ -134,6 +139,7 @@ public class MQTTPacketTokenizer {
     }
 
     public MqttTokenizerState process(byte[] data) {
+        //判斷長度
         int processed = 0;
         while (processed < data.length) {
             int temp = process(data, processed, data.length);
@@ -173,7 +179,7 @@ public class MQTTPacketTokenizer {
             byte[] aByteArray = tokenContainer.array();
             this.notifyListeners(aByteArray, timeout);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }

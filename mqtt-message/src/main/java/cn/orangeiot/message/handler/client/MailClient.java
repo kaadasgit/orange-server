@@ -4,6 +4,8 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.mail.MailConfig;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.mail.StartTLSOptions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -16,30 +18,44 @@ import java.util.Properties;
  */
 public class MailClient {
 
-    public static io.vertx.ext.mail.MailClient client;
+    public static io.vertx.ext.mail.MailClient kaadasClient;
 
-    /**r
+    public static io.vertx.ext.mail.MailClient philipClient;
+
+    private static Logger logger = LogManager.getLogger(MailClient.class);
+    /**
+     * r
+     *
      * @Description 配置邮箱服务
      * @author zhang bo
      * @date 17-11-23
      * @version 1.0
      */
-    public void mailConf(Vertx vertx){
+    public void mailConf(Vertx vertx) {
         InputStream mainIn = MailClient.class.getResourceAsStream("/email-config.properties");
         try {
             Properties mainConfig = new Properties();
             mainConfig.load(mainIn);
 
-            MailConfig config = new MailConfig();
-            config.setHostname(mainConfig.getProperty("mailServerHost"));
-            config.setPort(Integer.parseInt(mainConfig.getProperty("mailServerPort")));
-            config.setStarttls(StartTLSOptions.DISABLED);
-            config.setUsername(mainConfig.getProperty("userName"));
-            config.setPassword(mainConfig.getProperty("password"));
-            config.setMaxPoolSize(Integer.parseInt(mainConfig.getProperty("maxPool")));
-            client = io.vertx.ext.mail.MailClient.createShared(vertx, config);
-        }catch (Exception e){
-            e.printStackTrace();
+            MailConfig kaadasConfig = new MailConfig();
+            kaadasConfig.setHostname(mainConfig.getProperty("kaadasmailServerHost"));
+            kaadasConfig.setPort(Integer.parseInt(mainConfig.getProperty("kaadasmailServerPort")));
+            kaadasConfig.setStarttls(StartTLSOptions.DISABLED);
+            kaadasConfig.setUsername(mainConfig.getProperty("kaadasuserName"));
+            kaadasConfig.setPassword(mainConfig.getProperty("kaadaspassword"));
+            kaadasConfig.setMaxPoolSize(Integer.parseInt(mainConfig.getProperty("maxPool")));
+            kaadasClient = io.vertx.ext.mail.MailClient.createNonShared(vertx, kaadasConfig);
+
+            MailConfig philipConfig = new MailConfig();
+            philipConfig.setHostname(mainConfig.getProperty("philipmailServerHost"));
+            philipConfig.setPort(Integer.parseInt(mainConfig.getProperty("philipmailServerPort")));
+            philipConfig.setStarttls(StartTLSOptions.DISABLED);
+            philipConfig.setUsername(mainConfig.getProperty("philipuserName"));
+            philipConfig.setPassword(mainConfig.getProperty("philippassword"));
+            philipConfig.setMaxPoolSize(Integer.parseInt(mainConfig.getProperty("maxPool")));
+            philipClient = io.vertx.ext.mail.MailClient.createNonShared(vertx, philipConfig);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
     }
 }

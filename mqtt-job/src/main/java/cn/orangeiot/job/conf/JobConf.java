@@ -1,8 +1,11 @@
 package cn.orangeiot.job.conf;
 
+import cn.orangeiot.job.JobStart;
 import cn.orangeiot.job.verifycode.VerifyCodeJob;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.quartz.*;
 
 import static org.quartz.JobBuilder.newJob;
@@ -22,6 +25,8 @@ public class JobConf {
     private JsonObject configJson;
 
     private Scheduler scheduler;
+
+    private static Logger logger = LogManager.getLogger(JobConf.class);
 
     public JobConf(Vertx vertx, JsonObject configJson, Scheduler scheduler) {
         this.vertx=vertx;
@@ -52,7 +57,7 @@ public class JobConf {
         try {
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 

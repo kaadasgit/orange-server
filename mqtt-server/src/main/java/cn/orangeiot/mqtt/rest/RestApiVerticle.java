@@ -3,10 +3,13 @@ package cn.orangeiot.mqtt.rest;
 import cn.orangeiot.mqtt.MQTTSession;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +19,7 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Created by giovanni on 05/01/17.
@@ -34,22 +38,22 @@ public class RestApiVerticle extends AbstractVerticle {
         HttpServer server = vertx.createHttpServer();
         Router router = Router.router(vertx);
 
-        long size1mb = 1024*1024 ; //bytes
+        long size1mb = 1024 * 1024; //bytes
         router.route().handler(BodyHandler.create().setBodyLimit(size1mb));
 
         // http://<host:port>/pubsub/publish?channel=&lt;channel1&gt;&qos=0&retained=0
         // qos: MOST_ONE, LEAST_ONE, EXACTLY_ONC
-        router.post("/pubsub/publish").handler( req -> {
+        router.post("/pubsub/publish").handler(req -> {
             MultiMap headers = req.request().headers();
             MultiMap params = req.request().params();
             String tenant;
-            if(headers.contains("tenant")) {
+            if (headers.contains("tenant")) {
                 tenant = headers.get("tenant");
             } else {
                 tenant = params.get("tenant");
             }
             String topic;
-            if(params.contains("topic")) {
+            if (params.contains("topic")) {
                 topic = req.request().params().get("topic");
             } else if (params.contains("channel")) {
                 topic = req.request().params().get("channel");
@@ -63,7 +67,7 @@ public class RestApiVerticle extends AbstractVerticle {
             PublishMessage msg = new PublishMessage();
             msg.setMessageID(1);
             msg.setTopicName(topic);
-            if ( qos != null) {
+            if (qos != null) {
                 AbstractMessage.QOSType theqos =
                         AbstractMessage.QOSType.valueOf(qos);
                 msg.setQos(theqos);
@@ -91,10 +95,25 @@ public class RestApiVerticle extends AbstractVerticle {
 
         // http://<host:port>/pubsub/publish?channel=&lt;channel1&gt;&qos=0&retained=0
         // qos: MOST_ONE, LEAST_ONE, EXACTLY_ONC
-        router.get("/get/topic").handler( req -> {
+        router.get("/get/topic").handler(req -> {
             req.response().end(JsonObject.mapFrom(MQTTSession.suscribeMap).encodePrettily());
         });
 
+
+        router.get("/get/login/All").handler(req -> {
+            vertx.eventBus().send("cn.login.all", null, (AsyncResult<Message<JsonArray>> rs) -> {
+                if (rs.failed()) {
+                    req.response().end(new JsonArray().encodePrettily());
+                } else {
+                    if (Objects.nonNull(rs.result().body())) {
+                        req.response().end(rs.result().body().encodePrettily());
+                    } else {
+                        req.response().end(new JsonArray().encodePrettily());
+                    }
+                }
+
+            });
+        });
 
         router.exceptionHandler(event -> {
             logger.error(event.getMessage(), event.getCause());
@@ -108,6 +127,6 @@ public class RestApiVerticle extends AbstractVerticle {
                 logger.info("RestApiVerticle http server NOT started !");
             }
         });
-        logger.info("RestApiVerticle started" );
+        logger.info("RestApiVerticle started");
     }
 }

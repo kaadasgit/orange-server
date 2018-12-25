@@ -18,9 +18,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vertx.version>3.5.0</vertx.version>
-        <vertx.scope>provided</vertx.scope>
-        <wso2.scope>provided</wso2.scope>
-        <project.deploydir>${project.basedir}/target/deploy/${project.artifactId}</project.deploydir>
     </properties>
 
     <repositories>
@@ -40,8 +37,33 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <!--kafka配置和log4j2同步日志-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-kafka-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <!--vertx redisclient配置-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-redis-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>cn.orangeiot</groupId>
             <artifactId>reg-addr</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.orangeiot</groupId>
+            <artifactId>mqtt-common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
@@ -49,19 +71,16 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
-            <scope>${vertx.scope}</scope>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web</artifactId>
             <version>${vertx.version}</version>
-            <scope>${vertx.scope}</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
-            <scope>${vertx.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -73,7 +92,6 @@
             <groupId>org.wso2.carbon.commons</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
             <version>4.4.7</version>
-            <scope>${wso2.scope}</scope>
         </dependency>
 
         <!-- prometheus.io metrics -->
@@ -142,6 +160,13 @@
             <version>1.6.1</version>
             <!-- <scope>test</scope> -->
         </dependency>
+
+        <!--緩存組件-->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+        </dependency>
     </dependencies>
 
 
@@ -157,6 +182,7 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+            <!--fat.jar打包-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -171,39 +197,12 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <manifestEntries>
-                                        <Main-Class>cn.orangeiot.mqtt.MqttServerStart</Main-Class>
-                                    </manifestEntries>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/cxf/bus-extensions.txt</resource>
+                                    <mainClass>cn.orangeiot.mqtt.MqttServerStart</mainClass>
                                 </transformer>
                             </transformers>
-                            <artifactSet>
-                                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
-                                here -->
-                                <excludes>
-                                    <exclude>io.vertx:vertx-codegen</exclude>
-                                    <exclude>junit:junit</exclude>
-                                    <exclude>org.mvel:mvel2</exclude>
-                                    <!--<exclude>log4j:log4j</exclude>-->
-                                    <!--<exclude>org.slf4j:slf4j-api</exclude>-->
-                                </excludes>
-                            </artifactSet>
-                            <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar
-                            </outputFile>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.4</version>
             </plugin>
         </plugins>
         <resources>
@@ -211,15 +210,26 @@
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.json</include>
                 </includes>
                 <excludes>
                     <exclude>log4j2.xml</exclude>
+                    <exclude>kafka_consumer-conf.properties</exclude>
+                    <exclude>kafka_producer-conf.properties</exclude>
+                    <exclude>mod.json</exclude>
+                    <exclude>redis-conf.json</exclude>
+                    <exclude>vertx-default-jul-logging.properties</exclude>
+                    <exclude>zkConf.json</exclude>
+                    <exclude>config.json</exclude>
                 </excludes>
             </resource>
             <resource>
                 <filtering>true</filtering>
                 <directory>src/main/${package.target}</directory>
                 <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.json</include>
                     <include>*.xml</include>
                 </includes>
             </resource>
@@ -251,106 +261,6 @@
             <properties>
                 <package.target>resources-publish</package.target>
             </properties>
-        </profile>
-
-        <profile>
-            <id>include-vertx</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <vertx.scope>compile</vertx.scope>
-            </properties>
-        </profile>
-        <profile>
-            <id>include-wso2-auth</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <wso2.scope>compile</wso2.scope>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>metrics</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.vertx</groupId>
-                    <artifactId>vertx-dropwizard-metrics</artifactId>
-                    <version>${vertx.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-
-        <profile>
-            <id>win32</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-resources-win32</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${basedir}/target/win32</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>src/main/win32</directory>
-                                            <excludes>
-                                                <exclude>README.md</exclude>
-                                                <exclude>*.exe</exclude>
-                                            </excludes>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                        <resource>
-                                            <directory>src/main/win32</directory>
-                                            <includes>
-                                                <include>*.exe</include>
-                                            </includes>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                        <resource>
-                                            <directory>${basedir}/target</directory>
-                                            <includes>
-                                                <include>*-fat.jar</include>
-                                            </includes>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <configuration>
-                                    <descriptor>src/main/assembly/win32.xml</descriptor>
-                                </configuration>
-                                <id>create-archive-win32</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 

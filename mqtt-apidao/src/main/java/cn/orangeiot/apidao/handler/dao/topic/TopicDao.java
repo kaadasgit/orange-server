@@ -28,11 +28,11 @@ public class TopicDao {
     public void saveTopic(Message<JsonObject> message){
         if(Objects.nonNull(message.body())){
             RedisClient.client.hsetnx(RedisKeyConf.SUBSCRIBE_kEY, message.body().getString("topicName"), message.body().getString("uid"), rs -> {
-                if (rs.failed()) rs.cause().printStackTrace();
+                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
             });//保存订阅主题和发布者
 
             RedisClient.client.hset(RedisKeyConf.SUBSCRIBE_CLIENT_kEY + message.body().getString("topicName"), message.body().getString("uid"), "", rs -> {
-                if (rs.failed()) rs.cause().printStackTrace();
+                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
             });//订阅主题的用户集合
 
             message.reply(true);
@@ -52,19 +52,19 @@ public class TopicDao {
     public void delTopic(Message<JsonObject> message){
         if(Objects.nonNull(message.body())){
             RedisClient.client.hdel(RedisKeyConf.SUBSCRIBE_CLIENT_kEY + message.body().getString("topicName"), message.body().getString("uid"), rs -> {
-                if (rs.failed()) rs.cause().printStackTrace();
+                if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
             });//删除订阅账户
 
             RedisClient.client.hget(RedisKeyConf.SUBSCRIBE_kEY, message.body().getString("topicName"), rs -> {//查询主题发布者
                 if (rs.failed()) {
-                    rs.cause().printStackTrace();
+                    logger.error(rs.cause().getMessage(), rs);
                 } else {
                     if (Objects.nonNull(rs.result()) && rs.result().toString().equals(message.body().getString("uid"))) {//如果是主题发布者
                         RedisClient.client.hdel(RedisKeyConf.SUBSCRIBE_kEY,  message.body().getString("topicName"), as -> {
-                            if (rs.failed()) rs.cause().printStackTrace();
+                            if (as.failed()) logger.error(as.cause().getMessage(), as);
                         });
                         RedisClient.client.del(RedisKeyConf.SUBSCRIBE_CLIENT_kEY +  message.body().getString("topicName"), as -> {
-                            if (rs.failed()) rs.cause().printStackTrace();
+                            if (as.failed()) logger.error(as.cause().getMessage(), as);
                         });
                     }
                 }

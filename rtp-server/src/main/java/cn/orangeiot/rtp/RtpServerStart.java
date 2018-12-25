@@ -31,14 +31,13 @@ public class RtpServerStart {
             source = new ConfigurationSource(in);
             Configurator.initialize(null, source);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         if (null != source) {
             Vertx.vertx().deployVerticle(RtpVerticle.class.getName(), rs -> {
                 if (rs.failed()) {
                     logger.error("deploy RtpServerStart fail");
-                    rs.cause().printStackTrace();
                 } else {
                     logger.info("deploy RtpServerStart successs");
                 }

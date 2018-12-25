@@ -72,7 +72,7 @@ public class ServerTest extends AbstractVerticle{
                                     .setPassword("123456")))
                     .requestHandler(router::accept).listen(11123,"0.0.0.0");
         } catch (IOException e) {
-            e.printStackTrace();
+//            logger.error(e.getMessage(), e);
         }
         startFuture.complete();
     }

@@ -1,4 +1,21 @@
 {
-  "connection_string": "mongodb://oegrt:qweqwecz123dsfs12shawe@114.67.58.242:27017/orangeiot",
+  "connection_string": "mongodb://oegrt:qweqwecz123dsfs12shawe@121.201.57.214:27017/orangeiot",
   "useObjectId":true
 }
+//{
+//  //connection db
+//  "host":"121.201.57.214",
+//  "port": 27017,
+//  "username": "oegrt",
+//  "password": "qweqwecz123dsfs12shawe",
+//  "db_name":"orangeiot",
+//  "useObjectId": true,
+//  "authMechanism": "SCRAM-SHA-1",
+//
+//  //Connection Pool Settings
+//  "maxPoolSize" : 150,
+//  "minPoolSize" : 150,
+//  "waitQueueMultiple"  : 1000,
+//  "waitQueueTimeoutMS" : 5000,
+//  "serverSelectionTimeoutMS" : 2000
+//}

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<html>
+<head>
+    <title>MQTT api doc</title>
+    <link href="css/pushy-buttons.css" rel="stylesheet">
+    <style type="text/css">
+        #connect-container {
+            float: left;
+            width: 800px
+        }
+
+        .schemes-container {
+            width: 100%;
+            margin: 32% auto;
+        }
+
+        #connect-container div {
+            padding: 5px;
+        }
+
+        #console-container {
+            float: left;
+            width: 600px;
+            height: 450px;
+        }
+
+        #console {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 450px;
+            overflow-y: scroll;
+            padding: 5px;
+            width: 100%;
+        }
+
+        #console p {
+            padding: 0;
+            margin: 0;
+        }
+
+        .bye {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            padding: 5px;
+            height: 20%;
+            width: 8%;
+            background-color: #FAFFF0;
+            border-radius: 13%;
+        }
+
+        .desc {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            padding: 5px;
+            height: 150px;
+            width: 50%;
+        }
+
+        body {
+            text-align: center;
+        }
+
+        .tex {
+            width: 220px;
+            height: 22px;
+        }
+
+        .topic {
+            width: 270px;
+            height: 22px;
+        }
+
+        .w {
+            cursor: pointer
+        }
+    </style>
+
+    <script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
+    <script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        var ws = null;
+        var host = window.location.host;
+        //        var api = "http://localhost:34113"
+        var api = "http://" + host;
+        var url = "/websocket";
+        var transports = [];
+        var state = true;// true sockjs false websocket
+        var status = 0;//request status
+
+        function setConnected(connected) {
+            document.getElementById('connect').disabled = connected;
+            document.getElementById('disconnect').disabled = !connected;
+        }
+
+        function connect() {
+            if (!url && host != null) {
+                alert('Select whether to use W3C WebSocket or SockJS');
+                return;
+            }
+            console.log("connect -> " + api + url)
+
+            ws = state ?
+                new SockJS(api + url) : new WebSocket(api + url);
+
+            ws.onopen = function () {
+                setConnected(true);
+                log("connect mqtt server")
+                connectMqttServer()
+                console.log('Info:websocket connection opened.');
+            };
+            ws.onmessage = function (event) {
+                var result = JSON.parse(event.data);
+                console.log("Received  " + JSON.stringify(result))
+                if (JSON.stringify(result.data) != null && JSON.stringify(result.data) != "null") {
+                    if (result.data.topic != null) {
+                        // log('Received:  topic  => \n' + JSON.stringify(result.data.topic));
+                    }
+                    if (result.data.qos != null) {
+                        // log('Received:  qos => \n' + JSON.stringify(result.data.qos));
+                    }
+                    if (result.data.payload != null) {
+                        log('Received:  payload => \n' + JSON.stringify(result.data.payload));
+                    }
+                } else {
+                    log('Received: \n' + JSON.stringify(result));
+                }
+            };
+            ws.onclose = function (event) {
+                setConnected(false);
+                log('Info: mqtt  connection closed.');
+                console.log(event);
+            };
+
+        }
+
+        //connect mqtt
+        function connectMqttServer() {
+            //subscirbe topics
+            var topicArry = []
+            $('.liTopic').each(function () {
+                var topic = $(this).find('.topic').val()
+                var qos = parseInt($(this).find('.qos').val())
+                if (topic) {
+                    topicArry.push({topic: topic, qos: qos})
+                }
+            })
+
+            var mqttconnectInfo = {
+                host: $("#host").val(),
+                username: $("#username").val(),
+                password: $("#password").val(),
+                clientId: $("#clientId").val(),
+                topics: topicArry
+            };
+            var connectInfo = JSON.stringify(mqttconnectInfo)
+
+            //send
+            if (ws != null) {
+                console.log(connectInfo)
+                ws.send(connectInfo);
+            }
+
+        }
+
+        function disconnect() {
+            if (ws != null) {
+                console.log("close connect")
+                ws.close();
+                ws = null;
+            }
+            setConnected(false);
+        }
+
+
+        function updateTransport(transport) {
+            alert(transport);
+            transports = (transport == 'all') ? [] : [transport];
+        }
+
+        function log(message) {
+            var console = document.getElementById('console');
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.appendChild(document.createTextNode(message));
+            console.appendChild(p);
+            while (console.childNodes.length > 25) {
+                console.removeChild(console.firstChild);
+            }
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function addButton() {
+            var inputText = "<p class='liTopic'><label >topic :</label> " +
+                "<input class='topic'  type='text' name='topic'>" +
+                "  <label>qos : </label> <select class='qos'>" +
+                "<option>0</option>" +
+                "<option selected>1</option>" +
+                "<option>2</option>" +
+                "</select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p>";
+            $('#arr').append(inputText)
+        }
+
+
+        $(document).ready(function () {
+            getScheme()
+
+            $(".w").mousedown(function () {
+                $(this).css("cursor", "pointer");
+            }).mouseup(function () {
+                $(this).css("cursor", "default");
+            });
+        })
+
+
+        function getScheme() {
+            $.ajax({
+                type: "POST",
+                url: api + "/getTitle",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (jsonResult) {
+                    if (jsonResult.code == 200) {
+                        var schemes = jsonResult.data;
+                        console.log("schemes -> " + JSON.stringify(jsonResult.data))
+                        for (var i = 0, l = schemes.length; i < l; i++) {
+                            for (var key in schemes[i]) {
+                                var titleHead = "<p><div style='width:80%;margin:0 auto;text-align:left'>&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-size: 2.0rem;font-weight: bold;'>" + key + "</span></div><p>"
+                                $('#schemes').append(titleHead)
+                                console.log("======foreach======" + key + ':' + schemes[i][key]);
+                                $.each(schemes[i][key], function (index, value) {
+                                    var scheme = "<p><div  align='center' style='width:80%;margin:0 auto;'" +
+                                        "times='0' index='" + value + "'  onclick=\"getApi(this,'" + value + "'," + index + ",'" + key + "')\">" +
+                                        "<div style='border:1px solid #49cc90;background: rgb(73,204,144,.1);text-align:left;height: 50px;line-height:50px;'>" +
+                                        "&nbsp;&nbsp;&nbsp;&nbsp;<label style='font-size:1.4rem;font-weight: bold;'>" + value + "</label>"
+                                        + "<img src='./stop.svg' style='line-height: 50px;height:50px;float:right;width: 50px;' id='" + index + "' status='0'/></div></div>"
+                                    $('#schemes').append(scheme)
+                                });
+                            }
+                        }
+                    } else {
+                        alert("get scheme fail");
+                    }
+                }
+            });
+        }
+
+
+        function escapeJquery(srcString) {
+            // 转义之后的结果
+            var escapseResult = srcString;
+            // javascript正则表达式中的特殊字符
+            var jsSpecialChars = ["\\", "^", "$", "*", "?", ".", "+", "(", ")", "[",
+                "]", "|", "{", "}"];
+            // jquery中的特殊字符,不是正则表达式中的特殊字符
+            var jquerySpecialChars = ["~", "`", "@", "#", "%", "&", "=", "'", "\"",
+                ":", ";", "<", ">", ",", "/"];
+            for (var i = 0; i < jsSpecialChars.length; i++) {
+                escapseResult = escapseResult.replace(new RegExp("\\"
+                    + jsSpecialChars[i], "g"), "\\"
+                    + jsSpecialChars[i]);
+            }
+            for (var i = 0; i < jquerySpecialChars.length; i++) {
+                escapseResult = escapseResult.replace(new RegExp(jquerySpecialChars[i],
+                    "g"), "\\" + jquerySpecialChars[i]);
+            }
+            return escapseResult;
+        }
+
+
+        function disply(index, value) {
+            var status = $('#' + index).attr("status")
+            console.log("index -> " + index)
+            console.log("value -> " + value)
+            if (status == '0') {
+                $('#' + index).attr("src", "./start.svg")
+                $('#' + index).attr("style", "line-height: 50px;height:50px;width: 50px;float:right")
+                $('#' + index).attr("status", "1")
+                $('#' + escapeJquery(value)).attr("style", "display:block;border:1px solid #49cc90;width: 79.9%;margin:0 auto;")
+            } else {
+                $('#' + index).attr("src", "./stop.svg")
+                $('#' + index).attr("style", "line-height: 50px;height:50px;width: 50px;float:right")
+                $('#' + index).attr("status", "0")
+                $('#' + escapeJquery(value)).attr("style", "display:none;border:1px solid #49cc90;width: 79.9%;margin:0 auto;")
+            }
+        }
+
+
+        function divplay(index, value1, value2, id) {
+            $("#" + index + value1).attr("style", "vertical-align: top;font-size: 16px;color: blue;color:blue")
+            $("#" + id + value1).parent().attr("style", "display:block")
+            $("#" + index + value2).attr("style", "vertical-align: top;font-size: 16px;color: blue;color:black")
+            $("#" + id + value2).parent().attr("style", "display:none")
+        }
+
+
+        function getApi(obj, content, id_times, scheme) {
+            console.log("====index -> " + id_times + " , scheme ->" + scheme)
+            var times = $(obj).attr("times")
+            if (times == '0') {
+                var requestApi = {
+                    scheme: content,
+                    rootPath: scheme
+                }
+                $.ajax({
+                    type: "POST",
+                    url: api + "/getScheme",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(requestApi),
+                    success: function (jsonResult) {
+                        if (jsonResult.code == 200) {
+                            $(obj).attr("times", "1")
+                            $.each(jsonResult.data, function (index, value) {
+                                var new_payload = value.payload
+                                var new_topic = value.topic
+                                if (JSON.stringify(value.payload).indexOf("#clientId#") >= 0) {
+                                    new_payload = JSON.parse(JSON.stringify(value.payload).replace("#clientId#", $("#username").val()))
+                                }
+                                if (value.topic.indexOf("#clientId#") >= 0) {
+                                    new_topic = value.topic.replace("#clientId#", $("#username").val())
+                                }
+
+                                var apiArr = "<div style='border:1px solid #49cc90; width: 79.9%;margin:0 auto;' id='" + content + "'></p><label>topic :</label> <input class='tex' style='width: 22%;' type='text' value='" + new_topic + "'" +
+                                    "id='" + value.id + "topic'>" +
+                                    "    <label>qos : <input disabled type='text' maxlength='1' style='width: 20px'  value='" + value.qos + "'></label><br><br>" +
+                                    "<span style='vertical-align: top;font-size: 16px;color: blue' class='w' id='" + index + "2'  onclick=\"divplay(" + index + ",2,1,'" + value.id + "')\">payload</span> <span style='font-size: 16px;'> | </span>" +
+                                    "<span style='vertical-align: top;font-size: 16px;' class='w' id='" + index + "1' onclick=\"divplay(" + index + ",1,2,'" + value.id + "')\">description</span><p>"
+                                    + "<div><textarea class='desc' id='" + value.id + "2'>" + JSON.stringify(new_payload, null, 4) + "</textarea></div>"
+                                    + "<div style='display: none'><textarea class='desc' id='" + value.id + "1'>" + value.description + "</textarea></div><br>"
+                                    + " <a class='btn btn--md btn--green' style='width: 40%;' href='javascript:void(0)' onclick='sendMsg(this)' " +
+                                    "topic='" + value.id + "' qos='" + value.qos + "' payload='" + value.id + "2'>send</a></p></div>"
+
+                                $(obj).after(apiArr)
+                                $('#' + id_times).attr("src", "./start.svg")
+                                $('#' + id_times).attr("style", "line-height: 50px;width: 50px;height:50px;float:right")
+                                $('#' + id_times).attr("status", "1")
+                            });
+                        } else {
+                            alert("get scheme fail");
+                        }
+                    }
+                });
+            } else {
+                disply(id_times, content)
+            }
+        }
+
+        function sendMsg(obj) {
+            var content = $("#" + $(obj).attr("payload")).val()
+            var topic = $("#" + $(obj).attr("topic") + "topic").val()
+
+            var sendMsg = {
+                topic: topic,
+                payload: content,
+                qos: parseInt($(obj).attr("qos"))
+            }
+
+            console.log('Sent: ' + JSON.stringify(sendMsg));
+            if (ws != null)
+                ws.send(JSON.stringify(sendMsg));
+        }
+
+        function clean() {
+            $('#console').html("");
+        }
+
+        function clicks(show) {
+            var shoeid = document.getElementById(show);
+            if (shoeid.style.display == 'none') {
+                shoeid.style.display = '';
+            }
+            else {
+                shoeid.style.display = 'none';
+            }
+            return false;
+        }
+
+
+    </script>
+</head>
+<body style="background: rgb(199,238,206)">
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websockets
+    rely on Javascript being enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div style="width: 100%;">
+    <div id="connect-container" style="align-content:center;display:inline-block;">
+        <div id="sockJsTransportSelect" style="visibility:hidden;">
+            <span>SockJS transport:</span>
+            <select onchange="updateTransport(this.value)">
+                <option value="all">all</option>
+                <option value="websocket">websocket</option>
+                <option value="xhr-polling">xhr-polling</option>
+                <option value="jsonp-polling">jsonp-polling</option>
+                <option value="xhr-streaming">xhr-streaming</option>
+                <option value="iframe-eventsource">iframe-eventsource</option>
+                <option value="iframe-htmlfile">iframe-htmlfile</option>
+            </select>
+        </div>
+        <div style="text-align: right;width: 700px;">
+            <label style="vertical-align: middle;">mqtt server host:</label> <input id="host" type="text" class="tex"
+                                                                                    name="host"
+                                                                                    value="121.201.57.214:1883"
+                                                                                    style="vertical-align: middle;">
+            <!--<label>mqtt server host:</label> <input id="host" type="text" name="host" value="127.0.0.1:1883">-->
+            <p>
+                <label style="vertical-align: middle;">UserName :</label> <input id="username" class="tex" type="text"
+                                                                                 name="username"
+                                                                                 value="5902aca835736f21ae1e7a82"
+                                                                                 style="vertical-align: middle;">
+            <p>
+                <label style="vertical-align: middle;">password :</label> <input id="password" class="tex" type="text"
+                                                                                 name="password"
+                                                                                 value="123"
+                                                                                 style="vertical-align: middle;">
+            <p>
+                <label style="vertical-align: middle;">clientId : </label> <input id="clientId" class="tex" type="text"
+                                                                                  name="clientId"
+                                                                                  value="app:5902aca835736f21ae1e7a82"
+                                                                                  style="vertical-align: middle;">
+            <p>
+                <label style="float: left;margin-left: 240px;">subscribe topics :</label><br>
+            <p id="arr">
+            <span class='liTopic'><label>topic : </label> <input class="topic" type="text" name="topic"
+                                                                 value="/5902aca835736f21ae1e7a82/rpc/reply">
+                <label>qos :</label>
+                <select class="qos">
+                    <option>0</option>
+                    <option selected>1</option>
+                    <option>2</option>
+                </select>&nbsp;&nbsp;
+                <input id="add" class="bye" type="button" name="topic" value="ADD" onclick="addButton()"/>
+            </span>
+        </div>
+        <div>
+            <button id="connect" class="bye" onclick="connect();" style="width: 100px;height: 40px;">Connect</button>
+            <button id="disconnect" class="bye" style="width: 15%;height: 40px;" disabled="disabled"
+                    onclick="disconnect();">
+                Disconnect
+            </button>
+        </div>
+    </div>
+    <div id="console-container" style="text-align: left;font-size: 18px;">
+        <span>received window</span><br>
+        <div id="console"></div>
+        <a class="btn btn--sm btn--red" href="#" style="width: 95%;text-align: center" onclick='clean()'>clean</a>
+    </div>
+    <br>
+    <div id="schemes" class="schemes-container"></div>
+</div>
+</body>
+</html>

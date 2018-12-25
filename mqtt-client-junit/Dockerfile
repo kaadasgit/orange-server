@@ -1,0 +1,18 @@
+FROM openjdk:8-jre-alpine
+
+ENV VERTICLE_FILE mqtt-client-junit-1.0-SNAPSHOT.jar
+
+ENV VERTICLE_HOME /usr/verticles
+
+ENV LOGDIR_HOME /usr/dir
+
+WORKDIR $LOGDIR_HOME
+
+EXPOSE 34113
+
+COPY target/$VERTICLE_FILE $VERTICLE_HOME/
+
+
+WORKDIR $VERTICLE_HOME
+ENTRYPOINT ["sh", "-c"]
+CMD ["exec java -jar -DLOGDIR=$LOGDIR_HOME $VERTICLE_FILE >> $VERTICLE_HOME/server.log 2<&1"]

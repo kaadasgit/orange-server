@@ -4,11 +4,15 @@ import cn.orangeiot.mqtt.bridge.EventBusBridgeWebsocketClientVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeClientVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeServerVerticle;
 import cn.orangeiot.mqtt.bridge.EventBusBridgeWebsocketServerVerticle;
+import cn.orangeiot.mqtt.event.RegistEvenProcessHandler;
+import cn.orangeiot.mqtt.log.timer.CleanOverExpireTimer;
 import cn.orangeiot.mqtt.persistence.StoreVerticle;
+import cn.orangeiot.mqtt.util.LogFileUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +24,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -28,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MQTTBroker extends AbstractVerticle {
 
     private Logger logger = LogManager.getLogger(MQTTBroker.class);
+
+    private final int DEFAULT_IDLE_TIME = 60;//默认打idle最大超时时间
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
@@ -41,6 +48,7 @@ public class MQTTBroker extends AbstractVerticle {
                 }
         );
     }
+
     private void deployVerticle(Class c, DeploymentOptions opt) {
         vertx.deployVerticle(c.getName(), opt,
                 result -> {
@@ -53,6 +61,7 @@ public class MQTTBroker extends AbstractVerticle {
                 }
         );
     }
+
     private void deployAuthorizationVerticle(JsonObject config, int instances) {
 //        String clazz = config.getString("verticle", OAuth2AuthenticatorVerticle.class.getName());
         String clazz = config.getString("verticle");
@@ -63,6 +72,7 @@ public class MQTTBroker extends AbstractVerticle {
                         .setConfig(config)
         );
     }
+
     private void deployStoreVerticle(int instances) {
         deployVerticle(StoreVerticle.class,
                 new DeploymentOptions().setWorker(false).setInstances(instances)
@@ -72,22 +82,23 @@ public class MQTTBroker extends AbstractVerticle {
     private void deployBridgeServerVerticle(JsonObject config, int instances) {
         Boolean useWebsocket = config.getBoolean("websocket_enabled", false);
         Class c;
-        if(useWebsocket) {
+        if (useWebsocket) {
             c = EventBusBridgeWebsocketServerVerticle.class;
         } else {
             c = EventBusBridgeServerVerticle.class;
         }
-        deployVerticle( c, new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config) );
+        deployVerticle(c, new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config));
     }
+
     private void deployBridgeClientVerticle(JsonObject config, int instances) {
         Boolean useWebsocket = config.getBoolean("websocket_enabled", false);
         Class c;
-        if(useWebsocket) {
+        if (useWebsocket) {
             c = EventBusBridgeWebsocketClientVerticle.class;
         } else {
             c = EventBusBridgeClientVerticle.class;
         }
-        deployVerticle( c, new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config) );
+        deployVerticle(c, new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config));
     }
 
     @Override
@@ -104,13 +115,13 @@ public class MQTTBroker extends AbstractVerticle {
             deployStoreVerticle(1);
 
             // 2 bridge server
-            if(config.containsKey("bridge_server")) {
+            if (config.containsKey("bridge_server")) {
                 JsonObject bridgeServerConf = config.getJsonObject("bridge_server", new JsonObject());
                 deployBridgeServerVerticle(bridgeServerConf, 1);
             }
 
             // 3 bridge client
-            if(config.containsKey("bridge_client")) {
+            if (config.containsKey("bridge_client")) {
                 JsonObject bridgeClientConf = config.getJsonObject("bridge_client", new JsonObject());
                 deployBridgeClientVerticle(bridgeClientConf, 1);
             }
@@ -127,16 +138,15 @@ public class MQTTBroker extends AbstractVerticle {
 
 
             JsonArray brokers = config.getJsonArray("brokers");
-            for(int i=0; i<brokers.size(); i++) {
+            for (int i = 0; i < brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
-                brokerConf.put("send_publish_message",config.getString("send_publish_message"));
+                brokerConf.put("send_publish_message", config.getString("send_publish_message"));
                 ConfigParser c = new ConfigParser(brokerConf);
                 boolean wsEnabled = c.isWsEnabled();
                 if (wsEnabled) {
                     // MQTT over WebSocket
                     startWebsocketServer(c);
-                }
-                else {
+                } else {
                     // MQTT over TCP
                     startTcpServer(c);
                 }
@@ -147,12 +157,11 @@ public class MQTTBroker extends AbstractVerticle {
                 );
             }
 
-        } catch(Exception e ) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
 
     }
-
 
 
     private void startTcpServer(ConfigParser c) {
@@ -164,22 +173,29 @@ public class MQTTBroker extends AbstractVerticle {
 
         // MQTT over TCP
         NetServerOptions opt = new NetServerOptions()
-                .setTcpKeepAlive(true)
-                .setIdleTimeout(idleTimeout) // in seconds; 0 means "don't timeout".
-                .setPort(port);
+                .setTcpKeepAlive(false)
+                .setIdleTimeout(DEFAULT_IDLE_TIME) // in seconds; 0 means "don't timeout".
+                .setPort(port).setAcceptBacklog(100000);
 
-        if(tlsEnabled) {
+        if (tlsEnabled) {
             opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                .setKeyPath(keyPath)
-                .setCertPath(certPath)
+                    .setKeyPath(keyPath)
+                    .setCertPath(certPath)
             );
         }
         NetServer netServer = vertx.createNetServer(opt);
         Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
+        LogFileUtils logFileUtils = new LogFileUtils(c.getDirPath(), vertx, c.getSegmentSize(), c.getExpireTime());
+        new RegistEvenProcessHandler(vertx, sessions, logFileUtils).initHandle();
         netServer.connectHandler(netSocket -> {
-            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket, sessions);
+            NetSocketInternal soi = (NetSocketInternal) netSocket;
+            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(DEFAULT_IDLE_TIME, soi, vertx, c, netSocket, sessions, logFileUtils);
             mqttNetSocket.start();
         }).listen();
+        //啓動clean定時器
+        new CleanOverExpireTimer(vertx, c.getPeriodicTime(), c.getDirPath(), c.getExpireTime());
+
+
     }
 
     private void startWebsocketServer(ConfigParser c) {
@@ -195,17 +211,18 @@ public class MQTTBroker extends AbstractVerticle {
                 .setIdleTimeout(idleTimeout) // in seconds; 0 means "don't timeout".
                 .setWebsocketSubProtocols(wsSubProtocols)
                 .setPort(port);
-        if(tlsEnabled) {
+        if (tlsEnabled) {
             httpOpt.setSsl(true);
             httpOpt.setPemKeyCertOptions(new PemKeyCertOptions()
-                .setKeyPath(keyPath)
-                .setCertPath(certPath)
+                    .setKeyPath(keyPath)
+                    .setCertPath(certPath)
             );
         }
         HttpServer http = vertx.createHttpServer(httpOpt);
         Map<String, MQTTSession> sessions = new HashMap<>();
         http.websocketHandler(serverWebSocket -> {
-            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket, sessions);
+            NetSocketInternal soi = (NetSocketInternal) serverWebSocket;
+            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(DEFAULT_IDLE_TIME, soi, vertx, c, serverWebSocket, sessions);
             mqttWebSocket.start();
         }).listen();
     }

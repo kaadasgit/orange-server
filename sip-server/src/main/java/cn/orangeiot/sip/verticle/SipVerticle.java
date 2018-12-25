@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sip.SipFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -33,7 +34,7 @@ public class SipVerticle extends AbstractVerticle {
     public void start(Future<Void> startFuture) throws Exception {
 
         loadConf();
-        //todo 建立sip实例
+        // 建立sip实例
         startFuture.complete();
     }
 
@@ -58,27 +59,32 @@ public class SipVerticle extends AbstractVerticle {
                 JsonObject json = new JsonObject(zkConf);
                 jsonObject = new JsonObject(config);
 
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
+
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
                 Vertx.clusteredVertx(options, this::register);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != zkIn)
                 try {
                     zkIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             if (null != configIn)
                 try {
                     configIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

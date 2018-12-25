@@ -1,9 +1,12 @@
 package cn.orangeiot.message.handler.client;
 
+import cn.orangeiot.message.handler.RegisterHandler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +20,7 @@ import java.io.InputStream;
 public class SMSClient {
     public static io.vertx.ext.web.client.WebClient client;
 
+    private static Logger logger = LogManager.getLogger(SMSClient.class);
     /**
      * @Description 配置邮箱服务
      * @author zhang bo
@@ -39,13 +43,13 @@ public class SMSClient {
                         .setMaxPoolSize(json.getInteger("maxPoolSize")).setConnectTimeout(json.getInteger("timeout")));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (null != mongoIn)
                 try {
                     mongoIn.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
         }
     }

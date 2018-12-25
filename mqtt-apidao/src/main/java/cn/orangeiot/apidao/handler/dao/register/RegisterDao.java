@@ -21,11 +21,56 @@ public class RegisterDao {
      * @version 1.0
      */
     public void saveRegisterInfo(Message<JsonObject> message) {
-        RedisClient.client.hset(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), message.body().getString("socketAddress"), rs -> {
+        RedisClient.client.set(RedisKeyConf.REGISTER_USER + message.body().getString("uri"), message.body().getString("socketAddress"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
+            } else {
+                RedisClient.client.expire(RedisKeyConf.REGISTER_USER + message.body().getString("uri")
+                        , message.body().getInteger("expires").longValue(), as -> {
+                            if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                        });
             }
         });
+//        RedisClient.client.set(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress"), message.body().getString("uri"), rs -> {
+//            if (rs.failed()) {
+//                logger.error(rs.cause().getMessage(), rs.cause());
+//            } else {
+//                RedisClient.client.expire(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress")
+//                        , message.body().getInteger("expires").longValue(), as -> {
+//                            if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+//                        });
+//            }
+//        });
+    }
+
+
+    /**
+     * @Description 心跳包
+     * @author zhang bo
+     * @date 18-9-11
+     * @version 1.0
+     */
+    public void heartbeatRegisterInfo(Message<JsonObject> message) {
+        RedisClient.client.expire(RedisKeyConf.REGISTER_USER + message.body().getString("uri")
+                , message.body().getInteger("expires").longValue(), as -> {
+                    if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                });
+//        RedisClient.client.get(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress"), rs -> {
+//            if (rs.failed()) {
+//                logger.error(rs.cause().getMessage(), rs.cause());
+//            } else {
+//                if (Objects.nonNull(rs.result())) {
+//                    RedisClient.client.expire(RedisKeyConf.REGISTER_USER + rs.result()
+//                            , message.body().getInteger("expires").longValue(), as -> {
+//                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+//                            });
+//                    RedisClient.client.expire(RedisKeyConf.REGISTER_SIP_HEARTS + message.body().getString("socketAddress")
+//                            , message.body().getInteger("expires").longValue(), as -> {
+//                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+//                            });
+//                }
+//            }
+//        });
     }
 
 
@@ -37,9 +82,9 @@ public class RegisterDao {
      */
     @SuppressWarnings("Duplicates")
     public void getRegisterInfo(Message<String> message) {
-        RedisClient.client.hget(RedisKeyConf.REGISTER_USER, message.body(), rs -> {
+        RedisClient.client.get(RedisKeyConf.REGISTER_USER + message.body(), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()))
                     message.reply(rs.result());
@@ -57,9 +102,9 @@ public class RegisterDao {
      * @version 1.0
      */
     public void delRegisterInfo(Message<JsonObject> message) {
-        RedisClient.client.hdel(RedisKeyConf.REGISTER_USER, message.body().getString("uri"), rs -> {
+        RedisClient.client.del(RedisKeyConf.REGISTER_USER + message.body().getString("uri"), rs -> {
             if (rs.failed())
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
         });
     }
 
@@ -73,15 +118,75 @@ public class RegisterDao {
     public void saveCallIdAddr(Message<JsonObject> message) {
         RedisClient.client.hget(RedisKeyConf.REGISTER_USER, message.body().getString("sendAddr"), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
                     RedisClient.client.hset(RedisKeyConf.CALLIDADDR, message.body().getString("mediaType") + rs.result().split(":")[0], message.body().getString("receAddr"), as -> {
                         if (as.failed()) {
-                            as.cause().printStackTrace();
+                            logger.error(as);
                         }
                     });
                 }
+            }
+        });
+    }
+
+
+    /**
+     * @Description 保存会话节点
+     * @author zhang bo
+     * @date 18-3-8
+     * @version 1.0
+     */
+    public void saveSessionBranch(Message<JsonObject> message) {
+        RedisClient.client.hset(RedisKeyConf.SESSION_BRANCH + message.body().getString("branch"), RedisKeyConf.SIP_VAL_UID, message.body().getString("uid"), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
+            } else {
+                RedisClient.client.expire(RedisKeyConf.SESSION_BRANCH + message.body().getString("branch"), message.body().getInteger("expire"), as -> {
+                    if (as.failed()) {
+                        logger.error(as);
+                    }
+                });
+            }
+        });
+    }
+
+
+    /**
+     * @Description 获取会话节点
+     * @author zhang bo
+     * @date 18-3-8
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void getSessionBranch(Message<String> message) {
+        RedisClient.client.hget(RedisKeyConf.SESSION_BRANCH + message.body(), RedisKeyConf.SIP_VAL_UID, rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
+                message.reply(null);
+            } else {
+                if (Objects.nonNull(rs.result())) {
+                    message.reply(rs.result());
+                } else {
+                    message.reply(null);
+                }
+            }
+        });
+    }
+
+
+    /**
+     * @Description 获取会话节点
+     * @author zhang bo
+     * @date 18-3-8
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void removeSessionBranch(Message<String> message) {
+        RedisClient.client.del(RedisKeyConf.SESSION_BRANCH + message.body(), rs -> {
+            if (rs.failed()) {
+                logger.error(rs.cause().getMessage(), rs.cause());
             }
         });
     }
@@ -97,7 +202,7 @@ public class RegisterDao {
     public void getCallIdAddr(Message<String> message) {
         RedisClient.client.hget(RedisKeyConf.CALLIDADDR, message.body(), rs -> {
             if (rs.failed()) {
-                rs.cause().printStackTrace();
+                logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()))
                     message.reply(rs.result());

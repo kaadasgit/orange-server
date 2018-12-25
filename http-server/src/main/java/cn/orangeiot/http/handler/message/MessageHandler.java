@@ -9,9 +9,11 @@ import cn.orangeiot.reg.user.UserAddr;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -23,7 +25,6 @@ import java.util.Objects;
 public class MessageHandler implements UserAddr {
 
     private static Logger logger = LogManager.getLogger(MessageHandler.class);
-
 
     private EventBus eventBus;
 
@@ -43,27 +44,29 @@ public class MessageHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void sendSMS(RoutingContext routingContext) {
-        logger.info("==UserHandler=sendSMS==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("tel", DataType.STRING)
                 .put("code", DataType.STRING), asyncResult -> {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                eventBus.send(UserAddr.class.getName() + SMS_CODE, JsonObject.mapFrom(asyncResult.result()), SendOptions.getInstance()
-                        , rs -> {
-                            if (asyncResult.failed()) {
-                                routingContext.fail(501);
-                            } else {
-                                if (Objects.nonNull(rs.result().body())) {
-                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                if (StringUtils.isNumeric(asyncResult.result().getString("tel")))//检验是否是合法數字
+                    eventBus.send(UserAddr.class.getName() + SMS_CODE, asyncResult.result(), SendOptions.getInstance()
+                            , rs -> {
+                                if (rs.failed()) {
+                                    routingContext.fail(501);
                                 } else {
-                                    routingContext.response().end(JsonObject.mapFrom(new Result<String>()
-                                            .setErrorMessage(ErrorType.CODE_COUNT_FAIL.getKey(), ErrorType.CODE_COUNT_FAIL.getValue()))
-                                            .toString());
+                                    if (Objects.nonNull(rs.result().body())) {
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                    } else {
+                                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                                .setErrorMessage(ErrorType.CODE_COUNT_FAIL.getKey(), ErrorType.CODE_COUNT_FAIL.getValue()))
+                                                .toString());
+                                    }
                                 }
-                            }
-                        });
+                            });
+                else
+                    routingContext.fail(401);
 
             }
         });
@@ -78,27 +81,30 @@ public class MessageHandler implements UserAddr {
      */
     @SuppressWarnings("Duplicates")
     public void sendMail(RoutingContext routingContext) {
-        logger.info("==UserHandler=sendMail==params->" + routingContext.getBodyAsString());
         //验证参数的合法性
         VerifyParamsUtil.verifyParams(routingContext, new JsonObject().put("mail", DataType.STRING)
                 , asyncResult -> {
                     if (asyncResult.failed()) {
                         routingContext.fail(401);
                     } else {
-                        eventBus.send(UserAddr.class.getName() + MAIL_CODE, JsonObject.mapFrom(asyncResult.result()), SendOptions.getInstance()
-                                , rs -> {
-                                    if (asyncResult.failed()) {
-                                        routingContext.fail(501);
-                                    } else {
-                                        if (Objects.nonNull(rs.result().body())) {
-                                            routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                        String regex = "[\\w-]+(\\.[\\w-]+)*@[\\w-]+(\\.[\\w-]+)+$";
+                        if (asyncResult.result().getString("mail").matches(regex)) //检验是否是合法的邮箱地址
+                            eventBus.send(UserAddr.class.getName() + MAIL_CODE, asyncResult.result(), SendOptions.getInstance()
+                                    , rs -> {
+                                        if (asyncResult.failed()) {
+                                            routingContext.fail(501);
                                         } else {
-                                            routingContext.response().end(JsonObject.mapFrom(new Result<String>()
-                                                    .setErrorMessage(ErrorType.CODE_COUNT_FAIL.getKey(), ErrorType.CODE_COUNT_FAIL.getValue()))
-                                                    .toString());
+                                            if (Objects.nonNull(rs.result().body())) {
+                                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()).toString());
+                                            } else {
+                                                routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                                        .setErrorMessage(ErrorType.CODE_COUNT_FAIL.getKey(), ErrorType.CODE_COUNT_FAIL.getValue()))
+                                                        .toString());
+                                            }
                                         }
-                                    }
-                                });
+                                    });
+                        else
+                            routingContext.fail(401);
                     }
                 });
     }

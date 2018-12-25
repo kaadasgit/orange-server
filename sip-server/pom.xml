@@ -91,6 +91,13 @@
             <artifactId>ice4j-fork</artifactId>
             <version>1.0+f.4</version>
         </dependency>
+
+        <!--緩存組件-->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+        </dependency>
     </dependencies>
 
 
@@ -127,34 +134,34 @@
             </plugin>
 
             <!--ssh远程部署插件-->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>wagon-maven-plugin</artifactId>
-                <version>1.0</version>
-                <executions>
-                    <execution>
-                        <id>upload-deploy</id>
-                        <!-- 运行package打包的同时运行upload-single和sshexec -->
-                        <phase>package</phase>
-                        <goals>
-                            <goal>upload-single</goal>
-                            <goal>sshexec</goal>
-                        </goals>
-                        <configuration>
-                            <fromFile>
-                                ${project.build.directory}/${project.artifactId}-${project.parent.version}.${project.packaging}
-                            </fromFile>
-                            <url>scp://${ssh.userName}:${ssh.pwd}@${ssh.scp.url}${ssh.scp.directory}</url>
-                            <commands>
-                                <!-- 杀死原来的进程 -->
-                                <command>${ssh.exec.command}</command>
-                            </commands>
-                            <!-- 显示运行命令的输出结果 -->
-                            <displayCommandOutputs>true</displayCommandOutputs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>wagon-maven-plugin</artifactId>-->
+                <!--<version>1.0</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>upload-deploy</id>-->
+                        <!--&lt;!&ndash; 运行package打包的同时运行upload-single和sshexec &ndash;&gt;-->
+                        <!--<phase>package</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>upload-single</goal>-->
+                            <!--<goal>sshexec</goal>-->
+                        <!--</goals>-->
+                        <!--<configuration>-->
+                            <!--<fromFile>-->
+                                <!--${project.build.directory}/${project.artifactId}-${project.parent.version}.${project.packaging}-->
+                            <!--</fromFile>-->
+                            <!--<url>scp://${ssh.userName}:${ssh.pwd}@${ssh.scp.url}${ssh.scp.directory}</url>-->
+                            <!--<commands>-->
+                                <!--&lt;!&ndash; 杀死原来的进程 &ndash;&gt;-->
+                                <!--<command>${ssh.exec.command}</command>-->
+                            <!--</commands>-->
+                            <!--&lt;!&ndash; 显示运行命令的输出结果 &ndash;&gt;-->
+                            <!--<displayCommandOutputs>true</displayCommandOutputs>-->
+                        <!--</configuration>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
 
         </plugins>
         <resources>

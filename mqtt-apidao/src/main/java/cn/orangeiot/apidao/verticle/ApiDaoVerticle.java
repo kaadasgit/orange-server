@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author zhang bo
@@ -44,17 +45,24 @@ public class ApiDaoVerticle extends AbstractVerticle {
                 JsonObject json = new JsonObject(zkConf);
                 JsonObject configJson = new JsonObject(config);
 
+
+                if (Objects.nonNull(System.getProperty("CLUSTER")))
+                    json.put("rootPath", System.getProperty("CLUSTER"));
+
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+                if (Objects.nonNull(json.getValue("node.host")))
+                    options.setClusterHost(json.getString("node.host"));
 
                 //集群
-                String str= new JsonArray(System.getProperty("args")).getList().toArray()[1].toString();
-                RegisterHandler registerHandler = new RegisterHandler(configJson,str);
+                String str = new JsonArray(System.getProperty("args")).getList().toArray()[0].toString();
+                RegisterHandler registerHandler = new RegisterHandler(configJson, str);
                 Vertx.clusteredVertx(options, registerHandler::consumer);
+
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             startFuture.failed();
         } finally {
             if (null != zkIn)

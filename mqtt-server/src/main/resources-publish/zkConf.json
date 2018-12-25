@@ -1,0 +1,12 @@
+{
+    "hosts.zookeeper": "10.29.67.209:2181,10.29.68.127:2181,10.29.250.107:2181",
+    "node.host": "10.45.46.77",
+    "sessionTimeout": 5000,
+    "connectTimeout": 10000,
+    "rootPath": "io.vertx",
+    "retry": {
+        "initialSleepTime": 100,
+        "intervalTimes": 10000,
+        "maxTimes": 5
+    }
+}

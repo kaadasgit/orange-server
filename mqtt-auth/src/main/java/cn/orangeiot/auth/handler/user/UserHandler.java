@@ -39,7 +39,7 @@ public class UserHandler implements UserAddr {
         vertx.eventBus().send(UserAddr.class.getName() + VERIFY_TEL, message.body(), SendOptions.getInstance()
                 , (AsyncResult<Message<JsonObject>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                         message.reply(null);
                     } else {
                         message.reply(rs.result().body());
@@ -59,7 +59,7 @@ public class UserHandler implements UserAddr {
         vertx.eventBus().send(UserAddr.class.getName() + VERIFY_MAIL, message.body(), SendOptions.getInstance()
                 , (AsyncResult<Message<JsonObject>> rs) -> {
                     if (rs.failed()) {
-                        rs.cause().printStackTrace();
+                        logger.error(rs.cause().getMessage(), rs.cause());
                         message.reply(null);
                     } else {
                         message.reply(rs.result().body());

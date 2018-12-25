@@ -24,7 +24,7 @@ class SubAckDecoder extends DemuxDecoder {
         int remainingLength = message.getRemainingLength();
         
         //MessageID
-        message.setMessageID(in.readUnsignedShort());
+        message.setMessageID( in.readUnsignedShort());
         remainingLength -= 2;
         
         //Qos array

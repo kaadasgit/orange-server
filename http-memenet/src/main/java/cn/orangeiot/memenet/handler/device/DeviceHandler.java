@@ -1,5 +1,6 @@
 package cn.orangeiot.memenet.handler.device;
 
+import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.KdsCreateRandom;
 import cn.orangeiot.common.utils.SHA256;
@@ -7,6 +8,7 @@ import cn.orangeiot.memenet.client.HttpClient;
 import cn.orangeiot.reg.gateway.GatewayAddr;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -46,7 +48,7 @@ public class DeviceHandler implements GatewayAddr {
     public void onBindDeviceByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onBindDeviceByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
                 as.cause().printStackTrace();
@@ -55,29 +57,38 @@ public class DeviceHandler implements GatewayAddr {
                 vertx.eventBus().send(GatewayAddr.class.getName() + GET_USERINFO, message.body(), SendOptions.getInstance()
                         , (AsyncResult<Message<JsonObject>> ers) -> {
                             if (ers.failed()) {
-                                ers.cause().printStackTrace();
+                                logger.error(ers.cause().getMessage(), ers.cause());
                                 logger.error("==DeviceHandler=onBindDeviceByUser===501");
                             } else {
-                                //注册用户请求
-                                HttpClient.client.post("/v1/accsvr/binddevice")
-                                        .as(BodyCodec.jsonObject())
-                                        .addQueryParam("partid", conf.getString("partid"))
-                                        .addQueryParam("appid", conf.getString("appId"))
-                                        .addQueryParam("random", random)
-                                        .sendJsonObject(new JsonObject().put("userid", ers.result().body().getLong("userid").toString())
-                                                .put("devicesn", message.body().getString("devicesn")).put("sig", as.result()), rs -> {
-                                            if (rs.failed()) {
-                                                rs.cause().printStackTrace();
-                                                logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice timeout");
-                                            } else {
-                                                logger.info("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result -> " + rs.result().body());
-                                                if (rs.result().body().getInteger("result") == 0)
-                                                    vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
-                                                            .put("devicesn", message.body().getString("devicesn"))
-                                                            .put("domain", rs.result().body().getString("domain")), SendOptions.getInstance());
-
-                                            }
-                                        });
+                                if (Objects.nonNull(ers.result().body().getValue("userid"))) {//用戶注冊成功的
+                                    HttpClient.client.post("/v1/accsvr/binddevice")
+                                            .as(BodyCodec.jsonObject())
+                                            .addQueryParam("partid", conf.getString("partid"))
+                                            .addQueryParam("appid", conf.getString("appId"))
+                                            .addQueryParam("random", random)
+                                            .sendJsonObject(new JsonObject().put("userid", ers.result().body().getLong("userid").toString())
+                                                    .put("devicesn", message.body().getString("devicesn")).put("sig", as.result()), rs -> {
+                                                if (rs.failed()) {
+                                                    logger.error(rs.cause().getMessage(), rs.cause());
+                                                    logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice timeout");
+                                                    message.reply(null);
+                                                } else {
+                                                    logger.info("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result -> " + rs.result().body());
+                                                    if (rs.result().body().getInteger("result") == 0) {
+                                                        vertx.eventBus().send(GatewayAddr.class.getName() + UPDATE_GATEWAY_DOMAIN, new JsonObject()
+                                                                .put("devicesn", message.body().getString("devicesn")).put("uid", message.body().getString("uid"))
+                                                                .put("domain", rs.result().body().getString("domain")), SendOptions.getInstance());
+                                                        message.reply(new JsonObject());
+                                                    } else {
+                                                        logger.error("==DeviceHandler=onBindDeviceByUser===request /v1/accsvr/binddevice result ->" + rs.result().body().getInteger("result"));
+                                                        message.reply(null);
+                                                    }
+                                                }
+                                            });
+                                } else {
+                                    message.reply(null, new DeliveryOptions().addHeader("code", String.valueOf(ErrorType.MEMENET_USER_NO_REGISTER.getKey()))
+                                            .addHeader("msg", ErrorType.MEMENET_USER_NO_REGISTER.getValue()));
+                                }
                             }
                         });
             }
@@ -95,32 +106,33 @@ public class DeviceHandler implements GatewayAddr {
     public void onRelieveDeviceByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onRelieveDeviceByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onRelieveDeviceByUser Usersha256 encrypt is fail");
             } else {
                 vertx.eventBus().send(GatewayAddr.class.getName() + GET_GATEWWAY_USERID_LIST, message.body(), (AsyncResult<Message<JsonArray>> drs) -> {
                     if (drs.failed()) {
-                        drs.cause().printStackTrace();
+                        logger.error(drs.cause().getMessage(), drs.cause());
                     } else {
                         if (Objects.nonNull(drs.result())) {
                             drs.result().body().forEach(e -> {
-                                //注册用户请求
-                                HttpClient.client.post("/v1/accsvr/unbinddevice")
-                                        .addQueryParam("partid", conf.getString("partid"))
-                                        .addQueryParam("appid", conf.getString("appId"))
-                                        .addQueryParam("random", random)
-                                        .sendJsonObject(new JsonObject().put("userid", new JsonObject(e.toString()).getLong("userid"))
-                                                .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
-                                            if (rs.failed()) {
-                                                rs.cause().printStackTrace();
-                                                logger.error("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice timeout");
-                                            } else {
-                                                logger.info("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());
-                                            }
-                                        });
+                                JsonObject jsonObject = new JsonObject(e.toString());
+                                if (Objects.nonNull(jsonObject.getValue("userid")))
+                                    HttpClient.client.post("/v1/accsvr/unbinddevice")
+                                            .addQueryParam("partid", conf.getString("partid"))
+                                            .addQueryParam("appid", conf.getString("appId"))
+                                            .addQueryParam("random", random)
+                                            .sendJsonObject(new JsonObject().put("userid", jsonObject.getLong("userid"))
+                                                    .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
+                                                if (rs.failed()) {
+                                                    logger.error(rs.cause().getMessage(), rs.cause());
+                                                    logger.error("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice timeout");
+                                                } else {
+                                                    logger.info("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());
+                                                }
+                                            });
                             });
                         }
                     }
@@ -141,10 +153,10 @@ public class DeviceHandler implements GatewayAddr {
     public void onDelDevice(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onDelDevice===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onDelDevice Usersha256 encrypt is fail");
             } else {
                 //注册用户请求
@@ -155,7 +167,7 @@ public class DeviceHandler implements GatewayAddr {
                         .sendJsonObject(new JsonObject().put("devicesn", message.body().getString("devicesn"))
                                 .put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==DeviceHandler=onDelDevice===request /v1/accsvr/deldevice timeout");
                             } else {
                                 logger.info("==DeviceHandler=onDelDevice===request /v1/accsvr/deldevice result -> " + rs.result().body());
@@ -176,10 +188,10 @@ public class DeviceHandler implements GatewayAddr {
     public void onDelGatewayByUser(Message<JsonObject> message) {
         logger.info("==DeviceHandler=onDelGatewayByUser===params -> " + message.body());
         String random = KdsCreateRandom.createRandom(10);//获取随机数
-        //TODO sha256加密
+        // sha256加密
         SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
             if (as.failed()) {
-                as.cause().printStackTrace();
+                logger.error(as.cause().getMessage(), as.cause());
                 logger.error("==DeviceHandler=onDelGatewayByUser Usersha256 encrypt is fail");
             } else {
                 //注册用户请求
@@ -190,7 +202,7 @@ public class DeviceHandler implements GatewayAddr {
                         .sendJsonObject(new JsonObject().put("userid", message.body().getLong("userid"))
                                 .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
                             if (rs.failed()) {
-                                rs.cause().printStackTrace();
+                                logger.error(rs.cause().getMessage(), rs.cause());
                                 logger.error("==DeviceHandler=onDelGatewayByUser===request /v1/accsvr/unbinddevice timeout");
                             } else {
                                 logger.info("==DeviceHandler=onDelGatewayByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());

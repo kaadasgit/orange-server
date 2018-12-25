@@ -49,6 +49,28 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.5.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
@@ -83,6 +105,14 @@
             <version>${vertx.version}</version>
         </dependency>
 
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-unit</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -102,7 +132,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>cn.orangeiot.httpServerStart</mainClass>
+                                    <mainClass>cn.orangeiot.HttpServerStart</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -128,6 +158,8 @@
                     <include>**/*.xml</include>
                     <include>**/*.json</include>
                     <include>**/*.jks</include>
+                    <include>**/*.p12</include>
+                    <include>**/*.cer</include>
                 </includes>
                 <excludes>
                     <exclude>zkConf.json</exclude>
