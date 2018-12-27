@@ -1,4 +1,4 @@
-package cn.orangeiot.common.genera;
+package cn.orangeiot.common.entity;
 
 /**
  * @author zhang bo
