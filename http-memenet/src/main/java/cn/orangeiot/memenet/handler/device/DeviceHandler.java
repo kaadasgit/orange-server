@@ -61,6 +61,8 @@ public class DeviceHandler implements GatewayAddr {
                                 logger.error("==DeviceHandler=onBindDeviceByUser===501");
                             } else {
                                 if (Objects.nonNull(ers.result().body().getValue("userid"))) {//用戶注冊成功的
+                                    logger.info("==DeviceHandler=onBindDeviceByUser===params -> userid -> {} , devicesn -> {}"
+                                            , ers.result().body().getLong("userid").toString(),message.body().getString("devicesn"));
                                     HttpClient.client.post("/v1/accsvr/binddevice")
                                             .as(BodyCodec.jsonObject())
                                             .addQueryParam("partid", conf.getString("partid"))

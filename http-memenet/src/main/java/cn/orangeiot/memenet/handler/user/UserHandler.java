@@ -83,8 +83,16 @@ public class UserHandler implements UserAddr {
                                 logger.info("==UserHandler=onRegisterUser===request /v1/accsvr/accregister result -> " + rs.result().body());
                                 if (rs.result().body().getInteger("result") == 0) {
                                     vertx.eventBus().send(UserAddr.class.getName() + MEME_USER, message.body()
-                                            .put("userid", rs.result().body().getLong("userid")), SendOptions.getInstance());
-                                    this.callBackRegister(message, true, flag);
+                                            .put("userid", rs.result().body().getLong("userid")), SendOptions.getInstance(), res -> {
+                                        if (res.failed()) {
+                                            this.callBackRegister(message, false, flag);
+                                        } else {
+                                            if (res.result() != null && res.result().body() != null)
+                                                this.callBackRegister(message, true, flag);
+                                            else
+                                                this.callBackRegister(message, false, flag);
+                                        }
+                                    });
                                 } else {
                                     this.callBackRegister(message, false, flag);
                                 }
