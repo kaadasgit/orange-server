@@ -1,6 +1,7 @@
 package cn.orangeiot.apidao.handler.dao.file;
 
 import cn.orangeiot.apidao.client.MongoClient;
+import cn.orangeiot.common.constant.mongodb.KdsUserHead;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Logger;
@@ -27,8 +28,8 @@ public class FileDao {
      */
     @SuppressWarnings("Duplicates")
     public void onGetHeaderImg(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsUserHead", message.body(), new JsonObject().put("content", "")
-                .put("_id", 0).put("size", "").put("contentType", "").put("uploadDate", ""), res -> {
+        MongoClient.client.findOne(KdsUserHead.COLLECT_NAME, message.body(), new JsonObject().put(KdsUserHead.CONTENT, "")
+                .put(KdsUserHead._ID, 0).put(KdsUserHead.SIZE, "").put(KdsUserHead.CONTENT_TYPE, "").put(KdsUserHead.UPLOAD_DATE, ""), res -> {
             if (res.failed()) {
                 logger.error(res.cause().getMessage(), res.cause());
             } else {
@@ -49,11 +50,11 @@ public class FileDao {
      * @version 1.0
      */
     public void onUploadHeaderImg(Message<JsonObject> message) {
-        MongoClient.client.removeDocument("kdsUserHead",new JsonObject().put("uid", message.body().getString("uid")),rs->{
+        MongoClient.client.removeDocument(KdsUserHead.COLLECT_NAME,new JsonObject().put(KdsUserHead.UID, message.body().getString("uid")),rs->{
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             }else{
-                MongoClient.client.save("kdsUserHead",
+                MongoClient.client.save(KdsUserHead.COLLECT_NAME,
                         message.body(), res -> {
                             if (res.failed()) {
                                 logger.error(res.cause().getMessage(), res.cause());
