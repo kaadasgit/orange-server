@@ -1,6 +1,7 @@
 package cn.orangeiot.apidao.handler.dao.device;
 
 import cn.orangeiot.apidao.client.MongoClient;
+import cn.orangeiot.common.constant.mongodb.*;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.model.SNEntityModel;
 import cn.orangeiot.common.utils.KdsCreateRandom;
@@ -110,11 +111,11 @@ public class DeviceDao {
     @SuppressWarnings("Duplicates")
     public void productionModelSN(Message<JsonObject> message) {
         vertx.executeBlocking(future -> {
-            MongoClient.client.findWithOptions("kdsProductInfoList", new JsonObject().put("modelCode",
-                    message.body().getString("model")).put("childCode", message.body().getString("child")),
-                    new FindOptions().setFields(new JsonObject().put("time", 1).put("yearCode", 1)
-                            .put("weekCode", 1).put("count", 1).put("batch", 1).put("childCode", 1)
-                            .put("modelCode", 1)).setSort(new JsonObject().put("time", -1)).setLimit(1), rs -> {
+            MongoClient.client.findWithOptions(KdsProductInfoList.COLLECT_NAME, new JsonObject().put(KdsProductInfoList.MODEL_CODE,
+                    message.body().getString("model")).put(KdsProductInfoList.CHILD_CODE, message.body().getString("child")),
+                    new FindOptions().setFields(new JsonObject().put(KdsProductInfoList.TIME, 1).put(KdsProductInfoList.YEAR_CODE, 1)
+                            .put(KdsProductInfoList.WEEK_CODE, 1).put(KdsProductInfoList.COUNT, 1).put(KdsProductInfoList.BATCH, 1).put(KdsProductInfoList.CHILD_CODE, 1)
+                            .put(KdsProductInfoList.MODEL_CODE, 1)).setSort(new JsonObject().put(KdsProductInfoList.TIME, -1)).setLimit(1), rs -> {
                         if (rs.failed()) {
                             logger.error(rs.cause().getMessage(), rs);
                             message.reply(null);
@@ -180,7 +181,7 @@ public class DeviceDao {
 
                             //網關連接賬戶導入
                             if (GWbulkOperations.size() > 0) {
-                                MongoClient.client.bulkWrite("kdsUser", GWbulkOperations, urs -> {//导入账户列表
+                                MongoClient.client.bulkWrite(KdsUser.COLLECT_NAME, GWbulkOperations, urs -> {//导入账户列表
                                     if (urs.failed()) {
                                         logger.error(urs.cause().getMessage(), urs);
                                         message.reply(null);
@@ -195,17 +196,17 @@ public class DeviceDao {
                             }
 
                             //產品生产信息
-                            MongoClient.client.bulkWrite("kdsProductInfoList", bulkOperations, ars -> {
+                            MongoClient.client.bulkWrite(KdsProductInfoList.COLLECT_NAME, bulkOperations, ars -> {
                                 if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
                             });
 
                             //插入產品信息
-                            MongoClient.client.insert("kdsModelInfo",
-                                    new JsonObject().put("yearCode", time)
-                                            .put("weekCode", week).put("modelCode", message.body().getString("model"))
-                                            .put("childCode", message.body().getString("child"))
-                                            .put("count", message.body().getInteger("count"))
-                                            .put("time", insert_time), ars -> {
+                            MongoClient.client.insert(KdsModelInfo.COLLECT_NAME,
+                                    new JsonObject().put(KdsModelInfo.YEAR_CODE, time)
+                                            .put(KdsModelInfo.WEEK_CODE, week).put(KdsModelInfo.MODEL_CODE, message.body().getString("model"))
+                                            .put(KdsModelInfo.CHILD_CODE, message.body().getString("child"))
+                                            .put(KdsModelInfo.COUNT, message.body().getInteger("count"))
+                                            .put(KdsModelInfo.TIME, insert_time), ars -> {
                                         if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
                                     });//產品相關
                             message.reply(jsonArray);
@@ -224,7 +225,7 @@ public class DeviceDao {
     @SuppressWarnings("Duplicates")
     public Future<JsonObject> uploadPreBindDevice(List<BulkOperation> bulkOperationList) {
         return Future.future(rs -> {
-            MongoClient.client.bulkWriteWithOptions("kdsGatewayDeviceList", bulkOperationList
+            MongoClient.client.bulkWriteWithOptions(KdsGatewayDeviceList.COLLECT_NAME, bulkOperationList
                     , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
                         if (ars.failed()) {
                             logger.error(ars.cause().getMessage(), ars);
@@ -331,18 +332,18 @@ public class DeviceDao {
      */
     @SuppressWarnings("Duplicates")
     public void modelMacIn(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsProductInfoList", new JsonObject().put("SN",
-                message.body().getString("SN")).put("password1", message.body().getString("password1")),
-                new JsonObject().put("_id", 1), rs -> {
+        MongoClient.client.findOne(KdsProductInfoList.COLLECT_NAME, new JsonObject().put(KdsProductInfoList.SN,
+                message.body().getString("SN")).put(KdsProductInfoList.PASSWORD1, message.body().getString("password1")),
+                new JsonObject().put(KdsProductInfoList._ID, 1), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
                     } else {
                         if (Objects.nonNull(rs.result())) {
-                            MongoClient.client.updateCollectionWithOptions("kdsProductInfoList"
-                                    , new JsonObject().put("SN", message.body().getString("SN"))
-                                            .put("password1", message.body().getString("password1")), new JsonObject().put("$set",
-                                            new JsonObject().put("mac", message.body().getString("mac"))), new UpdateOptions().setUpsert(true), as -> {
+                            MongoClient.client.updateCollectionWithOptions(KdsProductInfoList.COLLECT_NAME
+                                    , new JsonObject().put(KdsProductInfoList.SN, message.body().getString("SN"))
+                                            .put(KdsProductInfoList.PASSWORD1, message.body().getString("password1")), new JsonObject().put("$set",
+                                            new JsonObject().put(KdsProductInfoList.MAC, message.body().getString("mac"))), new UpdateOptions().setUpsert(true), as -> {
                                         if (as.failed()) {
                                             logger.error(as.cause().getMessage(), as);
                                             message.reply(null);
@@ -447,7 +448,7 @@ public class DeviceDao {
     @SuppressWarnings("Duplicates")
     public Future<JsonObject> uploadMac(List<BulkOperation> bulkOperationList) {
         return Future.future(rs -> {
-            MongoClient.client.bulkWriteWithOptions("kdsProductInfoList", bulkOperationList
+            MongoClient.client.bulkWriteWithOptions(KdsProductInfoList.COLLECT_NAME, bulkOperationList
                     , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
                         if (ars.failed()) {
                             logger.error(ars.cause().getMessage(), ars);
@@ -549,7 +550,7 @@ public class DeviceDao {
     @SuppressWarnings("Duplicates")
     public Future<JsonObject> uploadDevTestInfo(List<BulkOperation> bulkOperationList) {
         return Future.future(rs -> {
-            MongoClient.client.bulkWriteWithOptions("kdsProductInfoTestList", bulkOperationList
+            MongoClient.client.bulkWriteWithOptions(KdsProductInfoTestList.COLLECT_NAME, bulkOperationList
                     , new BulkWriteOptions().setOrdered(false).setWriteOption(WriteOption.ACKNOWLEDGED), ars -> {
                         if (ars.failed()) {
                             logger.error(ars.cause().getMessage(), ars);
@@ -573,10 +574,10 @@ public class DeviceDao {
      */
     @SuppressWarnings("Duplicates")
     public void getWriteMacResult(Message<JsonObject> message) {
-        MongoClient.client.findWithOptions("kdsProductInfoList", new JsonObject()
-                        .put("modelCode", message.body().getString("modelCode")).put("childCode", message.body().getString("childCode"))
-                        .put("yearCode", message.body().getString("yearCode")).put("weekCode", message.body().getString("weekCode"))
-                        .put("mac", new JsonObject().put("$exists", false))
+        MongoClient.client.findWithOptions(KdsProductInfoList.COLLECT_NAME, new JsonObject()
+                        .put(KdsProductInfoList.MODEL_CODE, message.body().getString("modelCode")).put(KdsProductInfoList.CHILD_CODE, message.body().getString("childCode"))
+                        .put(KdsProductInfoList.YEAR_CODE, message.body().getString("yearCode")).put(KdsProductInfoList.WEEK_CODE, message.body().getString("weekCode"))
+                        .put(KdsProductInfoList.MAC, new JsonObject().put("$exists", false))
                 , new FindOptions().setFields(new JsonObject().put("_id", 0).put("SN", 1)), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
@@ -598,9 +599,9 @@ public class DeviceDao {
      * @version 1.0
      */
     public void getPwdByMac(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsProductInfoList", new JsonObject().put("SN",
+        MongoClient.client.findOne(KdsProductInfoList.COLLECT_NAME, new JsonObject().put(KdsProductInfoList.SN,
                 message.body().getString("SN")),
-                new JsonObject().put("_id", 0).put("password1", 1), rs -> {
+                new JsonObject().put(KdsProductInfoList._ID, 0).put(KdsProductInfoList.PASSWORD1, 1), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
