@@ -21,4 +21,8 @@ public interface KdsUser {
 
     String USER_MAIL = "userMail"; // 用户邮箱
 
+    // data not in db
+    String USER_GW_ACCOUNT = "userGwAccount";
+    String INSERT_TIME = "insertTime";
+
 }
