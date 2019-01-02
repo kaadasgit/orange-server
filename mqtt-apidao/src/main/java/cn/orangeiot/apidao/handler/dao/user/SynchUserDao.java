@@ -3,6 +3,7 @@ package cn.orangeiot.apidao.handler.dao.user;
 import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
+import cn.orangeiot.common.constant.mongodb.KdsGatewayDeviceList;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
@@ -46,8 +47,8 @@ public abstract class SynchUserDao {
      */
     public void onGatewayInfo(JsonObject message) {
         logger.debug("==UserHandler=onSynchUser" + message);
-        MongoClient.client.findWithOptions("kdsGatewayDeviceList", new JsonObject().put("deviceSN", message.getString("username")),
-                new FindOptions().setFields(new JsonObject().put("uid", 1).put("_id", 0)), ars -> {
+        MongoClient.client.findWithOptions(KdsGatewayDeviceList.COLLECT_NAME, new JsonObject().put(KdsGatewayDeviceList.DEVICE_SN, message.getString("username")),
+                new FindOptions().setFields(new JsonObject().put(KdsGatewayDeviceList.UID, 1).put(KdsGatewayDeviceList._ID, 0)), ars -> {
                     if (ars.failed()) {
                         logger.error(ars.cause().getMessage(), ars);
                     } else {
