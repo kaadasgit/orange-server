@@ -15,4 +15,5 @@ public interface KdsSuggest {
     String TOKENS = "tokens";
     String SUGGEST = "suggest"; // 留言内容（字符小于30）
 
+    String TIME = "time";
 }
