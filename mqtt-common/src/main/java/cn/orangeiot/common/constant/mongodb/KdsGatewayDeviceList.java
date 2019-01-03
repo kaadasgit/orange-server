@@ -25,19 +25,21 @@ public interface KdsGatewayDeviceList {
     String DEVICE_LIST = "deviceList"; // 网关挂载设备相关信息状态
 
     // 设备列表下面的二级键
-    String _DL_IP_ADDR = "ipaddr";
-    String _DL_MAC_ADDR = "macaddr";
-    String _DL_SW = "SW";
+    String _DL_IP_ADDR = "ipaddr"; //ip地址
+    String _DL_MAC_ADDR = "macaddr";//mac 地址
+    String _DL_SW = "SW";//版本號
     String _DL_IEEE_ADDR = "ieeeaddr";
     String _DL_NW_ADDR = "nwaddr";
     String _DL_EVENT_STR = "delete";
     String _DL_DEVICE_TYPE = "net";
-    String _DL_DEVICE_ID = "deviceId";
-    String _DL_TIME = "time";
+    String _DL_DEVICE_ID = "deviceId";//設備id
+    String _DL_TIME = "time";//時間
+    String _DL_STATUS="event_str";//設備狀態
+    String _DL_NICKANEM="nickName";//設備昵稱
 
-    String ME_USER_NAME = "meUsername";
-    String ME_PWD = "mePwd";
-    String ME_BIND_STATE = "meBindState";
+    String ME_USER_NAME = "meUsername";//第三方米米網帳號
+    String ME_PWD = "mePwd";//第三方米米網密碼
+    String ME_BIND_STATE = "meBindState";//第三方米米網綁定狀態
 
 
 }

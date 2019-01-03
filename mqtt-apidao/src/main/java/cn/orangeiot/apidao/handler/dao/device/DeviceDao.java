@@ -142,7 +142,7 @@ public class DeviceDao {
             }
 
             if (bulkOperations.size() > 0)
-                MongoClient.client.bulkWrite("kdsUser", bulkOperations, urs -> {//导入账户列表
+                MongoClient.client.bulkWrite(KdsUser.COLLECT_NAME, bulkOperations, urs -> {//导入账户列表
                     if (urs.failed()) {
                         logger.error(urs.cause().getMessage(), urs);
                         future.complete(null);

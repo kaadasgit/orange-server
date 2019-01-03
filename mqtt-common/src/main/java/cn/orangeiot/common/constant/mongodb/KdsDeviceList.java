@@ -12,8 +12,8 @@ public interface KdsDeviceList {
     String LOCK_NAME = "lockName"; // 锁设备名称(唯一)
     String U_NAME = "uname"; // 管理员名称
     String INFO_LIST = "infoList"; // 信息列表
-    String INFO_LIST_NUM = "num";
-    String INFO_LIST_NUM_NICK_NAME = "numNickname";
-    String INFO_LIST_TIME = "time";
-    String MODEL = "model";
+    String INFO_LIST_NUM = "num";// 鎖編號
+    String INFO_LIST_NUM_NICK_NAME = "numNickname";//編號昵稱
+    String INFO_LIST_TIME = "time";//時間
+    String MODEL = "model";//
 }

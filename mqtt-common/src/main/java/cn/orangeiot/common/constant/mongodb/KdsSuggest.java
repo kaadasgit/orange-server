@@ -13,7 +13,7 @@ public interface KdsSuggest {
     String _CLASS = "_class";
     String UID = "uid"; // 用户id(kdsUser外键)
     String TOKENS = "tokens";
-    String SUGGEST = "suggest"; // 留言内容（字符小于30）
+    String SUGGEST = "suggest"; // 留言内容（字符小于300）
 
-    String TIME = "time";
+    String TIME = "time";//時間
 }
