@@ -3,6 +3,10 @@ package cn.orangeiot.apidao.handler.dao.user;
 import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
+import cn.orangeiot.common.constant.mongodb.KdsGatewayDeviceList;
+import cn.orangeiot.common.constant.mongodb.KdsSuggest;
+import cn.orangeiot.common.constant.mongodb.KdsUser;
+import cn.orangeiot.common.constant.mongodb.KdsUserLog;
 import cn.orangeiot.common.genera.ErrorType;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.common.utils.KdsCreateMD5;
@@ -85,8 +89,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         message.reply(false);
                     } else {//网关
                         //查找DB
-                        MongoClient.client.findOne("kdsUser", new JsonObject().put("userGwAccount", message.body().getString("username")), new JsonObject()
-                                .put("userPwd", 1), res -> {
+                        MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser.USER_GW_ACCOUNT, message.body().getString("username")), new JsonObject()
+                                .put(KdsUser.USER_PWD, 1), res -> {
                             if (res.failed()) {
                                 logger.error(res.cause().getMessage(), res.cause());
                                 message.reply(false);
@@ -217,15 +221,15 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void telLogin(Message<JsonObject> message) {
         //查找DB
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("userTel", message.body().getString("tel"))
-                .put("versionType", message.body().getString("versionType")), new JsonObject()
-                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
-                .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
+        MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser.USER_TEL, message.body().getString("tel"))
+                .put(KdsUser.VERSION_TYPE, message.body().getString("versionType")), new JsonObject()
+                .put(KdsUser.USER_PWD, 1).put(KdsUser.PWD_SALT, 1).put(KdsUser._ID, 1).put(KdsUser.NICK_NAME, 1)
+                .put(KdsUser.ME_USERNAME, 1).put(KdsUser.ME_PWD, 1).put(KdsUser.USER_ID, 1), res -> {
             if (res.failed()) {
                 logger.error(res.cause().getMessage(), res.cause());
             } else {
                 if (Objects.nonNull(res.result())) {
-                    if (Objects.nonNull(res.result().getValue("pwdSalt"))) {//md5验证
+                    if (Objects.nonNull(res.result().getValue(KdsUser.PWD_SALT))) {//md5验证
                         encyPwd(res.result().put("username", message.body().getString("tel"))
                                 .put("loginIP", message.body().getString("loginIP")), message, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(res.result().getString("pwdSalt") + message.body().getString("password"))));
                     } else {//sha1验证
@@ -249,10 +253,10 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
     @SuppressWarnings("Duplicates")
     public void mailLogin(Message<JsonObject> message) {
         //查找DB
-        MongoClient.client.findOne("kdsUser", new JsonObject().put("userMail", message.body().getString("mail"))
-                .put("versionType", message.body().getString("versionType")), new JsonObject()
-                .put("userPwd", 1).put("pwdSalt", 1).put("_id", 1).put("nickName", 1)
-                .put("meUsername", 1).put("mePwd", 1).put("userid", 1), res -> {
+        MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser.USER_MAIL, message.body().getString("mail"))
+                .put(KdsUser.VERSION_TYPE, message.body().getString("versionType")), new JsonObject()
+                .put(KdsUser.USER_PWD, 1).put(KdsUser.PWD_SALT, 1).put(KdsUser._ID, 1).put(KdsUser.NICK_NAME, 1)
+                .put(KdsUser.ME_USERNAME, 1).put(KdsUser.ME_PWD, 1).put(KdsUser.USER_ID, 1), res -> {
             if (res.failed()) {
                 logger.error(res.cause().getMessage(), res.cause());
             } else {
@@ -309,16 +313,16 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result()) && rs.result().equals(message.body().getString("tokens"))) {//验证码验证通过
-                    MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                            .put("versionType", message.body().getString("versionType")), new JsonObject().put("_id", 1), as -> {//是否已经注册
+                    MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(field, message.body().getString("name"))
+                            .put(KdsUser.VERSION_TYPE, message.body().getString("versionType")), new JsonObject().put(KdsUser._ID, 1), as -> {//是否已经注册
                         if (as.failed()) {
                             logger.error(as.cause().getMessage(), as.cause());
                         } else {
                             if (!Objects.nonNull(as.result())) {//没有注册
                                 String password = SHA1.encode(message.body().getString("password"));
-                                MongoClient.client.insert("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                                        .put("userPwd", password).put("nickName", message.body().getString("name"))
-                                        .put("versionType", message.body().getString("versionType"))
+                                MongoClient.client.insert(KdsUser.COLLECT_NAME, new JsonObject().put(field, message.body().getString("name"))
+                                        .put(KdsUser.USER_PWD, password).put(KdsUser.NICK_NAME, message.body().getString("name"))
+                                        .put(KdsUser.VERSION_TYPE, message.body().getString("versionType"))
                                         .put("insertTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), res -> {
                                     if (res.failed()) {
                                         logger.error(res.cause().getMessage(), res.cause());
@@ -339,8 +343,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                                     }
                                                 });
                                         message.reply(new JsonObject().put("token", jwts[1]).put("uid", uid));
-                                        onSynchRegisterUserInfo(new JsonObject().put("userPwd", password).put("nickName", message.body().getString("name"))
-                                                .put("_id", uid).put("username", message.body().getString("name")));
+                                        onSynchRegisterUserInfo(new JsonObject().put(KdsUser.USER_PWD, password).put(KdsUser.NICK_NAME, message.body().getString("name"))
+                                                .put(KdsUser._ID, uid).put("username", message.body().getString("name")));
                                     }
                                 });
                             } else {
@@ -398,11 +402,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
 
             //更新登錄記錄
             String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            MongoClient.client.findOneAndUpdateWithOptions("kdsUserLog", new JsonObject().put("userName"
-                    , jsonObject.getString("username")).put("versionType", message.body().getString("versionType"))
-                    , new JsonObject().put("$set", new JsonObject().put("userName", jsonObject.getString("username"))
-                            .put("loginTime", time).put("loginIp", jsonObject.getString("loginIP"))
-                            .put("versionType", message.body().getString("versionType")))
+            MongoClient.client.findOneAndUpdateWithOptions(KdsUserLog.COLLECT_NAME, new JsonObject().put(KdsUserLog.USER_NAME
+                    , jsonObject.getString("username")).put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType"))
+                    , new JsonObject().put("$set", new JsonObject().put(KdsUserLog.USER_NAME, jsonObject.getString("username"))
+                            .put(KdsUserLog.LOGIN_TIME, time).put(KdsUserLog.LOGIN_IP, jsonObject.getString("loginIP"))
+                            .put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType")))
                     , new FindOptions(), new UpdateOptions().setUpsert(true), logtime -> {
                         if (logtime.failed()) logtime.cause().printStackTrace();
                     });
@@ -429,11 +433,11 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 logger.error(ars.cause().getMessage(), ars.cause());
             } else {
                 if (Objects.nonNull(ars.result())) {
-                    message.reply(new JsonObject().put("nickName", new JsonObject(ars.result()).getString("nickName")));
+                    message.reply(new JsonObject().put(KdsUser.NICK_NAME, new JsonObject(ars.result()).getString("nickName")));
                 } else {
-                    MongoClient.client.findOne("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                    .put("versionType", message.body().getString("versionType")),
-                            new JsonObject().put("nickName", "").put("_id", 0), rs -> {
+                    MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+                                    .put(KdsUser.VERSION_TYPE, message.body().getString("versionType")),
+                            new JsonObject().put(KdsUser.NICK_NAME, "").put(KdsUser._ID, 0), rs -> {
                                 if (rs.failed()) {
                                     logger.error(rs.cause().getMessage(), rs.cause());
                                 } else {
@@ -470,8 +474,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                 } else {
                                     message.reply(new JsonObject());
                                     //异步同步信息
-                                    MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                            , new JsonObject().put("$set", new JsonObject().put("nickName", message.body().getString("nickname"))), mrs -> {
+                                    MongoClient.client.updateCollection(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+                                            , new JsonObject().put("$set", new JsonObject().put(KdsUser.NICK_NAME, message.body().getString("nickname"))), mrs -> {
                                                 if (mrs.failed()) {
                                                     logger.error(mrs.cause().getMessage(), mrs.cause());
                                                 } else {
@@ -510,15 +514,15 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                     if (Objects.nonNull(jsonObject.getValue("pwdSalt"))) {//MD5
                         if (jsonObject.getString("userPwd").equals(KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
                                 jsonObject.getString("pwdSalt") + message.body().getString("oldpwd")))))
-                            MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                    , new JsonObject().put("$set", new JsonObject().put("userPwd", KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
+                            MongoClient.client.updateCollection(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+                                    , new JsonObject().put("$set", new JsonObject().put(KdsUser.USER_PWD, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
                                             jsonObject.getString("pwdSalt") + message.body().getString("newpwd"))))), rs -> {
                                         if (rs.failed()) {
                                             logger.error(rs.cause().getMessage(), rs.cause());
                                         } else {
                                             if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
                                                 message.reply(new JsonObject());
-                                                onSynchUpdateUserInfo(new JsonObject().put("userPwd", KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
+                                                onSynchUpdateUserInfo(new JsonObject().put(KdsUser.USER_PWD, KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
                                                         jsonObject.getString("pwdSalt") + message.body().getString("newpwd"))))
                                                         .put("uid", message.body().getString("uid")));
                                             } else {
@@ -530,14 +534,14 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                             message.reply(null);
                     } else {//SHA-1
                         if (jsonObject.getString("userPwd").equals(SHA1.encode(message.body().getString("oldpwd"))))
-                            MongoClient.client.updateCollection("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                                    , new JsonObject().put("$set", new JsonObject().put("userPwd", SHA1.encode(message.body().getString("newpwd")))), rs -> {
+                            MongoClient.client.updateCollection(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+                                    , new JsonObject().put("$set", new JsonObject().put(KdsUser.USER_PWD, SHA1.encode(message.body().getString("newpwd")))), rs -> {
                                         if (rs.failed()) {
                                             logger.error(rs.cause().getMessage(), rs.cause());
                                         } else {
                                             if (Objects.nonNull(rs.result()) && rs.result().getDocModified() == 1) {
                                                 message.reply(new JsonObject());
-                                                onSynchUpdateUserInfo(new JsonObject().put("userPwd", SHA1.encode(message.body().getString("newpwd")))
+                                                onSynchUpdateUserInfo(new JsonObject().put(KdsUser.USER_PWD, SHA1.encode(message.body().getString("newpwd")))
                                                         .put("uid", message.body().getString("uid")));
                                             } else {
                                                 message.reply(null);
@@ -576,24 +580,24 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         field = "userMail";
                     }
                     String finalField = field;
-                    MongoClient.client.findOne("kdsUser", new JsonObject().put(field, message.body().getString("name"))
-                                    .put("versionType", message.body().getString("versionType")),
-                            new JsonObject().put("pwdSalt", "").put("_id", 1), mrs -> {
+                    MongoClient.client.findOne(KdsUser.COLLECT_NAME, new JsonObject().put(field, message.body().getString("name"))
+                                    .put(KdsUser.VERSION_TYPE, message.body().getString("versionType")),
+                            new JsonObject().put(KdsUser.PWD_SALT, "").put(KdsUser._ID, 1), mrs -> {
                                 if (mrs.failed()) {
                                     logger.error(mrs.cause().getMessage(), mrs.cause());
                                 } else {
                                     if (Objects.nonNull(mrs.result())) {//账户是否存在
                                         String pwd = "";
-                                        if (Objects.nonNull(mrs.result().getValue("pwdSalt"))) {//MD5
+                                        if (Objects.nonNull(mrs.result().getValue(KdsUser.PWD_SALT))) {//MD5
                                             pwd = KdsCreateMD5.getMd5(KdsCreateMD5.getMd5(
-                                                    mrs.result().getString("pwdSalt") + message.body().getString("pwd")));
+                                                    mrs.result().getString(KdsUser.PWD_SALT) + message.body().getString("pwd")));
                                         } else {
                                             pwd = SHA1.encode(message.body().getString("pwd"));
                                         }
                                         //重置密码
-                                        MongoClient.client.updateCollection("kdsUser", new JsonObject().put(finalField, message.body().getString("name"))
-                                                        .put("versionType", message.body().getString("versionType"))
-                                                , new JsonObject().put("$set", new JsonObject().put("userPwd", pwd)), res -> {
+                                        MongoClient.client.updateCollection(KdsUser.COLLECT_NAME, new JsonObject().put(finalField, message.body().getString("name"))
+                                                        .put(KdsUser.VERSION_TYPE, message.body().getString(KdsUser.VERSION_TYPE))
+                                                , new JsonObject().put("$set", new JsonObject().put(KdsUser.USER_PWD, pwd)), res -> {
                                                     if (res.failed()) {
                                                         logger.error(res.cause().getMessage(), res.cause());
                                                     } else if (res.succeeded()) {
@@ -602,7 +606,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                                                         message.reply(null);
                                                     }
                                                 });
-                                        onSynchUpdateUserInfo(new JsonObject().put("userPwd", pwd).put("uid", mrs.result().getString("_id")));
+                                        onSynchUpdateUserInfo(new JsonObject().put(KdsUser.USER_PWD, pwd).put("uid", mrs.result().getString("_id")));
                                     } else {
                                         message.reply(null, new DeliveryOptions().addHeader("code",
                                                 String.valueOf(ErrorType.RESULT_CODE_FAIL.getKey())).addHeader("msg", ErrorType.RESULT_CODE_FAIL.getValue()));
@@ -627,7 +631,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void suggestMsg(Message<JsonObject> message) {
-        MongoClient.client.insert("kdsSuggest", message.body().put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
+        MongoClient.client.insert(KdsSuggest.COLLECT_NAME, message.body().put(KdsSuggest.TIME, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
@@ -660,9 +664,9 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     public void meMeUser(Message<JsonObject> message) {
         //同步db
-        MongoClient.client.updateCollectionWithOptions("kdsUser", new JsonObject().put("_id", new JsonObject().put("$oid", message.body().getString("uid")))
-                , new JsonObject().put("$set", new JsonObject().put("meUsername", message.body().getString("username"))
-                        .put("mePwd", message.body().getString("password")).put("userid", message.body().getLong("userid")))
+        MongoClient.client.updateCollectionWithOptions(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+                , new JsonObject().put("$set", new JsonObject().put(KdsUser.ME_USERNAME, message.body().getString("username"))
+                        .put(KdsUser.ME_PWD, message.body().getString("password")).put(KdsUser.USER_ID, message.body().getLong("userid")))
                 , new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs.cause());
@@ -690,9 +694,9 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                         });
                 });
 
-        MongoClient.client.updateCollectionWithOptions("kdsGatewayDeviceList", new JsonObject().put("uid", message.body().getString("uid"))
-                , new JsonObject().put("$set", new JsonObject().put("meUsername", message.body().getString("username")).put("mePwd",message.body().getString("password"))
-                .put("userid",message.body().getLong("userid")))
+        MongoClient.client.updateCollectionWithOptions(KdsGatewayDeviceList.COLLECT_NAME, new JsonObject().put(KdsGatewayDeviceList.UID, message.body().getString("uid"))
+                , new JsonObject().put("$set", new JsonObject().put(KdsGatewayDeviceList.ME_USER_NAME, message.body().getString("username")).put("mePwd",message.body().getString("password"))
+                .put(KdsGatewayDeviceList.USER_ID,message.body().getLong("userid")))
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
                 });
@@ -706,7 +710,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      * @version 1.0
      */
     public void meMeUserBulk(Message<JsonObject> message) {
-        MongoClient.client.count("kdsUser", new JsonObject().put("userid", new JsonObject().put("$exists", false))
+        MongoClient.client.count(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser.USER_ID, new JsonObject().put("$exists", false))
                 , rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs.cause());
@@ -743,8 +747,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
         if (num == 0) {
             return true;
         } else {
-            Future.<List<JsonObject>>future(f -> MongoClient.client.findWithOptions("kdsUser", new JsonObject().put("userid"
-                    , new JsonObject().put("$exists", false)), new FindOptions().setFields(new JsonObject().put("_id", 1))
+            Future.<List<JsonObject>>future(f -> MongoClient.client.findWithOptions(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser.USER_ID
+                    , new JsonObject().put("$exists", false)), new FindOptions().setFields(new JsonObject().put(KdsUser._ID, 1))
                     .setLimit(count.intValue()), f))
                     .compose(users -> {//异步处理数据
                         if (Objects.nonNull(users) && users.size() > 0) {//用户id
@@ -800,7 +804,7 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                     logger.error(f.cause().getMessage(), f);
                 } else {
                     //修改用户数据
-                    MongoClient.client.bulkWrite("kdsUser", f.result(), ars -> {
+                    MongoClient.client.bulkWrite(KdsUser.COLLECT_NAME, f.result(), ars -> {
                         if (ars.failed()) {
                             logger.error(ars.cause().getMessage(), ars.cause());
                         } else {
@@ -823,10 +827,10 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     @SuppressWarnings("Duplicates")
     public void selectGWAdmin(Message<JsonObject> message) {
-        MongoClient.client.findOne("kdsGatewayDeviceList",
-                new JsonObject().put("deviceSN", message.body().getString("gwId")
-                ).put("adminuid", new JsonObject().put("$exists", true)), new JsonObject()
-                        .put("_id", 0).put("adminuid", 1), rs -> {
+        MongoClient.client.findOne(KdsGatewayDeviceList.COLLECT_NAME,
+                new JsonObject().put(KdsGatewayDeviceList.DEVICE_SN, message.body().getString("gwId")
+                ).put(KdsGatewayDeviceList.ADMIN_UID, new JsonObject().put("$exists", true)), new JsonObject()
+                        .put(KdsGatewayDeviceList._ID, 0).put(KdsGatewayDeviceList.ADMIN_UID, 1), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs.cause());
                         message.reply(null);
@@ -904,8 +908,8 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                     message.reply(null);
                 } else {
                     if (Objects.nonNull(rs.result()) && rs.result() == 1) {
-                        MongoClient.client.findOne("kdsGatewayDeviceList", new JsonObject().put("deviceList.deviceId", message.body().getString("deviceId"))
-                                .put("deviceList.event_str", "online"), new JsonObject().put("_id", 0).put("deviceSN", 1), ars -> {
+                        MongoClient.client.findOne(KdsGatewayDeviceList.COLLECT_NAME, new JsonObject().put("deviceList.deviceId", message.body().getString("deviceId"))
+                                .put("deviceList.event_str", "online"), new JsonObject().put(KdsGatewayDeviceList._ID, 0).put(KdsGatewayDeviceList.DEVICE_SN, 1), ars -> {
                             if (ars.failed()) {
                                 logger.error(rs.cause().getMessage(), rs.cause());
                                 message.reply(null);

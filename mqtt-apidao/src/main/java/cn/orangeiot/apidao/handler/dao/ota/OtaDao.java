@@ -1,6 +1,7 @@
 package cn.orangeiot.apidao.handler.dao.ota;
 
 import cn.orangeiot.apidao.client.MongoClient;
+import cn.orangeiot.common.constant.mongodb.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -36,10 +37,10 @@ public class OtaDao {
     public void selectModelType(Message<String> message) {
         logger.info("==selectModelType==params -> {}", message.body());
 
-        MongoClient.client.runCommand("aggregate", new JsonObject().put("aggregate", "kdsModelInfo")
+        MongoClient.client.runCommand("aggregate", new JsonObject().put("aggregate", KdsModelInfo.COLLECT_NAME)
                 .put("pipeline", new JsonArray().add(new JsonObject().put("$group", new JsonObject().put("_id"
-                        , new JsonObject().put("modelCode", "$modelCode").put("childCode", "$childCode")
-                                .put("time", "$time")))).add(new JsonObject().put("$sort", new JsonObject().put("_id.time", 1)))), rs -> {
+                        , new JsonObject().put(KdsModelInfo.MODEL_CODE, "$modelCode").put(KdsModelInfo.CHILD_CODE, "$childCode")
+                                .put(KdsModelInfo.TIME, "$time")))).add(new JsonObject().put("$sort", new JsonObject().put("_id.time", 1)))), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
             } else {
@@ -60,10 +61,10 @@ public class OtaDao {
     public void selectDateRange(Message<JsonObject> message) {
         logger.info("==selectDateRange==params -> {}", message.body());
 
-        MongoClient.client.findWithOptions("kdsModelInfo", new JsonObject().put("modelCode", message.body().getString("modelCode"))
-                        .put("childCode", message.body().getString("childCode"))
-                , new FindOptions().setFields(new JsonObject().put("yearCode", 1).put("weekCode", 1).put("_id", 0))
-                        .setSort(new JsonObject().put("weekCode", 1)), rs -> {
+        MongoClient.client.findWithOptions(KdsModelInfo.COLLECT_NAME, new JsonObject().put(KdsModelInfo.MODEL_CODE, message.body().getString("modelCode"))
+                        .put(KdsModelInfo.CHILD_CODE, message.body().getString("childCode"))
+                , new FindOptions().setFields(new JsonObject().put(KdsModelInfo.YEAR_CODE, 1).put(KdsModelInfo.WEEK_CODE, 1).put(KdsModelInfo._ID, 0))
+                        .setSort(new JsonObject().put(KdsModelInfo.WEEK_CODE, 1)), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
@@ -84,10 +85,10 @@ public class OtaDao {
     public void selectNumRange(Message<JsonObject> message) {
         logger.info("==selectNumRange==params -> {}", message.body());
 
-        MongoClient.client.findWithOptions("kdsModelInfo", new JsonObject().put("modelCode", message.body().getString("modelCode"))
-                        .put("childCode", message.body().getString("childCode")).put("yearCode", message.body().getString("yearCode"))
-                        .put("weekCode", message.body().getString("weekCode"))
-                , new FindOptions().setFields(new JsonObject().put("count", 1).put("_id", 0)), rs -> {
+        MongoClient.client.findWithOptions(KdsModelInfo.COLLECT_NAME, new JsonObject().put(KdsModelInfo.MODEL_CODE, message.body().getString("modelCode"))
+                        .put(KdsModelInfo.CHILD_CODE, message.body().getString("childCode")).put(KdsModelInfo.YEAR_CODE, message.body().getString("yearCode"))
+                        .put(KdsModelInfo.WEEK_CODE, message.body().getString("weekCode"))
+                , new FindOptions().setFields(new JsonObject().put(KdsModelInfo.COUNT, 1).put(KdsModelInfo._ID, 0)), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                     } else {
@@ -111,7 +112,7 @@ public class OtaDao {
     public void submitOTAUpgrade(Message<JsonObject> message) {
         logger.info("==submitOTAUpgrade==params -> {}", message.body());
 
-        MongoClient.client.insert("kdsOtaUpgrade", message.body().put("time",
+        MongoClient.client.insert(KdsOtaUpgrade.COLLECT_NAME, message.body().put(KdsOtaUpgrade.TIME,
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), rs -> {
             if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
         });
@@ -129,14 +130,14 @@ public class OtaDao {
     public void getUpgradeDevice(Message<JsonObject> message) {
         logger.info("==getUpgradeDevice==params -> {}", message.body());
 
-        JsonObject paramsJsonObject = new JsonObject().put("modelCode", message.body().getString("modelCode"))
-                .put("childCode", message.body().getString("childCode"));
+        JsonObject paramsJsonObject = new JsonObject().put(KdsProductInfoList.COLLECT_NAME, message.body().getString("modelCode"))
+                .put(KdsProductInfoList.CHILD_CODE, message.body().getString("childCode"));
 
         //生產日期範圍
         if (!message.body().getString("yearCode").equals("ALL")) {
-            paramsJsonObject.put("yearCode", message.body().getString("yearCode"));
+            paramsJsonObject.put(KdsProductInfoList.YEAR_CODE, message.body().getString("yearCode"));
             if (!message.body().getString("weekCode").equals("ALL"))
-                paramsJsonObject.put("weekCode", message.body().getString("weekCode"));
+                paramsJsonObject.put(KdsProductInfoList.WEEK_CODE, message.body().getString("weekCode"));
         }
 
         String[] arrs;
@@ -152,8 +153,8 @@ public class OtaDao {
         }
 
         //獲取設備PN號
-        MongoClient.client.findWithOptions("kdsProductInfoList", paramsJsonObject,
-                new FindOptions().setFields(new JsonObject().put("SN", 1).put("_id", 0).put("mac", 1)), rs -> {
+        MongoClient.client.findWithOptions(KdsProductInfoList.COLLECT_NAME, paramsJsonObject,
+                new FindOptions().setFields(new JsonObject().put(KdsProductInfoList.SN, 1).put(KdsProductInfoList._ID, 0).put(KdsProductInfoList.MAC, 1)), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);
                         message.reply(null);
@@ -176,10 +177,10 @@ public class OtaDao {
                                 message.reply(null);
                                 return;
                         }
-                        MongoClient.client.findWithOptions("kdsGatewayDeviceList", pnJsonObject.put("isAdmin", 1)
+                        MongoClient.client.findWithOptions(KdsGatewayDeviceList.COLLECT_NAME, pnJsonObject.put(KdsGatewayDeviceList.IS_ADMIN, 1)
                                 , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
-                                        .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
-                                        .put("adminuid", 1)), as -> {
+                                        .put(KdsGatewayDeviceList.DEVICE_SN, 1).put(KdsGatewayDeviceList._ID, 0).put("deviceList.event_str", 1)
+                                        .put(KdsGatewayDeviceList.ADMIN_UID, 1)), as -> {
                                     if (as.failed()) {
                                         logger.error(as.cause().getMessage(), as);
                                         message.reply(null);
@@ -202,12 +203,12 @@ public class OtaDao {
     @SuppressWarnings("Duplicates")
     public void getDeviceByGateway(JsonObject jsonObject, Message<JsonObject> message, List<String> ids) {
         if (message.body().getInteger("type") == 1) {//用户确认升级
-            jsonObject.put("deviceSN", new JsonObject().put("$in", new JsonArray(ids)))
-                    .put("isAdmin", 1);//管理员
-            MongoClient.client.findWithOptions("kdsGatewayDeviceList", jsonObject
+            jsonObject.put(KdsGatewayDeviceList.DEVICE_SN, new JsonObject().put("$in", new JsonArray(ids)))
+                    .put(KdsGatewayDeviceList.IS_ADMIN, 1);//管理员
+            MongoClient.client.findWithOptions(KdsGatewayDeviceList.COLLECT_NAME, jsonObject
                     , new FindOptions().setFields(new JsonObject().put("deviceList.deviceId", 1)
-                            .put("deviceSN", 1).put("_id", 0).put("deviceList.event_str", 1)
-                            .put("adminuid", 1)), as -> {
+                            .put(KdsGatewayDeviceList.DEVICE_SN, 1).put(KdsGatewayDeviceList._ID, 0).put("deviceList.event_str", 1)
+                            .put(KdsGatewayDeviceList.ADMIN_UID, 1)), as -> {
                         if (as.failed()) {
                             logger.error(as.cause().getMessage(), as);
                             message.reply(null);
@@ -242,9 +243,9 @@ public class OtaDao {
     public void getDeviceByApp(List<JsonObject> list, Message<JsonObject> message) {
         List<String> _ids = list.stream().map(e -> new JsonObject(e.toString()).getString("mac"))
                 .filter(x -> x != null).collect(Collectors.toList());
-        MongoClient.client.findWithOptions("kdsNormalLock", new JsonObject().put("is_admin", "1").put("macLock"
-                , new JsonObject().put("$in", new JsonArray(_ids))), new FindOptions().setFields(new JsonObject().put("lockName", 1)
-                .put("uid", 1).put("_id", 0).put("macLock", 1)), rs -> {
+        MongoClient.client.findWithOptions(KdsNormalLock.COLLECT_NAME, new JsonObject().put(KdsNormalLock.IS_ADMIN, "1").put(KdsNormalLock.MAC_LOCK
+                , new JsonObject().put("$in", new JsonArray(_ids))), new FindOptions().setFields(new JsonObject().put(KdsNormalLock.LOCK_NAME, 1)
+                .put(KdsNormalLock.UID, 1).put(KdsNormalLock._ID, 0).put(KdsNormalLock.MAC_LOCK, 1)), rs -> {
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 message.reply(null);
@@ -262,7 +263,7 @@ public class OtaDao {
      */
     public void otaApprovateRecord(Message<JsonObject> message) {
         logger.info("params -> {}", message.body());
-        MongoClient.client.insert("kdsOTARecord", message.body(), rs -> {
+        MongoClient.client.insert(KdsOTARecord.COLLECT_NAME, message.body(), rs -> {
             if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
         });
     }
