@@ -1,5 +1,6 @@
 package cn.orangeiot.managent.spi;
 
+import cn.orangeiot.common.annotation.http.HttpZkFactory;
 import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.managent.handler.BaseHandler;
 import cn.orangeiot.managent.handler.device.PublishDeviceHandler;
@@ -23,6 +24,7 @@ import org.apache.log4j.NDC;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.zookeeper.CreateMode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,6 +46,13 @@ public class SpiConf {
     private Router router;
 
     private JsonObject vertxConfig;
+
+    /**
+     * @author : baijun
+     * @date : 2019-01-04
+     * 集群对象
+     */
+    private ClusterManager clusterManager;
 
     public SpiConf(JsonObject vertxConfig) {
         this.vertxConfig = vertxConfig;
@@ -90,6 +99,12 @@ public class SpiConf {
             router.post(ApiConf.SUBMIT_UPGRADE_DATA).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(otaHandler::submitOTAUpgrade);
 
             createHttpServerManagent();//创建httpServer后台管理
+
+            /**
+             * @date : 2019-01-04
+             * @description : 把 http-managent 项目 http 信息存储到 zookeeper，临时节点
+             */
+            HttpZkFactory.Instance.handleHttpManagentMsg(configJson.getInteger("port"),"/zk/http-managent",ApiConf.class,((ZookeeperClusterManager)clusterManager).getCuratorFramework(), CreateMode.EPHEMERAL);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
@@ -149,6 +164,8 @@ public class SpiConf {
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+                clusterManager = mgr; // 为集群对象赋值
 //                        .setMetricsOptions(new VertxHawkularOptions().setEnabled(true)
 //                                .setHost("127.0.0.1")
 //                                .setPort(8080)
