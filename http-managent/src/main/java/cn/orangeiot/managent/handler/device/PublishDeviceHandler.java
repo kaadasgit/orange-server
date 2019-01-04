@@ -56,6 +56,49 @@ public class PublishDeviceHandler implements EventbusAddr {
         this.config = config;
     }
 
+
+    /**
+     * @Description 生產測試用戶
+     * @author zhang bo
+     * @date 18-12-25
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public void productionTestUser(RoutingContext routingContext) {
+        logger.info("==PublishDeviceHandler=productionDeviceSN==params->" + routingContext.getBodyAsString());
+        if (Objects.nonNull(routingContext.request().getParam("prefix"))
+                && Objects.nonNull(routingContext.request().getParam("count"))) {
+            vertx.eventBus().send(AdminlockAddr.class.getName() + PRODUCTION_TEST_USER, new JsonObject().put("prefix"
+                    , routingContext.request().getParam("prefix")).put("count",
+                    routingContext.request().getParam("count")), (AsyncResult<Message<JsonArray>> res) -> {
+                if (res.failed()) {
+                    logger.error(res.cause().getMessage(), res.cause());
+                    routingContext.fail(501);
+                } else {
+                    if (Objects.nonNull(res.result()) && Objects.nonNull(res.result().body())) {
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        ExcelUtil.exportModelExcel("測試帳號", new HashMap<String, String>() {{
+                            put("num", "序号");
+                            put("userMail", "帳號");
+                            put("userPwd","密碼");
+                        }}, res.result().body(), null, 0, os);
+                        byte[] content = os.toByteArray();
+                        routingContext.response().setChunked(true).putHeader("Content-type", "application/octet-stream")
+                                .putHeader("Content-Disposition", " attachment; filename=production_TestUsers.xlsx")
+                                .write(Buffer.buffer().appendBytes(content)).end();//分块编码
+
+                    } else {//失败
+                        routingContext.response().end(JsonObject.mapFrom(new Result<String>()
+                                .setErrorMessage(ErrorType.PRODUCTION_DEVICESN_FAIL.getKey(), ErrorType.PRODUCTION_DEVICESN_FAIL.getValue())).toString());
+                    }
+                }
+            });
+        } else {
+            routingContext.fail(401);
+        }
+    }
+
+
     /**
      * @Description 生产设备SN号导入
      * @author zhang bo
@@ -240,7 +283,6 @@ public class PublishDeviceHandler implements EventbusAddr {
             }
         }
     }
-
 
 
     /**

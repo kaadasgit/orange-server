@@ -40,6 +40,8 @@ public class FuncHandler {
 
     private MemeNetService memeNetService;
 
+    private TestProcessService testProcessService;
+
     public FuncHandler(Vertx vertx, JsonObject jsonObject) {
         this.vertx = vertx;
         this.jsonObject = jsonObject;
@@ -48,7 +50,8 @@ public class FuncHandler {
         approvateService = new ApprovateServiceImpl(vertx, jsonObject);
         userService = new UserServiceImpl(vertx, jsonObject);
         lockService = new LockServiceImpl(vertx, jsonObject);
-        memeNetService=new MemeNetSserviceImpl(vertx.eventBus());
+        memeNetService = new MemeNetSserviceImpl(vertx.eventBus());
+        testProcessService= new TestProcessServiceImpl(vertx.eventBus());
     }
 
 
@@ -200,13 +203,16 @@ public class FuncHandler {
                 });
                 break;
             case "RegisterMemeAndBind"://注册米米网用户并且绑定
-                memeNetService.registerMemeAndBind(message.body(),handler);
+                memeNetService.registerMemeAndBind(message.body(), handler);
                 break;
             case "RegisterMeme"://注册米米网用户
-                memeNetService.registerMeme(message.body(),handler);
+                memeNetService.registerMeme(message.body(), handler);
                 break;
             case "bindMeme"://绑定米米网设备
-                memeNetService.bindMeme(message.body(),handler);
+                memeNetService.bindMeme(message.body(), handler);
+                break;
+            case "testUnBindGateway":
+                testProcessService.testUnBindGateway(message.body(), handler);
                 break;
             default:
                 handler.handle(Future.failedFuture("func resources not find "));

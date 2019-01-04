@@ -18,9 +18,9 @@ public interface KdsOtaUpgrade {
     String TIME = "time"; // 提交时间
     String FILE_PATH_URL = "filePathUrl";
     String MODEL_TYPE = "modelType"; // 升级的产品类型（1：网关 2：挂载设备）
-    String FILE_MD5 = "fileMd5";
-    String FILE_LEN = "fileLen";
-    String SW = "SW";
+    String FILE_MD5 = "fileMd5";//文件md5
+    String FILE_LEN = "fileLen";//文件愛呢長度
+    String SW = "SW";//版本
 
     // no data in db
     String OTA_ORDER_NO = "OTAOrderNo"; // ota 单号 唯一性

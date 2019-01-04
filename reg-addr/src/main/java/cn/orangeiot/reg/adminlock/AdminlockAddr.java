@@ -52,6 +52,8 @@ public interface AdminlockAddr {
 
     String UPDATE_PRE_BIND_DEVICE="preBindDevice";//預先綁定設備
 
+    String PRODUCTION_TEST_USER="productTestUser";//生產測試用戶
+
     String GET_WRITE_MAC_RESULT = "getWriteMacResult";//获取mac写入结果
 
     String GET_MODEL_PASSWORD = "getPwdByMac";//根据mac获取模块的password1

@@ -668,19 +668,27 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
                 , new JsonObject().put("$set", new JsonObject().put(KdsUser.ME_USERNAME, message.body().getString("username"))
                         .put(KdsUser.ME_PWD, message.body().getString("password")).put(KdsUser.USER_ID, message.body().getLong("userid")))
                 , new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
-                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
-                    else
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs.cause());
+                        message.reply(null);
+                    }else
                         //同步緩存
                         RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, res -> {
                             if (res.failed()) {
                                 logger.error(res.cause().getMessage(), res.cause());
+                                message.reply(null);
                             } else {
                                 if (Objects.nonNull(res.result()))
                                     RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
                                             , new JsonObject(res.result()).put("meUsername", message.body().getString("username"))
                                                     .put("mePwd", message.body().getString("password"))
                                                     .put("userid", message.body().getLong("userid")).toString(), as -> {
-                                                if (as.failed()) logger.error(as.cause().getMessage(), as.cause());
+                                                if (as.failed()) {
+                                                    logger.error(as.cause().getMessage(), as.cause());
+                                                    message.reply(null);
+                                                }else {
+                                                    message.reply(new JsonObject());
+                                                }
                                             });
                             }
                         });

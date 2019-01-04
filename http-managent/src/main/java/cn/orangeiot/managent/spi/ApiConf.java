@@ -35,4 +35,6 @@ public interface ApiConf {
 
     String UPLOAD_DEVICE_BIND="/upload/device/bind";//上傳設備預綁定 文檔
 
+    String PRODUCT_TEST_USER="/product/user/test/:prefix/:count";//生產測試用戶
+
 }

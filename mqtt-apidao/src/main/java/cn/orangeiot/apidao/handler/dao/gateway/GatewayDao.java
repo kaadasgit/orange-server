@@ -682,12 +682,17 @@ public class GatewayDao implements GatewayAddr {
      * @version 1.0
      */
     public void deviceDelete(Message<JsonObject> message) {
-        MongoClient.client.updateCollectionWithOptions(KdsGatewayDeviceList.COLLECT_NAME, new JsonObject().put(KdsGatewayDeviceList.DEVICE_SN,
-                message.body().getString("clientId").split(":")[1]).put("deviceList.deviceId", new JsonObject()
-                        .put("$in", new JsonArray().add(message.body().getString("deviceId")))),
+        JsonObject params = new JsonObject().put(KdsGatewayDeviceList.DEVICE_SN, message.body().getString("clientId").split(":")[1])
+                .put("deviceList.deviceId", new JsonObject()
+                .put("$in", new JsonArray().add(message.body().getString("deviceId"))));
+        if (message.body().getValue("userId") != null)//單用戶刪除
+            params.put("uid", message.body().getString("userId"));
+
+        MongoClient.client.updateCollectionWithOptions(KdsGatewayDeviceList.COLLECT_NAME, params,
                 new JsonObject().put("$set", new JsonObject().put("deviceList.$.event_str"
                         , message.body().getJsonObject("eventparams").getString("event_str"))
-                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))))//刪除狀態
+                        .put("deviceList.$.time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))
+                        .put("deviceList.$.nickName", message.body().getString("deviceId")))//刪除狀態
                 , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
                     if (rs.failed()) {
                         logger.error(rs.cause().getMessage(), rs);

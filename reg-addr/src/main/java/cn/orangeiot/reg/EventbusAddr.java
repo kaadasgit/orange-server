@@ -12,6 +12,7 @@ import cn.orangeiot.reg.ota.OtaAddr;
 import cn.orangeiot.reg.publish.PublishAddr;
 import cn.orangeiot.reg.rateLimit.RateLimitAddr;
 import cn.orangeiot.reg.storage.StorageAddr;
+import cn.orangeiot.reg.testservice.TestProcessAddr;
 import cn.orangeiot.reg.user.UserAddr;
 
 /**
@@ -21,7 +22,7 @@ import cn.orangeiot.reg.user.UserAddr;
  * @date 2017-12-12
  */
 public interface EventbusAddr extends PublishAddr, MessageAddr, UserAddr, FileAddr,
-        AdminlockAddr, MemenetAddr, GatewayAddr, EventAddr, OtaAddr, StorageAddr, LogAddr, RateLimitAddr {
+        AdminlockAddr, MemenetAddr, GatewayAddr, EventAddr, OtaAddr, StorageAddr, LogAddr, RateLimitAddr,TestProcessAddr {
 
 
 }

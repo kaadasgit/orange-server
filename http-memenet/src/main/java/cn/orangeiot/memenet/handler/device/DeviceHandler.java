@@ -61,6 +61,8 @@ public class DeviceHandler implements GatewayAddr {
                                 logger.error("==DeviceHandler=onBindDeviceByUser===501");
                             } else {
                                 if (Objects.nonNull(ers.result().body().getValue("userid"))) {//用戶注冊成功的
+                                    logger.info("==DeviceHandler=onBindDeviceByUser===params -> userid -> {} , devicesn -> {}"
+                                            , ers.result().body().getLong("userid").toString(), message.body().getString("devicesn"));
                                     HttpClient.client.post("/v1/accsvr/binddevice")
                                             .as(BodyCodec.jsonObject())
                                             .addQueryParam("partid", conf.getString("partid"))
@@ -116,7 +118,7 @@ public class DeviceHandler implements GatewayAddr {
                     if (drs.failed()) {
                         logger.error(drs.cause().getMessage(), drs.cause());
                     } else {
-                        if (Objects.nonNull(drs.result())) {
+                        if (Objects.nonNull(drs.result()) && drs.result().body().size() > 0) {
                             drs.result().body().forEach(e -> {
                                 JsonObject jsonObject = new JsonObject(e.toString());
                                 if (Objects.nonNull(jsonObject.getValue("userid")))
@@ -124,12 +126,13 @@ public class DeviceHandler implements GatewayAddr {
                                             .addQueryParam("partid", conf.getString("partid"))
                                             .addQueryParam("appid", conf.getString("appId"))
                                             .addQueryParam("random", random)
-                                            .sendJsonObject(new JsonObject().put("userid", jsonObject.getLong("userid"))
+                                            .sendJsonObject(new JsonObject().put("userid", jsonObject.getLong("userid").toString())
                                                     .put("devicesn", message.body().getString("devuuid")).put("sig", as.result()), rs -> {
                                                 if (rs.failed()) {
                                                     logger.error(rs.cause().getMessage(), rs.cause());
                                                     logger.error("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice timeout");
                                                 } else {
+                                                    unregisterUser(jsonObject.getLong("userid").toString());
                                                     logger.info("==DeviceHandler=onRelieveDeviceByUser===request /v1/accsvr/unbinddevice result -> " + rs.result().body());
                                                 }
                                             });
@@ -139,6 +142,39 @@ public class DeviceHandler implements GatewayAddr {
 
                 });
             }
+        });
+    }
+
+
+    /**
+     * @param userid 米米網用戶id
+     * @Description 注銷米米網用戶
+     * @author zhang bo
+     * @date 18-12-29
+     * @version 1.0
+     */
+    public void unregisterUser(String userid) {
+        String random = KdsCreateRandom.createRandom(10);//获取随机数
+        // sha256加密
+        SHA256.getSHA256Str(conf.getString("sig").replace("RANDOM_VALUE", random), as -> {
+            if (as.failed()) {
+                logger.error(as.cause().getMessage(), as.cause());
+                logger.error("==DeviceHandler=onRelieveDeviceByUser Usersha256 encrypt is fail");
+            } else {
+                HttpClient.client.post("/v1/accsvr/deluser")
+                        .addQueryParam("partid", conf.getString("partid"))
+                        .addQueryParam("appid", conf.getString("appId"))
+                        .addQueryParam("random", random)
+                        .sendJsonObject(new JsonObject().put("userid", userid).put("sig", as.result()), rs -> {
+                            if (rs.failed()) {
+                                logger.error(rs.cause().getMessage(), rs.cause());
+                                logger.error("==DeviceHandler=unregisterUser===request /v1/accsvr/deluser timeout");
+                            } else {
+                                logger.info("==DeviceHandler=unregisterUser===request /v1/accsvr/deluser result -> " + rs.result().body());
+                            }
+                        });
+            }
+
         });
     }
 
