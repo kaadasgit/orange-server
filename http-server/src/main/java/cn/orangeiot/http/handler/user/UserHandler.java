@@ -158,7 +158,8 @@ public class UserHandler implements EventbusAddr {
             if (asyncResult.failed()) {
                 routingContext.fail(401);
             } else {
-                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
+                String regex="^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*\\.[a-zA-Z0-9]{2,6}$";
+//                String regex = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
                 if (asyncResult.result().getString("name").matches(regex)) //检验是否是合法的邮箱地址
                     register(asyncResult.result(), UserAddr.class.getName() + REGISTER_USER_MAIL, routingContext);
                 else

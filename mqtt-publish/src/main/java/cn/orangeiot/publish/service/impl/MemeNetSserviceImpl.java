@@ -46,7 +46,8 @@ public class MemeNetSserviceImpl implements MemeNetService {
         String meUsername = UUIDUtils.getUUID();
         String mePassword = UUIDUtils.getUUID();
         eb.send(MemenetAddr.class.getName() + REGISTER_USER_CALLBACK, new JsonObject().put("username", meUsername)
-                .put("password", mePassword).put("uid", jsonObject.getString("uid")), SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
+                .put("password", mePassword).put("uid", jsonObject.getString("uid")).put("devuuid",jsonObject.getString("devuuid"))
+                , SendOptions.getInstance(), (AsyncResult<Message<Boolean>> rs) -> {
             if (rs.failed()) {
                 handler.handle(Future.succeededFuture(JsonObject.mapFrom(new ResultInfo<>().setErrorMessage(ErrorType.REGISTER_MEME_FAIL.getKey()
                         , ErrorType.REGISTER_MEME_FAIL.getValue(),jsonObject.getString("func")))));

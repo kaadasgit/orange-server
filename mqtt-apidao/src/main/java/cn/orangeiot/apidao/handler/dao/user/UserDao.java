@@ -664,41 +664,46 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
      */
     public void meMeUser(Message<JsonObject> message) {
         //同步db
-        MongoClient.client.updateCollectionWithOptions(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
-                , new JsonObject().put("$set", new JsonObject().put(KdsUser.ME_USERNAME, message.body().getString("username"))
-                        .put(KdsUser.ME_PWD, message.body().getString("password")).put(KdsUser.USER_ID, message.body().getLong("userid")))
-                , new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
-                    if (rs.failed()) {
-                        logger.error(rs.cause().getMessage(), rs.cause());
-                        message.reply(null);
-                    }else
-                        //同步緩存
-                        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, res -> {
-                            if (res.failed()) {
-                                logger.error(res.cause().getMessage(), res.cause());
-                                message.reply(null);
-                            } else {
-                                if (Objects.nonNull(res.result()))
-                                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
-                                            , new JsonObject(res.result()).put("meUsername", message.body().getString("username"))
-                                                    .put("mePwd", message.body().getString("password"))
-                                                    .put("userid", message.body().getLong("userid")).toString(), as -> {
-                                                if (as.failed()) {
-                                                    logger.error(as.cause().getMessage(), as.cause());
-                                                    message.reply(null);
-                                                }else {
-                                                    message.reply(new JsonObject());
-                                                }
-                                            });
-                            }
-                        });
-                });
+//        MongoClient.client.updateCollectionWithOptions(KdsUser.COLLECT_NAME, new JsonObject().put(KdsUser._ID, new JsonObject().put("$oid", message.body().getString("uid")))
+//                , new JsonObject().put("$set", new JsonObject().put(KdsUser.ME_USERNAME, message.body().getString("username"))
+//                        .put(KdsUser.ME_PWD, message.body().getString("password")).put(KdsUser.USER_ID, message.body().getLong("userid")))
+//                , new UpdateOptions().setUpsert(true).setMulti(false), rs -> {
+//                    if (rs.failed()) {
+//                        logger.error(rs.cause().getMessage(), rs.cause());
+//                    } else
+//                        //同步緩存
+//                        RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO, res -> {
+//                            if (res.failed()) {
+//                                logger.error(res.cause().getMessage(), res.cause());
+//                            } else {
+//                                if (Objects.nonNull(res.result()))
+//                                    RedisClient.client.hset(RedisKeyConf.USER_ACCOUNT + message.body().getString("uid"), RedisKeyConf.USER_VAL_INFO
+//                                            , new JsonObject(res.result()).put("meUsername", message.body().getString("username"))
+//                                                    .put("mePwd", message.body().getString("password"))
+//                                                    .put("userid", message.body().getLong("userid")).toString(), as -> {
+//                                                if (as.failed())
+//                                                    logger.error(as.cause().getMessage(), as.cause());
+//                                            });
+//                            }
+//                        });
+//                });
 
-        MongoClient.client.updateCollectionWithOptions(KdsGatewayDeviceList.COLLECT_NAME, new JsonObject().put(KdsGatewayDeviceList.UID, message.body().getString("uid"))
-                , new JsonObject().put("$set", new JsonObject().put(KdsGatewayDeviceList.ME_USER_NAME, message.body().getString("username")).put("mePwd",message.body().getString("password"))
-                .put(KdsGatewayDeviceList.USER_ID,message.body().getLong("userid")))
-                , new UpdateOptions().setUpsert(false).setMulti(true), rs -> {
-                    if (rs.failed()) logger.error(rs.cause().getMessage(), rs);
+        JsonObject params = new JsonObject().put(KdsGatewayDeviceList.UID, message.body().getString("uid"));
+        if (message.body().getValue("devuuid") != null)
+            params.put(KdsGatewayDeviceList.DEVICE_SN, message.body().getString("devuuid"));
+        MongoClient.client.updateCollectionWithOptions(KdsGatewayDeviceList.COLLECT_NAME, params
+                , new JsonObject().put("$set", new JsonObject().put(KdsGatewayDeviceList.ME_USER_NAME, message.body().getString("username")).put("mePwd", message.body().getString("password"))
+                        .put(KdsGatewayDeviceList.USER_ID, message.body().getLong("userid")))
+                , new UpdateOptions().setUpsert(false).setMulti(false), rs -> {
+                    if (rs.failed()) {
+                        logger.error(rs.cause().getMessage(), rs);
+                        message.reply(null);
+                    } else {
+                        if (rs.result().getDocMatched() > 0)
+                            message.reply(new JsonObject());
+                        else
+                            message.reply(null);
+                    }
                 });
     }
 
