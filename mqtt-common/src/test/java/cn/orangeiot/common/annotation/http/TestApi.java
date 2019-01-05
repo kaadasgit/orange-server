@@ -1,15 +1,8 @@
-package cn.orangeiot.managent.spi;
+package cn.orangeiot.common.annotation.http;
 
 import cn.orangeiot.common.annotation.KdsHttpMessage;
 
-/**
- * @author zhang bo
- * @version 1.0
- * @Description
- * @date 2017-12-08
- */
-public interface ApiConf {
-
+public interface TestApi {
     /**
      * api路径
      */
@@ -48,8 +41,4 @@ public interface ApiConf {
 
     @KdsHttpMessage(Method = "post")
     String UPLOAD_DEVICE_BIND="/upload/device/bind";//上傳設備預綁定 文檔
-
-    @KdsHttpMessage(Method = "get")
-    String PRODUCT_TEST_USER="/product/user/test/:prefix/:count";//生產測試用戶
-
 }

@@ -1,5 +1,6 @@
 package cn.orangeiot.http.spi;
 
+import cn.orangeiot.common.annotation.http.HttpZkFactory;
 import cn.orangeiot.common.constant.HttpAttrType;
 import cn.orangeiot.http.constant.UserRequestRateLimitConf;
 import cn.orangeiot.http.handler.BaseHandler;
@@ -21,6 +22,7 @@ import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +47,13 @@ public class SpiConf {
     private Router router;
 
     private JsonObject vertxConfig;
+
+    /**
+     * @author : baijun
+     * @date : 2019-01-04
+     * @description : zookeeper 集群实体，用来获取 zk 客户端
+     */
+    private ZookeeperClusterManager zookeeperClusterManager;
 
     public SpiConf(JsonObject vertxConfig) {
         this.vertxConfig = vertxConfig;
@@ -132,6 +141,14 @@ public class SpiConf {
             router.post(ApiConf.MODEL_PWD_BY_MAC).consumes(HttpAttrType.CONTENT_TYPE_JSON.getValue()).produces(HttpAttrType.CONTENT_TYPE_JSON.getValue()).handler(macHandler::getMacAddr);
 
             createHttpServer();//创建httpServer
+
+            /**
+             * @author : baijun
+             * @date : 2019-01-04
+             * @description : 处理 http-server 项目中 http 信息，放到 zookeeper 中
+             */
+            HttpZkFactory.Instance.handleHttpServerMsg(vertxConfig.getInteger("http-port",
+                    configJson.getInteger("port")),"/zk/http-server",ApiConf.class,zookeeperClusterManager.getCuratorFramework(), CreateMode.EPHEMERAL);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
@@ -212,6 +229,13 @@ public class SpiConf {
                 System.setProperty("vertx.zookeeper.hosts", json.getString("hosts.zookeeper"));
                 ClusterManager mgr = new ZookeeperClusterManager(json);
                 VertxOptions options = new VertxOptions().setClusterManager(mgr);
+
+                /**
+                 * @date : 2019-01-04
+                 * @description : 为 zookeeper 集群赋值
+                 */
+                zookeeperClusterManager = (ZookeeperClusterManager)mgr;
+
                 if (Objects.nonNull(json.getValue("node.host")))
                     options.setClusterHost(json.getString("node.host"));
 
