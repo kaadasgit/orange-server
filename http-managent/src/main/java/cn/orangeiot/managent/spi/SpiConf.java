@@ -100,12 +100,12 @@ public class SpiConf {
 
             createHttpServerManagent();//创建httpServer后台管理
 
-            /**
-             * @date : 2019-01-04
-             * @description : 把 http-managent 项目 http 信息存储到 zookeeper，临时节点
-             */
-            HttpZkFactory.Instance.handleHttpManagentMsg(configJson.getInteger("port"),"/zk/http-managent",ApiConf.class,((ZookeeperClusterManager)clusterManager).getCuratorFramework(), CreateMode.EPHEMERAL);
-        } else {
+//            /**
+//             * @date : 2019-01-04
+//             * @description : 把 http-managent 项目 http 信息存储到 zookeeper，临时节点
+//             */
+//            HttpZkFactory.Instance.handleHttpManagentMsg(configJson.getInteger("port"),"/zk/http-managent",ApiConf.class,((ZookeeperClusterManager)clusterManager).getCuratorFramework(), CreateMode.EPHEMERAL);
+//        } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
         }

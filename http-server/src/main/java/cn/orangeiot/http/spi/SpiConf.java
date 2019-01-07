@@ -142,13 +142,13 @@ public class SpiConf {
 
             createHttpServer();//创建httpServer
 
-            /**
-             * @author : baijun
-             * @date : 2019-01-04
-             * @description : 处理 http-server 项目中 http 信息，放到 zookeeper 中
-             */
-            HttpZkFactory.Instance.handleHttpServerMsg(vertxConfig.getInteger("http-port",
-                    configJson.getInteger("port")),"/zk/http-server",ApiConf.class,zookeeperClusterManager.getCuratorFramework(), CreateMode.EPHEMERAL);
+//            /**
+//             * @author : baijun
+//             * @date : 2019-01-04
+//             * @description : 处理 http-server 项目中 http 信息，放到 zookeeper 中
+//             */
+//            HttpZkFactory.Instance.handleHttpServerMsg(vertxConfig.getInteger("http-port",
+//                    configJson.getInteger("port")),"/zk/http-server",ApiConf.class,zookeeperClusterManager.getCuratorFramework(), CreateMode.EPHEMERAL);
         } else {
             // failed!
             logger.error(res.cause().getMessage(), res.cause());
