@@ -9,7 +9,11 @@
       "expireTime":604800000,
       "periodicTime":3600000,
       "user_prefix": "app",
-      "gateway_prefix": "gw"
+      "gateway_prefix": "gw",
+      "tls": {
+        //        "password": "123456",
+        //        "certPath": "/server.jks"
+      }
     },
     {
       "tcp_port": 11883,
