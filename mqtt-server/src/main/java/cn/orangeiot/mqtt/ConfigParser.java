@@ -17,7 +17,7 @@ public class ConfigParser {
     private boolean retainSupport;
     private String authenticatorAddress;
     private boolean securityEnabled;
-    private String tlsKeyPath;
+    private String tlsPassword;
     private String tlsCertPath;
     private String publish;
     private int socketIdleTimeout;
@@ -56,7 +56,7 @@ public class ConfigParser {
         securityEnabled = authenticatorAddress != null && authenticatorAddress.trim().length() > 0;
 
         JsonObject tls = conf.getJsonObject("tls", new JsonObject());
-        tlsKeyPath = tls.getString("keyPath");
+        tlsPassword = tls.getString("password");
         tlsCertPath = tls.getString("certPath");
         socketIdleTimeout = conf.getInteger("socket_idle_timeout", IDLE_TIMEOUT_SECONDS);
         publish = conf.getString("send_publish_message");
@@ -115,8 +115,8 @@ public class ConfigParser {
         return securityEnabled;
     }
 
-    public String getTlsKeyPath() {
-        return tlsKeyPath;
+    public String getTlsPassword() {
+        return tlsPassword;
     }
 
     public String getTlsCertPath() {
@@ -124,7 +124,7 @@ public class ConfigParser {
     }
 
     public boolean isTlsEnabled() {
-        String keyPath = getTlsKeyPath();
+        String keyPath = getTlsPassword();
         String certPath = getTlsCertPath();
         boolean ret = keyPath != null && keyPath.trim().length() > 0 && certPath != null && certPath.trim().length() > 0;
         return ret;

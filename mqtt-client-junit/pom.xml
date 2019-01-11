@@ -147,6 +147,7 @@
                     <include>**/*.jpg</include>
                     <include>**/*.scss</include>
                     <include>**/*.json</include>
+                    <include>**/*.jks</include>
                 </includes>
                 <excludes>
                     <exclude>log4j2.xml</exclude>

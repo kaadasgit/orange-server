@@ -9,13 +9,17 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSSocket;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -193,6 +197,51 @@ public class SockJSSocketAndMqttSocketImpl {
         logger.error(throwable.getMessage(), throwable);
     }
 
+    /**
+     * @param certPath 证书路径
+     * @Description 证书写入缓冲区
+     * @author zhang bo
+     * @date 19-1-11
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public Buffer getCert(String certPath) {
+        InputStream jksIn = SockJSSocketAndMqttSocketImpl.class.getResourceAsStream(certPath);
+        Buffer buffer = null;
+        try {
+            if (jksIn != null) {
+                byte[] jksByte = IOUtils.toByteArray(jksIn);
+                buffer = Buffer.buffer().appendBytes(jksByte);
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return buffer;
+    }
+
+
+    /**
+     * @Description 加载TLS
+     * @author zhang bo
+     * @date 19-1-11
+     * @version 1.0
+     */
+    public void loadTls(MqttClientOptions options) {
+        String bol = System.getProperty("tls");
+        Boolean flag = false;
+        try {
+            if (bol != null) {
+                flag = Boolean.valueOf(bol);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Buffer bu = null;
+        if (flag && (bu = getCert("/server.jks")) != null) {
+            options.setSsl(true).setKeyStoreOptions(new JksOptions().setValue(bu)
+                    .setPassword("123456"));
+        }
+    }
 
     /**
      * @Description 创建mqtt客户端
@@ -221,6 +270,8 @@ public class SockJSSocketAndMqttSocketImpl {
         MqttClientOptions options = new MqttClientOptions().setPassword(jsonObject.getString("password"))
                 .setUsername(jsonObject.getString("username")).setKeepAliveTimeSeconds(10).setClientId(jsonObject.getString("clientId"))
                 .setCleanSession(true);
+
+        loadTls( options);
 
         String[] host = jsonObject.getString("host").split(":");
         client = MqttClient.create(vertx, options);

@@ -10,17 +10,22 @@ import cn.orangeiot.mqtt.persistence.StoreVerticle;
 import cn.orangeiot.mqtt.util.LogFileUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -163,10 +168,32 @@ public class MQTTBroker extends AbstractVerticle {
 
     }
 
+    /**
+     * @param certPath 证书路径
+     * @Description 证书写入缓冲区
+     * @author zhang bo
+     * @date 19-1-11
+     * @version 1.0
+     */
+    @SuppressWarnings("Duplicates")
+    public Buffer getCert(String certPath) {
+        InputStream jksIn = MQTTBroker.class.getResourceAsStream(certPath);
+        Buffer buffer = null;
+        try {
+            if (jksIn != null) {
+                byte[] jksByte = IOUtils.toByteArray(jksIn);
+                buffer = Buffer.buffer().appendBytes(jksByte);
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return buffer;
+    }
+
 
     private void startTcpServer(ConfigParser c) {
         int port = c.getPort();
-        String keyPath = c.getTlsKeyPath();
+        String password = c.getTlsPassword();
         String certPath = c.getTlsCertPath();
         boolean tlsEnabled = c.isTlsEnabled();
         int idleTimeout = c.getSocketIdleTimeout();
@@ -178,10 +205,11 @@ public class MQTTBroker extends AbstractVerticle {
                 .setPort(port).setAcceptBacklog(100000);
 
         if (tlsEnabled) {
-            opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                    .setKeyPath(keyPath)
-                    .setCertPath(certPath)
-            );
+            Buffer bu = null;
+            if ((bu = getCert(certPath)) != null)
+                opt.setSsl(true).setKeyStoreOptions(new JksOptions().setValue(bu)
+                        .setPassword(c.getTlsPassword()));
+
         }
         NetServer netServer = vertx.createNetServer(opt);
         Map<String, MQTTSession> sessions = new ConcurrentHashMap<>();
@@ -201,7 +229,7 @@ public class MQTTBroker extends AbstractVerticle {
     private void startWebsocketServer(ConfigParser c) {
         int port = c.getPort();
         String wsSubProtocols = c.getWsSubProtocols();
-        String keyPath = c.getTlsKeyPath();
+        String keyPath = c.getTlsPassword();
         String certPath = c.getTlsCertPath();
         boolean tlsEnabled = c.isTlsEnabled();
         int idleTimeout = c.getSocketIdleTimeout();
