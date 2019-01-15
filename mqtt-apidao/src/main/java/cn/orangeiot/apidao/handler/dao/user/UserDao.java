@@ -383,6 +383,28 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
         });
     }
 
+
+    /**
+     * @Description 记录用户登录信息
+     * @author zhang bo
+     * @date 19-1-15
+     * @version 1.0
+     */
+    public void recordUserLogin(JsonObject jsonObject, Message<JsonObject> message) {
+        //更新登錄記錄
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        MongoClient.client.findOneAndUpdateWithOptions(KdsUserLog.COLLECT_NAME, new JsonObject().put(KdsUserLog.USER_NAME
+                , jsonObject.getString("username")).put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType"))
+                , new JsonObject().put("$set", new JsonObject().put(KdsUserLog.USER_NAME, jsonObject.getString("username"))
+                        .put(KdsUserLog.LOGIN_TIME, time).put(KdsUserLog.LOGIN_IP, jsonObject.getString("loginIP"))
+                        .put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType")))
+                , new FindOptions(), new UpdateOptions().setUpsert(true), logtime -> {
+                    if (logtime.failed()) logger.error(logtime.cause().getMessage(),logtime);
+                });
+    }
+
+
+
     /**
      * @Description 检验密码
      * @author zhang bo
@@ -397,22 +419,24 @@ public class UserDao extends SynchUserDao implements MemenetAddr {
             String[] jwts = StringUtils.split(jwtStr, ".");
             verifyUserTTl(jsonObject.getString("_id"));
 
-            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
-                    .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
-
-            //更新登錄記錄
-            String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            MongoClient.client.findOneAndUpdateWithOptions(KdsUserLog.COLLECT_NAME, new JsonObject().put(KdsUserLog.USER_NAME
-                    , jsonObject.getString("username")).put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType"))
-                    , new JsonObject().put("$set", new JsonObject().put(KdsUserLog.USER_NAME, jsonObject.getString("username"))
-                            .put(KdsUserLog.LOGIN_TIME, time).put(KdsUserLog.LOGIN_IP, jsonObject.getString("loginIP"))
-                            .put(KdsUserLog.VERSION_TYPE, message.body().getString("versionType")))
-                    , new FindOptions(), new UpdateOptions().setUpsert(true), logtime -> {
-                        if (logtime.failed()) logtime.cause().printStackTrace();
-                    });
             if (Objects.nonNull(jsonObject.getValue("username"))) {//同步数据
-                onSynchUserInfo(jsonObject, jwts[1], config.getLong("liveTime"));
+                onSynchUserInfo(jsonObject, jwts[1], config.getLong("liveTime"), res -> {
+                    if (res.failed()) {
+                        message.reply(null);
+                    } else {
+                        if (res.result()) {
+                            message.reply(new JsonObject().put("uid", jsonObject.getString("_id")).put("token", jwts[1])
+                                    .put("meUsername", jsonObject.getString("meUsername")).put("mePwd", jsonObject.getString("mePwd")));
+                            recordUserLogin(jsonObject, message);
+                        } else {
+                            message.reply(null);
+                        }
+                    }
+                });
+            } else {
+                message.reply(null);
             }
+
         } else {
             message.reply(null);
         }

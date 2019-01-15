@@ -4,6 +4,9 @@ import cn.orangeiot.apidao.client.MongoClient;
 import cn.orangeiot.apidao.client.RedisClient;
 import cn.orangeiot.apidao.conf.RedisKeyConf;
 import cn.orangeiot.common.constant.mongodb.KdsGatewayDeviceList;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
@@ -73,34 +76,44 @@ public abstract class SynchUserDao {
      * @version 1.0
      */
     @SuppressWarnings("Duplicates")
-    public void onSynchUserInfo(JsonObject message, String token, Long liveTime) {
+    public void onSynchUserInfo(JsonObject message, String token, Long liveTime, Handler<AsyncResult<Boolean>> handler) {
         logger.debug("==UserHandler=onSynchUserInfo" + message);
         RedisClient.client.hget(RedisKeyConf.USER_ACCOUNT + message.getString("_id"), RedisKeyConf.USER_VAL_TOKEN, ars -> {
-            if (ars.failed()) logger.error(ars.cause().getMessage(), ars);
-            else {
+            if (ars.failed()) {
+                logger.error(ars.cause().getMessage(), ars);
+                handler.handle(Future.succeededFuture(false));
+            }else {
                 if (Objects.nonNull(ars.result())) {
                     RedisClient.client.hmset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"),
                             new JsonObject().put(RedisKeyConf.USER_VAL_INFO
                                     , message.toString()).put(RedisKeyConf.USER_VAL_TOKEN, token).put(RedisKeyConf.USER_VAL_OLDTOKEN, ars.result()), rs -> {
-                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
-                                else
+                                if (rs.failed()) {
+                                    logger.error(rs.cause().getMessage(), rs.cause());
+                                    handler.handle(Future.succeededFuture(false));
+                                }else {
+                                    handler.handle(Future.succeededFuture(true));
                                     RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + message.getString("_id")
                                             , liveTime, times -> {
                                                 if (times.failed())
                                                     logger.error(times.cause().getMessage(), times.cause());
                                             });
+                                }
                             });
                 } else {
                     RedisClient.client.hmset(RedisKeyConf.USER_ACCOUNT + message.getString("_id"),
                             new JsonObject().put(RedisKeyConf.USER_VAL_INFO
                                     , message.toString()).put(RedisKeyConf.USER_VAL_TOKEN, token), rs -> {
-                                if (rs.failed()) logger.error(rs.cause().getMessage(), rs.cause());
-                                else
+                                if (rs.failed()) {
+                                    logger.error(rs.cause().getMessage(), rs.cause());
+                                    handler.handle(Future.succeededFuture(false));
+                                }else {
+                                    handler.handle(Future.succeededFuture(true));
                                     RedisClient.client.expire(RedisKeyConf.USER_ACCOUNT + message.getString("_id")
                                             , liveTime, times -> {
                                                 if (times.failed())
                                                     logger.error(times.cause().getMessage(), times.cause());
                                             });
+                                }
                             });
                 }
             }
