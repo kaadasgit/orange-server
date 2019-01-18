@@ -51,8 +51,8 @@ public class LoggerReporter extends ScheduledReporter {
             return;
         }
 
-        String dateTime = this.dateFormat.format(new Date(this.clock.getTime()));
-        this.printWithBanner(dateTime, '=');
+//        String dateTime = this.dateFormat.format(new Date(this.clock.getTime()));
+//        this.printWithBanner(dateTime, '=');
 //        this.logger.info("\n");
         Iterator i$;
         Entry entry;
@@ -62,7 +62,7 @@ public class LoggerReporter extends ScheduledReporter {
 
             while(i$.hasNext()) {
                 entry = (Entry)i$.next();
-                this.logger.info((String)entry.getKey()+"\n");
+                this.logger.info((String)entry.getKey());
                 this.printGauge(entry);
             }
 
@@ -75,7 +75,7 @@ public class LoggerReporter extends ScheduledReporter {
 
             while(i$.hasNext()) {
                 entry = (Entry)i$.next();
-                this.logger.info((String)entry.getKey()+"\n");
+                this.logger.info((String)entry.getKey());
                 this.printCounter(entry);
             }
 
@@ -88,7 +88,7 @@ public class LoggerReporter extends ScheduledReporter {
 
             while(i$.hasNext()) {
                 entry = (Entry)i$.next();
-                this.logger.info((String)entry.getKey()+"\n");
+                this.logger.info((String)entry.getKey());
                 this.printHistogram((Histogram)entry.getValue());
             }
 
@@ -101,7 +101,7 @@ public class LoggerReporter extends ScheduledReporter {
 
             while(i$.hasNext()) {
                 entry = (Entry)i$.next();
-                this.logger.info((String)entry.getKey()+"\n");
+                this.logger.info((String)entry.getKey());
                 this.printMeter((Meter)entry.getValue());
             }
 
@@ -114,7 +114,7 @@ public class LoggerReporter extends ScheduledReporter {
 
             while(i$.hasNext()) {
                 entry = (Entry)i$.next();
-                this.logger.info((String)entry.getKey()+"\n");
+                this.logger.info((String)entry.getKey());
                 this.printTimer((Timer)entry.getValue());
             }
 
@@ -181,7 +181,6 @@ public class LoggerReporter extends ScheduledReporter {
         for(int i = 0; i < 80 - s.length() - 1; ++i) {
             buffer.append(c);
         }
-        buffer.append("\n");
 
         logger.info(buffer.toString());
     }
