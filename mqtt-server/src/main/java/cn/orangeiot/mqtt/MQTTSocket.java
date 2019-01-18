@@ -1,5 +1,7 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.common.metrics.MetricBuilder;
+import cn.orangeiot.common.metrics.OpsType;
 import cn.orangeiot.common.options.SendOptions;
 import cn.orangeiot.mqtt.parser.MQTTDecoder;
 import cn.orangeiot.mqtt.parser.MQTTEncoder;
@@ -180,6 +182,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                             logFileUtils.remove(connectedClientID);//移除离线实例
                             sendMessageToClient(connAck);
                             PromMetrics.mqtt_sessions_total.inc();
+                            // 连接数加1，2019-01-18 baijun
+                            MetricBuilder.COUNT.inc(MQTTSocket.class, OpsType.CONNECTION_COUNT);
                             if (!session.isCleanSession()) {
 //                            session.sendAllMessagesFromQueue();
                             }
@@ -347,6 +351,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             case DISCONNECT:
                 if (checkConnected(session)) {
                     PromMetrics.mqtt_disconnect_total.labels(session.getClientID()).inc();
+                    // 连接数减1,2019-01-18 baijun
+                    MetricBuilder.COUNT.dec(MQTTSocket.class,OpsType.CONNECTION_COUNT);
                     if (session != null) {
                         checkDevice(session.getClientID(), "offline");//离线狀態
                         session.closeState();

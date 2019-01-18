@@ -64,5 +64,6 @@
       }
     }
   ],
-  "send_publish_message": "cn.orangeiot.publish.message"
+  "send_publish_message": "cn.orangeiot.publish.message",
+  "metric_period": 120
 }

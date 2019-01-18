@@ -20,8 +20,20 @@
         <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>-->
         <!--<SizeBasedTriggeringPolicy size="1 MB"/>-->
         <!--</RollingFile>-->
+        <!--性能监控日志配置，2019-01-18 baijun-->
+        <RollingFile name="metrics" fileName="./logs/mqttserver-metric.log"
+                     filePattern="./logs/$${date:yyyy-MM}/log-%d{MM-dd-yyyy}-mqttserver-metric.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] (%F:%L)  - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+            </Policies>
+        </RollingFile>
     </Appenders>
     <Loggers>
+        <!--性能监控日志节点配置，2019-01-18 baijun-->
+        <logger name="metrics" level = "info" additivity="false">
+            <appender-ref ref="metrics"/>
+        </logger>
         <!--异步写入log-->
         <Root level="info">
             <AppenderRef ref="serverLog"/>

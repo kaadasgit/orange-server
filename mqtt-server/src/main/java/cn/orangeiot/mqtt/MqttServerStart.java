@@ -1,5 +1,7 @@
 package cn.orangeiot.mqtt;
 
+import cn.orangeiot.common.metrics.MetricBuilder;
+import cn.orangeiot.common.metrics.OpsType;
 import cn.orangeiot.mqtt.log.LogVerticle;
 import cn.orangeiot.mqtt.prometheus.PromMetricsExporter;
 import cn.orangeiot.mqtt.rest.RestApiVerticle;
@@ -22,6 +24,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Giovanni Baleani on 13/11/2015.
@@ -98,7 +101,11 @@ public class MqttServerStart {
             if (Objects.nonNull(config))
                 deploymentOptions.setConfig(config);
 
+            // 性能监控日志注册 2019-01-18 baijun
+            MetricBuilder.COUNT.createCounter(MQTTSocket.class, OpsType.CONNECTION_COUNT.getDesc())
+                    .start("metrics",config.getInteger("metric_period"), TimeUnit.SECONDS);
         }
+
 
         //zookeeper集群
         JsonObject zkConfig = null;
