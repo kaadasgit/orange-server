@@ -52,6 +52,13 @@
     </properties>
 
     <dependencies>
+        <!-- 引入metric依赖包，baijun，2019-01-18 -->
+        <dependency>
+            <groupId>com.codahale.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
