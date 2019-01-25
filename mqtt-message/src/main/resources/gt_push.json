@@ -1,0 +1,16 @@
+{
+  "host": "restapi.getui.com",
+//  "port": 443,
+  "is_ssl": true,
+  "verifyHost": false,
+  "trustAll": true,
+  "timeout": 3000,
+  "alpn": true,
+  "maxPoolSize": 100,
+  "cert_password": "123456",
+  "IdleTimeout": 30,
+  "appId": "5zODhkZOQd66zCoOgxX152",
+  "appKey": "2MYvnQfX4k7JHqC7KNaCuA",
+  "masterSecret": "0EbQVmp3M69cTeOBv6QBi7"
+}
+`

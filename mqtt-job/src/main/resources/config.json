@@ -1,5 +1,18 @@
 {
   "host":"127.0.0.1",
   "verifyCodeCron":"0 0 0 * * ?",
-  "send_verifyCodeCron":"cn.orangeiot.job.VerifyCode"
+  "send_verifyCodeCron":"cn.orangeiot.job.VerifyCode",
+//  "gtAuthtokenCron":"0 * * * * ?",
+  "send_gtAuthtokenCron":"cn.orangeiot.job.gtAuthtokenSave",
+  "gt_host": "restapi.getui.com",
+  "gt_port": 443,
+  "gt_is_ssl": true,
+  "gt_verifyHost": false,
+  "gt_trustAll": true,
+  "gt_timeout": 3000,
+  "gt_alpn": true,
+  "gt_maxPoolSize": 100,
+  "gt_appId": "5zODhkZOQd66zCoOgxX152",
+  "gt_appKey": "2MYvnQfX4k7JHqC7KNaCuA",
+  "gt_masterSecret": "0EbQVmp3M69cTeOBv6QBi7"
 }

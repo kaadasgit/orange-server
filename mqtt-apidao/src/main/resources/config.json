@@ -6,5 +6,7 @@
   "consumer_saveTopic":"cn.orangeiot.topic.cache.saveTopic",
   "consumer_delTopic":"cn.orangeiot.topic.cache.delTopic",
   "consumer_saveOfflineMessage":"cn.orangeiod.cache.saveOfflineMsg",
-  "consumer_verifyCodeCron":"cn.orangeiot.job.VerifyCode"
+  "consumer_verifyCodeCron":"cn.orangeiot.job.VerifyCode",
+  "consumer_gtAuthtokenSave":"cn.orangeiot.job.gtAuthtokenSave",
+  "consumer_gtAuthtokenGet":"cn.orangeiot.job.gtAuthtokenGet"
 }

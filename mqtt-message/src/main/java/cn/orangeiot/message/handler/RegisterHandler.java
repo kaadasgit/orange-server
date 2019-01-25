@@ -1,9 +1,6 @@
 package cn.orangeiot.message.handler;
 
-import cn.orangeiot.message.handler.client.KafkaClient;
-import cn.orangeiot.message.handler.client.MailClient;
-import cn.orangeiot.message.handler.client.PushClient;
-import cn.orangeiot.message.handler.client.SMSClient;
+import cn.orangeiot.message.handler.client.*;
 import cn.orangeiot.message.handler.msg.OffMessageHandler;
 import cn.orangeiot.message.handler.notify.NotifyHandler;
 import cn.orangeiot.message.handler.ota.OtaUpgradeHandler;
@@ -73,6 +70,11 @@ public class RegisterHandler implements EventbusAddr {
             pushClient.loadAndroidConf(vertx);
             pushClient.loadIOSConf(vertx);
             pushClient.loadIOSVoipConf(vertx);
+
+            // 个推推送客户端
+            GTPushClient gtPushClient = new GTPushClient();
+            gtPushClient.loadConf(vertx);
+
             //注册kafkaclient
 //            KafkaClient kafkaClient=new KafkaClient();
 //            kafkaClient.kafkaProducerConf(vertx);

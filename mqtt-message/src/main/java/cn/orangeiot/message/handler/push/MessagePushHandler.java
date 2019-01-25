@@ -1,17 +1,23 @@
 package cn.orangeiot.message.handler.push;
 
 import cn.orangeiot.common.constant.HttpAttrType;
+import cn.orangeiot.common.utils.UUIDUtils;
 import cn.orangeiot.message.constant.ConstantConf;
+import cn.orangeiot.message.handler.client.GTPushClient;
 import cn.orangeiot.message.handler.client.PushClient;
 import cn.orangeiot.reg.message.MessageAddr;
+import io.netty.util.internal.StringUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sun.nio.ch.IOUtil;
 
+import java.io.InputStream;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,6 +33,8 @@ public class MessagePushHandler implements MessageAddr {
     private static Logger logger = LogManager.getLogger(MessagePushHandler.class);
 
     private String Authorization;
+    private String gtAppKey;
+    private String gtAppId;
 
     private Vertx vertx;
 
@@ -34,6 +42,11 @@ public class MessagePushHandler implements MessageAddr {
         String auth = ConstantConf.AUTH_PRE + conf.getString("jpush_appkey") + ":" + conf.getString("jpush_secret");
         Authorization = Base64.getEncoder().encodeToString(auth.getBytes("UTF-8"));
         this.vertx = vertx;
+
+        InputStream inputStream = MessagePushHandler.class.getResourceAsStream("/gt_push.json");
+        JsonObject jsonObject = new JsonObject(IOUtils.toString(inputStream));
+        gtAppId = jsonObject.getString("appId");
+        gtAppKey = jsonObject.getString("appKey");
     }
 
 
@@ -53,7 +66,8 @@ public class MessagePushHandler implements MessageAddr {
                     if (as.result().body().getInteger("type") == 1) {//ios
                         sendAPNS(message.body(), as.result().body());
                     } else {//android
-                        sendJpush(message.body(), as.result().body());
+//                        sendJpush(message.body(), as.result().body());
+                        sendGTpush(message.body(),as.result().body());
                     }
                 } else {
                     logger.warn("pushId is null , not upload , uid -> {}", message.body().getString("uid"));
@@ -79,7 +93,8 @@ public class MessagePushHandler implements MessageAddr {
                     if (as.result().body().getInteger("type") == 1) {//ios
                         sendSoundAPNS(message.body(), as.result().body());
                     } else {//android
-                        sendJpush(message.body(), as.result().body());
+//                        sendJpush(message.body(), as.result().body());
+                        sendGTpush(message.body(),as.result().body());
                     }
                 } else {
                     logger.warn("pushId is null , not upload , uid -> {}", message.body().getString("uid"));
@@ -150,11 +165,79 @@ public class MessagePushHandler implements MessageAddr {
                                     jpush.getString("JPushId"), rs.result().body().toString(), message.getString("uid"));
                         }
                     });
-        }else{
+        } else {
             logger.error("sendJpush JPushId is null , uid -> {}", message.getString("uid"));
         }
     }
 
+    /**
+     * @Description 个推推送
+     * @author zhang bo
+     * @date 18-5-28
+     * @version 1.0
+     */
+    public void sendGTpush(JsonObject message, JsonObject gTpush) {
+        if (gTpush.getValue("JPushId") != null) {
+            JsonObject params = new JsonObject();
+
+
+            JsonObject mJson = new JsonObject();
+            mJson.put("appkey", gtAppKey);
+            mJson.put("is_offline", true);
+            mJson.put("offline_expire_time", 24 * 3600 * 1000);
+            mJson.put("msgtype", "transmission");
+            params.put("message", mJson);
+
+            JsonObject tJson = new JsonObject();
+            tJson.put("transmission_type", false);
+            tJson.put("transmission_content", "this");//this
+
+            JsonObject nJson = new JsonObject();
+            nJson.put("title", StringUtil.isNullOrEmpty(message.getString("title"))? "":message.getString("title"));
+            nJson.put("content", StringUtil.isNullOrEmpty(message.getString("content"))? "":message.getString("content"));
+            nJson.put("intent","#Intent;action=android.intent.action.oppopush;package=com.kaidishi.lock;component=com.kaidishi.lock/com.kaidishi.lock.WelcomeActivity;S.stringType="
+                     + (null == message.getJsonObject("extras")? "":message.getJsonObject("extras").toString()) + ";end");
+            nJson.put("type", 1);
+            tJson.put("notify",nJson);
+            params.put("transmission", tJson);
+
+            params.put("cid", gTpush.getString("JPushId"));
+            params.put("requestid", UUIDUtils.getUUID().replace("_", ""));
+
+//            JsonObject sJson = new JsonObject();
+//            sJson.put("type",1);
+//            tJson.put("style", sJson);
+
+            logger.info("request  uri /v1/L8Vfjgn2GM7AadGkOaVpQ2/push_single , uid -> {} ,  header.Authorization -> {} , bodyLength -> {}", message.getString("uid")
+                    , gTpush.getString("JPushId"), Authorization, params.toString().length());
+
+            // 获取个推authtoken
+            vertx.eventBus().send("cn.orangeiot.job.gtAuthtokenGet", gtAppId,  as -> {
+                System.out.println("get gt_authtoken:" + as.result().body().toString());
+                System.out.println("gt_params:" + params.toString());
+                if(as.failed()){
+                    logger.info("gt_authtoken acquisition failed");
+                }else {
+                    GTPushClient.webClient.post("/v1/5zODhkZOQd66zCoOgxX152/push_single")
+                            .putHeader(HttpAttrType.CONTENT_TYPE_JSON.getKey(), HttpAttrType.CONTENT_TYPE_JSON.getValue())
+                            .putHeader("cache-control","no-cache")
+                            // authtoken：restAPI获取，有效期1天，放redis
+                            .putHeader("authtoken", as.result().body().toString())
+                            .sendJsonObject(params, rs -> {
+                                if (rs.failed()) {
+                                    logger.error(rs.cause().getMessage(), rs);
+                                } else {
+                                    logger.info("request result url /v1/5zODhkZOQd66zCoOgxX152/push_single , JPushId -> {} , result -> {} , requestUid -> {}",
+                                            gTpush.getString("JPushId"), rs.result().body().toString(), message.getString("uid"));
+                                }
+                            });
+                }
+            });
+
+        } else {
+            logger.error("sendJpush JPushId is null , uid -> {}", message.getString("uid"));
+        }
+    }
 
     /**
      * @Description 推送APNS服务器
@@ -182,7 +265,7 @@ public class MessagePushHandler implements MessageAddr {
                                     rs.result().getHeader("apns-id"), message.getString("uid"));
                         }
                     });
-        }else{
+        } else {
             logger.error("sendAPNS JPushId is null , uid -> {}", message.getString("uid"));
         }
     }

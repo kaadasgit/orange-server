@@ -48,4 +48,6 @@ public class RedisKeyConf {
     public final static String SIP_VAL_UID = "sipUid";//sipuid字段
 
     public final static String SIP_VAL_COUNT = "count";//count字段
+
+    public final static String GT_AUTHTOKEN = "gt:authtoken";// 个推authtoken
 }

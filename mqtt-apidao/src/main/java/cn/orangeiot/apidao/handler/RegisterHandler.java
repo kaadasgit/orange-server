@@ -105,6 +105,10 @@ public class RegisterHandler implements EventbusAddr {
             //job处理
             JobDao jobDao = new JobDao();
             vertx.eventBus().consumer(config.getString("consumer_verifyCodeCron"), jobDao::onMsgVerifyCodeCount);
+            //个推API-authToken保存
+            vertx.eventBus().consumer(config.getString("consumer_gtAuthtokenSave"), jobDao::saveGtAuthtoken);
+            //个推API-authToken获取
+            vertx.eventBus().consumer(config.getString("consumer_gtAuthtokenGet"), jobDao::getGtAuthtoken);
 
             //锁相关处理
             lockAboutEvent(vertx);
