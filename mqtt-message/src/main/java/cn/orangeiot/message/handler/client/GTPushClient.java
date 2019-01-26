@@ -1,14 +1,5 @@
 package cn.orangeiot.message.handler.client;
 
-import com.gexin.rp.sdk.base.IPushResult;
-import com.gexin.rp.sdk.base.impl.AppMessage;
-import com.gexin.rp.sdk.base.impl.SingleMessage;
-import com.gexin.rp.sdk.base.impl.Target;
-import com.gexin.rp.sdk.exceptions.RequestException;
-import com.gexin.rp.sdk.http.IGtPush;
-import com.gexin.rp.sdk.template.LinkTemplate;
-import com.gexin.rp.sdk.template.NotificationTemplate;
-import com.gexin.rp.sdk.template.style.Style0;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
@@ -19,8 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GTPushClient {
     private static Logger logger = LogManager.getLogger(GTPushClient.class);

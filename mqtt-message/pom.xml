@@ -46,11 +46,11 @@
 
     <dependencies>
         <!-- 个推依赖包 -->
-        <dependency>
-            <groupId>com.gexin.platform</groupId>
-            <artifactId>gexin-rp-sdk-http</artifactId>
-            <version>4.1.0.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.gexin.platform</groupId>-->
+            <!--<artifactId>gexin-rp-sdk-http</artifactId>-->
+            <!--<version>4.1.0.0</version>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>junit</groupId>
@@ -137,11 +137,11 @@
     </build>
     <repositories>
         <!--个推仓库-->
-        <repository>
-            <id>getui-nexus</id>
-            <name>getui</name>
-            <url>http://mvn.gt.igexin.com/nexus/content/repositories/releases/</url>
-        </repository>
+        <!--<repository>-->
+            <!--<id>getui-nexus</id>-->
+            <!--<name>getui</name>-->
+            <!--<url>http://mvn.gt.igexin.com/nexus/content/repositories/releases/</url>-->
+        <!--</repository>-->
 
     </repositories>
 </project>
