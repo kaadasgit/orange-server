@@ -162,6 +162,7 @@ public class InviteHandler implements UserAddr, MessageAddr {
      */
     @SuppressWarnings("Duplicates")
     public void processInvite(SIPRequest request, SipOptions sipOptions, Vertx vertx) {
+        logger.info("------------------- 2");
         //查询是否存在相关账户信息
         To to = (To) request.getHeader(To.NAME);
         Via via = (Via) request.getHeader(Via.NAME);
@@ -181,45 +182,41 @@ public class InviteHandler implements UserAddr, MessageAddr {
                 , callID.getCallIdentifer().toString()).put("uid", fromUid).put("expire", jsonObject.getInteger("branchExpire")));//加入會畫管理branch
 
         vertx.eventBus().send(UserAddr.class.getName() + GET_REGISTER_USER, uid, SendOptions.getInstance(), rs -> {
+            logger.info("------------------- 3");
             if (rs.failed()) {
                 logger.error(rs.cause().getMessage(), rs);
                 notExistsUser(request, sipOptions);
             } else {
-                logger.info("---------------------------1;");
+                logger.info("---------------------------4;");
                 if (Objects.nonNull(rs.result().body())) {
                     //回复100 Trying
                     replySuccess(request, sipOptions);
 
                     ResponseMsgUtil.sendMessage(to.getAddress().getURI().toString(), newRequest.toString(), sipOptions, uid);
                 } else {
-                    logger.info("-------------------------2;");
+                    logger.info("-------------------------5;");
                     getPushIdAndProcessNotify(vertx, uid, flag -> {
                         if (!flag) {
                             notExistsUser(request, sipOptions);
                         } else {
-                            logger.info("----------------------------3;");
+                            logger.info("----------------------------6;");
                             vertx.eventBus().send(MessageAddr.class.getName() + BRANCH_SEND_TIMES, new JsonObject().put("callId", callID.getCallIdentifer().toString())
                                     .put("deviceId", fromUid), SendOptions.getInstance(), (AsyncResult<Message<JsonObject>> times) -> {
                                 if (times.failed()) {
                                     logger.error(times.cause());
                                 } else {
-                                    logger.info("----------------------------4");
+                                    logger.info("----------------------------7");
                                     if (times.result() != null && times.result().body() != null) {
-//                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
-//                                                .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
-//                                                        .put("func", "catEyeCall").put("gwId", times.result().body().getString("deviceSN")).put("deviceId", fromUid)
-//                                                        .put("data", newRequest.toString()))
-//                                                .put("time_to_live", 30));
-//
-//                                        replySuccess(request, sipOptions);
+                                        vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
+                                                .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
+                                                        .put("func", "catEyeCall").put("gwId", times.result().body().getString("deviceSN")).put("deviceId", fromUid)
+                                                        .put("data", newRequest.toString()))
+                                                .put("time_to_live", 30));
+
+                                        replySuccess(request, sipOptions);
                                     }else{
                                         logger.info("------------------------times.result   is   null");
                                     }
-                                    vertx.eventBus().send(MessageAddr.class.getName() + SEND_APPLICATION_SOUND_NOTIFY, new JsonObject().put("uid", uid)
-                                            .put("title", NotifyConf.CAT_EYE_TITLE).put("content", NotifyConf.CAT_EYE_CONTERNT).put("extras", new JsonObject()
-                                                    .put("func", "catEyeCall").put("gwId", "1233211234567").put("deviceId", fromUid)
-                                                    .put("data", newRequest.toString()))
-                                            .put("time_to_live", 30));
 
                                     replySuccess(request, sipOptions);
                                 }

@@ -1,6 +1,6 @@
 {
-  "port": 5061,
-  "host": "192.168.2.190",
+  "port": 5435,
+  "host": "192.168.3.201",
   "startHost": "0.0.0.0",
   "receBufferSize": 16384,
   "idleTimeout": 1200,

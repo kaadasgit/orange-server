@@ -132,10 +132,13 @@ public class PorcessHandler implements UserAddr {
                 logger.error(rs.cause().getMessage(), rs.cause());
             } else {
                 if (Objects.nonNull(rs.result())) {
-                    if (rs.result() instanceof SIPResponse)
+                    if (rs.result() instanceof SIPResponse) {
+                        logger.info("------------------- to sip");
                         responseSwitch((SIPResponse) rs.result(), SipOptions.UDP, datagramPacket.sender());//回包
-                    else
+                    }else {
+                        logger.info("------------------- to getui");
                         redirectSwitch((SIPRequest) rs.result(), null, SipOptions.UDP, datagramPacket.sender());//转发处理
+                    }
 
 //                    heartbeatProcess(datagramPacket);
                 } else {//心跳包
@@ -174,6 +177,7 @@ public class PorcessHandler implements UserAddr {
 
     public void redirectSwitch(SIPRequest sipMessage, NetSocket netSocket, SipOptions sipOptions, SocketAddress
             socketAddress) {
+        logger.info("------------------- 1");
         if (!Objects.nonNull(sipMessage)) {
             logger.error("processRequest request is null.");
             return;

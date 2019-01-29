@@ -195,8 +195,15 @@ public class MessagePushHandler implements MessageAddr {
             JsonObject nJson = new JsonObject();
             nJson.put("title", StringUtil.isNullOrEmpty(message.getString("title"))? "":message.getString("title"));
             nJson.put("content", StringUtil.isNullOrEmpty(message.getString("content"))? "":message.getString("content"));
-            nJson.put("intent","#Intent;action=android.intent.action.oppopush;package=com.kaidishi.lock;component=com.kaidishi.lock/com.kaidishi.lock.WelcomeActivity;S.stringType="
-                     + (null == message.getJsonObject("extras")? "":message.getJsonObject("extras").toString()) + ";end");
+
+            String extras = (null == message.getJsonObject("extras")? "":message.getJsonObject("extras").toString());
+            logger.info("--------------------->getui extras:" + extras);
+            if (!StringUtil.isNullOrEmpty(extras)){
+                extras = Base64.getEncoder().encodeToString(extras.getBytes());
+                logger.info("--------------------->getui base64Extras:" + extras);
+            }
+            nJson.put("intent","intent:#Intent;action=android.intent.action.oppopush;package=com.kaidishi.lock;component=com.kaidishi.lock/com.kaidishi.lock.WelcomeActivity;S.stringType="
+                     + extras + ";end");
             nJson.put("type", 1);
             tJson.put("notify",nJson);
             params.put("transmission", tJson);
@@ -204,17 +211,13 @@ public class MessagePushHandler implements MessageAddr {
             params.put("cid", gTpush.getString("JPushId"));
             params.put("requestid", UUIDUtils.getUUID().replace("_", ""));
 
-//            JsonObject sJson = new JsonObject();
-//            sJson.put("type",1);
-//            tJson.put("style", sJson);
-
-            logger.info("request  uri /v1/L8Vfjgn2GM7AadGkOaVpQ2/push_single , uid -> {} ,  header.Authorization -> {} , bodyLength -> {}", message.getString("uid")
-                    , gTpush.getString("JPushId"), Authorization, params.toString().length());
+//            logger.info("request  uri /v1/L8Vfjgn2GM7AadGkOaVpQ2/push_single , uid -> {} , params -> {} ,  pushId -> {} , bodyLength -> {}", message.getString("uid")
+//                    , params.toString(), gTpush.getString("JPushId"), Authorization, params.toString().length());
 
             // 获取个推authtoken
             vertx.eventBus().send("cn.orangeiot.job.gtAuthtokenGet", gtAppId,  as -> {
-                System.out.println("get gt_authtoken:" + as.result().body().toString());
-                System.out.println("gt_params:" + params.toString());
+                logger.info("get gt_authtoken:" + as.result().body().toString());
+                logger.info("gt_params:" + params.toString());
                 if(as.failed()){
                     logger.info("gt_authtoken acquisition failed");
                 }else {
@@ -227,8 +230,8 @@ public class MessagePushHandler implements MessageAddr {
                                 if (rs.failed()) {
                                     logger.error(rs.cause().getMessage(), rs);
                                 } else {
-                                    logger.info("request result url /v1/5zODhkZOQd66zCoOgxX152/push_single , JPushId -> {} , result -> {} , requestUid -> {}",
-                                            gTpush.getString("JPushId"), rs.result().body().toString(), message.getString("uid"));
+                                    logger.info("request result url /v1/5zODhkZOQd66zCoOgxX152/push_single , JPushId -> {} , params -> {} , result -> {} , requestUid -> {}",
+                                            gTpush.getString("JPushId"), params.toString() ,rs.result().body().toString(), message.getString("uid"));
                                 }
                             });
                 }
