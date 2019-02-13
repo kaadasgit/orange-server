@@ -27,7 +27,7 @@
         <module>sip-server</module>
         <module>rtp-server</module>
         <module>mqtt-client-junit</module>
-        <module>trace-common</module>
+        <!--<module>trace-common</module>-->
     </modules>
 
 
@@ -191,6 +191,13 @@
             <id>alimaven</id>
             <name>aliyun maven</name>
             <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+        </repository>
+
+        <!--个推仓库-->
+        <repository>
+            <id>getui-nexus</id>
+            <name>getui</name>
+            <url>http://mvn.gt.igexin.com/nexus/content/repositories/releases/</url>
         </repository>
 
     </repositories>
